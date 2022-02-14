@@ -70,7 +70,6 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                     if (newValue == true) {
                         setPinCode(pin, it)
                         lockScreenDialog.dismiss()
-                        parentFragmentManager.popBackStack()
                     } else {
                         removePinCode(pin, lockScreenDialog, pineEntryCheckBox)
                     }

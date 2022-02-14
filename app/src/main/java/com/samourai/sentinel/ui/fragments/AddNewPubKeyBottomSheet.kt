@@ -54,7 +54,7 @@ class AddNewPubKeyBottomSheet(private val pubKey:String= "") : GenericBottomShee
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.layout_bottom_sheet, container)
-        view.findViewById<TextView>(R.id.dialogTitle).text = "Add new public key"
+        view.findViewById<TextView>(R.id.dialogTitle).text = getString(R.string.add_another_public_key)
         val fragmentLayout = inflater.inflate(R.layout.fragment_bottomsheet_view_pager, container)
         val content = view.findViewById<FrameLayout>(R.id.contentContainer)
         content.addView(fragmentLayout)
