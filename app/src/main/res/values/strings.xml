@@ -150,7 +150,7 @@
     <string name="tx_length_error">Samourai does not handle transactions over 100KB in size. Please try splitting your transaction.</string>
     <string name="tx_hex">Transaction hex</string>
     <string name="enter_tx_hex">Enter transaction in hex format</string>
-    <string name="broadcast">Broadcast transaction</string>
+    <string name="broadcast_transaction">Broadcast transaction</string>
     <string name="address">Address</string>
 
     <string name="select_network">Select network…</string>
