@@ -4,15 +4,22 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.method.ScrollingMovementMethod
-import android.view.*
-import android.view.View.*
-import android.widget.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
+import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.PopupMenu
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.widget.addTextChangedListener
@@ -40,7 +47,9 @@ import kotlinx.android.synthetic.main.fee_selector.*
 import kotlinx.android.synthetic.main.fragment_broadcast_tx.*
 import kotlinx.android.synthetic.main.fragment_compose_tx.*
 import kotlinx.android.synthetic.main.fragment_spend.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
 import java.io.File
@@ -55,10 +64,10 @@ class SendFragment : Fragment() {
     private var isBTCEditing = false
     private var isFiatEditing = false
     private var amount: Double = 0.0
-    private var transactionComposer = TransactionComposer();
-    private var rate: ExchangeRateRepository.Rate = ExchangeRateRepository.Rate("", 0);
+    private var transactionComposer = TransactionComposer()
+    private var rate: ExchangeRateRepository.Rate = ExchangeRateRepository.Rate("", 0)
     private val exchangeRateRepository: ExchangeRateRepository by inject(ExchangeRateRepository::class.java)
-    private var address: String = "";
+    private var address: String = ""
     private val feeRepository: FeeRepository by inject(FeeRepository::class.java)
     private var feeLow: Long = 0L
     private var feeMed: Long = 0L
@@ -69,9 +78,9 @@ class SendFragment : Fragment() {
     private val viewModel: SendViewModel by viewModels()
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_spend, container, false)
     }
@@ -124,15 +133,15 @@ class SendFragment : Fragment() {
             }
             val cm = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager?
             val clipData = ClipData
-                .newPlainText("PSBT", psbt)
+                    .newPlainText("PSBT", psbt)
             if (cm != null) {
                 cm.setPrimaryClip(clipData)
                 Toast.makeText(context, getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT)
-                    .show()
+                        .show()
             }
         }
 
-        viewModel.minerFee.observe(viewLifecycleOwner,{
+        viewModel.minerFee.observe(viewLifecycleOwner, {
             totalMinerFee.text = it
         })
 
@@ -166,7 +175,7 @@ class SendFragment : Fragment() {
         composeBtn.setOnClickListener {
             it.hideKeyboard()
             if (viewModel.makeTx()) {
-                requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(),R.color.v3_accent);
+                requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.v3_accent)
                 containerTransform(unsignedTxView, composeBtn)
             }
         }
@@ -200,34 +209,34 @@ class SendFragment : Fragment() {
 
     private fun sharePSBTFile() {
         val psbt = viewModel.getPsbtBytes() ?: return
-        val qrFile = "${requireContext().cacheDir.path}${File.separator}${UUID.randomUUID()}.psbt";
+        val qrFile = "${requireContext().cacheDir.path}${File.separator}${UUID.randomUUID()}.psbt"
 
         val file = File(qrFile)
         if (file.exists()) {
             file.delete()
         }
         file.writeBytes(psbt)
-        file!!.setReadable(true, false)
+        file.setReadable(true, false)
         val intent = Intent()
         intent.action = Intent.ACTION_SEND
         intent.type = "**/**"
         if (Build.VERSION.SDK_INT >= 24) {
             //From API 24 sending FIle on intent ,require custom file provider
             intent.putExtra(
-                Intent.EXTRA_STREAM, FileProvider.getUriForFile(
+                    Intent.EXTRA_STREAM, FileProvider.getUriForFile(
                     requireContext(),
                     requireContext()
-                        .packageName + ".provider", file
-                )
+                            .packageName + ".provider", file
+            )
             )
         } else {
             intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))
         }
         startActivity(
-            Intent.createChooser(
-                intent,
-                requireContext().getText(R.string.send_payment_code)
-            )
+                Intent.createChooser(
+                        intent,
+                        requireContext().getText(R.string.send_payment_code)
+                )
         )
 
     }
@@ -242,20 +251,20 @@ class SendFragment : Fragment() {
         transition.duration = 400
         transition.endView = enter
 
-        transition.addTarget(enter);
-        TransitionManager.beginDelayedTransition(view as ViewGroup, transition);
+        transition.addTarget(enter)
+        TransitionManager.beginDelayedTransition(view as ViewGroup, transition)
         enter.visibility = VISIBLE
         leaving.visibility = GONE
-        if(leaving.id ==unsignedTxView.id){
+        if (leaving.id == unsignedTxView.id) {
             requireActivity().window.statusBarColor =
-                ContextCompat.getColor(requireContext(),android.R.color.transparent);
-        }else{
-            requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(),R.color.v3_accent);
+                    ContextCompat.getColor(requireContext(), android.R.color.transparent)
+        } else {
+            requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.v3_accent)
         }
     }
 
     private fun watchAddressAndAmount() {
-        fiatEditTextLayout.hint = exchangeRateRepository.getRateLive().value?.currency;
+        fiatEditTextLayout.hint = exchangeRateRepository.getRateLive().value?.currency
         fiatEditText.addTextChangedListener { onFiatValueChange(it.toString(), btcEditText.toString()) }
         btcEditText.addTextChangedListener { onBtcValueChanged(it.toString()) }
         btcAddress.addTextChangedListener {
@@ -317,7 +326,7 @@ class SendFragment : Fragment() {
 
             setBtcEdit(MonetaryUtil.getInstance().formatToBtc((btcRate * 1e8).toLong()))
             setFiatEdit(DecimalFormat.getNumberInstance().format(fiat))
-            val btc: Double =  MonetaryUtil.getInstance().formatToBtc((btcRate * 1e8).toLong()).toDouble()
+            val btc: Double = MonetaryUtil.getInstance().formatToBtc((btcRate * 1e8).toLong()).toDouble()
             amount = btc
             viewModel.setAmount(amount)
             print("Setting amount: " + amount)
@@ -328,14 +337,14 @@ class SendFragment : Fragment() {
 
     private fun setBtcEdit(value: String) {
         isBTCEditing = true
-        btcEditText.setText(value);
+        btcEditText.setText(value)
         btcEditText.text?.length?.let { btcEditText.setSelection(it) }
         isBTCEditing = false
     }
 
     private fun setFiatEdit(value: String) {
         isFiatEditing = true
-        fiatEditText.setText(value);
+        fiatEditText.setText(value)
         fiatEditText.text?.length?.let { fiatEditText.setSelection(it) }
         isFiatEditing = false
     }
@@ -346,7 +355,7 @@ class SendFragment : Fragment() {
             containerTransform(composeBtn, unsignedTxView)
             return false
         }
-         Timber.i("onBackPressed: ")
+        Timber.i("onBackPressed: ")
         return true
     }
 
@@ -361,24 +370,24 @@ class SendFragment : Fragment() {
         mCollection?.let {
             val items = it.pubs.map { it.label }.toMutableList()
             val adapter: ArrayAdapter<String> = ArrayAdapter(
-                requireContext(),
-                R.layout.dropdown_menu_popup_item, items
+                    requireContext(),
+                    R.layout.dropdown_menu_popup_item, items
             )
             pubKeySelector.inputType = InputType.TYPE_NULL
             pubKeySelector.threshold = items.size
             pubKeySelector.setAdapter(adapter)
             pubKeySelector.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
-                val selectPubKeyModel = it.pubs[index] ?: return@OnItemClickListener
+                val selectPubKeyModel = it.pubs[index]
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
-                if (selectPubKeyModel!!.type != AddressTypes.BIP84) {
+                if (selectPubKeyModel.type != AddressTypes.BIP84) {
                     //view?.isEnabled = false;
                     //view?.alpha = 0.5f;
-                    view?.isEnabled = true;
-                    view?.alpha = 1f;
+                    view?.isEnabled = true
+                    view?.alpha = 1f
                 } else {
-                    view?.isEnabled = true;
-                    view?.alpha = 1f;
+                    view?.isEnabled = true
+                    view?.alpha = 1f
                 }
             }
             if (items.size == 0) {
@@ -400,7 +409,7 @@ class SendFragment : Fragment() {
         val high = feeHigh / 2 + feeHigh
         val feeHighSliderValue = (high * multiplier)
         val feeMedSliderValue = (feeMed * multiplier)
-        val valueTo = (feeHighSliderValue - multiplier).toFloat();
+        val valueTo = (feeHighSliderValue - multiplier).toFloat()
         feeSlider.stepSize = 1F
         feeSlider.valueTo = if (valueTo <= 0) feeHighSliderValue.toFloat() else valueTo
         feeSlider.valueFrom = 1F
@@ -471,14 +480,14 @@ class SendFragment : Fragment() {
                 estBlockTime.text = "50+ blocks"
             }
             setFeeLabels()
-            viewModel.setFee(value*1000)
+            viewModel.setFee(value * 1000)
         }
         estBlockTime.text = "$nbBlocks blocks"
     }
 
     private fun setFeeLabels() {
         if (feeSlider.valueTo <= 0) {
-            return;
+            return
         }
         val sliderValue: Float = feeSlider.value / feeSlider.valueTo
         val sliderInPercentage = sliderValue * 100
@@ -504,11 +513,11 @@ class SendFragment : Fragment() {
         viewModel.viewModelScope.launch(Dispatchers.Default) {
             var bitmap: Bitmap? = null
             val qrCodeEncoder = QRCodeEncoder(
-                uri,
-                null,
-                Contents.Type.TEXT,
-                BarcodeFormat.QR_CODE.toString(),
-                imgWidth
+                    uri,
+                    null,
+                    Contents.Type.TEXT,
+                    BarcodeFormat.QR_CODE.toString(),
+                    imgWidth
             )
             qrError.visibility = GONE
             try {

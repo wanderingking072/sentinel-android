@@ -1,10 +1,7 @@
 package com.samourai.sentinel.ui.collectionDetails.send
 
-import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
-import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.Utxo
 import com.samourai.sentinel.data.db.dao.UtxoDao
@@ -12,8 +9,6 @@ import com.samourai.sentinel.send.FeeUtil
 import com.samourai.sentinel.send.SuggestedFee
 import com.samourai.sentinel.util.MonetaryUtil
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.consume
-import org.koin.java.KoinJavaComponent
 import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
 import java.math.BigInteger
@@ -23,15 +18,15 @@ import java.util.*
 class SendViewModel : ViewModel() {
 
 
-    private var selectPubKeyModel: PubKeyModel? = null;
+    private var selectPubKeyModel: PubKeyModel? = null
     private val utxos: ArrayList<Utxo> = arrayListOf()
     private val selectedUtxos: ArrayList<Utxo> = arrayListOf()
     private var address: String = ""
     private var amount: Double = 0.0
     private var enteredAmount: Double = 0.0
     var job: Job? = null
-    private var selectedFee = 0L;
-    private var transactionComposer = TransactionComposer();
+    private var selectedFee = 0L
+    private var transactionComposer = TransactionComposer()
     private val utxoDao: UtxoDao by inject(UtxoDao::class.java)
     private var receivers: HashMap<String, BigInteger> = hashMapOf()
 
@@ -62,7 +57,7 @@ class SendViewModel : ViewModel() {
         selectPubKeyModel = pubKeyModel
         transactionComposer.setPubKey(pubKeyModel)
         utxoDao.getUtxoWithPubKey(pubKeyModel.pubKey)
-            .observe(lifecycleOwner, utxoObserver)
+                .observe(lifecycleOwner, utxoObserver)
     }
 
     private fun prepareSpend(): Boolean {
@@ -93,16 +88,16 @@ class SendViewModel : ViewModel() {
                 receivers = HashMap()
                 receivers[address] = BigInteger.valueOf(amount.toLong())
                 val isValid = transactionComposer.compose(
-                    inputAddress = address,
-                    inputAmount = amount,
-                    inputFee = selectedFee,
-                    inputUtxos = utxos
+                        inputAddress = address,
+                        inputAmount = amount,
+                        inputFee = selectedFee,
+                        inputUtxos = utxos
                 )
                 withContext(Dispatchers.Main) {
                     _validSpend.postValue(isValid)
                 }
             } catch (ex: TransactionComposer.ComposeException) {
-                throw CancellationException("unable to compose");
+                throw CancellationException("unable to compose")
             }
         }
         job?.invokeOnCompletion {
@@ -117,7 +112,7 @@ class SendViewModel : ViewModel() {
 ////            composeTransactionFragment.setMinerFeeTotal("${MonetaryUtil.getInstance().formatToBtc(l)} BTC")
 //        }
 
-        return true;
+        return true
     }
 
     fun setAmount(amount: Double) {
@@ -163,7 +158,7 @@ class SendViewModel : ViewModel() {
         if (validSpend.value == true) {
             val psbt = transactionComposer.getPSBT()
             psbt?.let {
-                _psbt.postValue(it.toString());
+                _psbt.postValue(it.toString())
                 return true
             }
             return false
