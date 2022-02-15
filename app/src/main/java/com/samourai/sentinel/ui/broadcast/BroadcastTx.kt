@@ -1,25 +1,20 @@
 package com.samourai.sentinel.ui.broadcast
 
-import android.content.Context
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
-import android.util.AttributeSet
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.core.content.ContentProviderCompat.requireContext
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
-import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
-import kotlinx.android.synthetic.main.content_choose_address_type.*
 import kotlinx.android.synthetic.main.layout_broadcast_bottom_sheet.*
 import kotlinx.coroutines.*
 import org.bitcoinj.core.Transaction
@@ -32,7 +27,7 @@ class BroadcastTx : SentinelActivity() {
 
         private val _hex = MutableLiveData("")
         val hex: LiveData<String> get() = _hex
-        private val apiService: ApiService by inject(ApiService::class.java);
+        private val apiService: ApiService by inject(ApiService::class.java)
         fun broadCast(): Job {
             return viewModelScope.launch(Dispatchers.IO) {
                 hex.value?.let {
@@ -42,7 +37,7 @@ class BroadcastTx : SentinelActivity() {
                         throw CancellationException(e.message)
                     }
                 }
-            };
+            }
         }
 
         fun setHex(hex: String) {
@@ -53,11 +48,11 @@ class BroadcastTx : SentinelActivity() {
     private var onBroadcastSuccess: ((hash: String) -> Unit)? = null
 
     private val model: BroadcastVm by viewModels()
-    private var hash = "";
+    private var hash = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.layout_broadcast_bottom_sheet);
+        setContentView(R.layout.layout_broadcast_bottom_sheet)
 
         disableBtn(broadCastTransactionBtn, false)
 
@@ -77,7 +72,7 @@ class BroadcastTx : SentinelActivity() {
         })
 
         pasteHex.setOnClickListener {
-            val clipboardData = AndroidUtil.getClipBoardString(applicationContext);
+            val clipboardData = AndroidUtil.getClipBoardString(applicationContext)
             clipboardData?.takeIf { it.isNotEmpty() }?.let { string ->
                 model.viewModelScope.launch(Dispatchers.Default) {
                     validate(string)
@@ -106,7 +101,7 @@ class BroadcastTx : SentinelActivity() {
                                 applicationContext,
                                 hash,
                                 Toast.LENGTH_SHORT
-                        ).show();
+                        ).show()
                         model.setHex("")
                     } else {
                         Toast.makeText(
@@ -124,7 +119,7 @@ class BroadcastTx : SentinelActivity() {
     private suspend fun validate(hex: String) {
         try {
             val transaction = Transaction(SentinelState.getNetworkParam(), Hex.decode(hex))
-            hash = transaction.hashAsString;
+            hash = transaction.hashAsString
             withContext(Dispatchers.Main) {
                 disableAllButtons(true)
                 model.setHex(hex)
@@ -132,7 +127,7 @@ class BroadcastTx : SentinelActivity() {
 
         } catch (ex: Exception) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(applicationContext, "Text in clipboard is not a hex transaction", Toast.LENGTH_LONG).show( )
+                Toast.makeText(applicationContext, "Text in clipboard is not a hex transaction", Toast.LENGTH_LONG).show()
                 disableBtn(broadCastTransactionBtn, false)
             }
         }
@@ -145,7 +140,7 @@ class BroadcastTx : SentinelActivity() {
     }
 
     fun setOnBroadcastSuccess(listener: (hash: String) -> Unit) {
-        this.onBroadcastSuccess = listener;
+        this.onBroadcastSuccess = listener
     }
 
     private fun disableAllButtons(enable: Boolean) {

@@ -40,9 +40,9 @@ import org.koin.java.KoinJavaComponent.inject
 class HomeActivity : SentinelActivity() {
 
     private lateinit var linearLayoutManager: LinearLayoutManager
-    private val collectionsAdapter = CollectionsAdapter();
-    private val webSocketHandler: WebSocketHandler by inject(WebSocketHandler::class.java);
-    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java);
+    private val collectionsAdapter = CollectionsAdapter()
+    private val webSocketHandler: WebSocketHandler by inject(WebSocketHandler::class.java)
+    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
     private var connectingDojo = false
     private lateinit var torServicePrefs: TorServicePrefs
 
@@ -259,7 +259,7 @@ class HomeActivity : SentinelActivity() {
 
         linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
-        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(applicationContext, R.drawable.divider_home)!!);
+        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(applicationContext, R.drawable.divider_home)!!)
         collectionRecyclerView.apply {
             adapter = collectionsAdapter
             layoutManager = linearLayoutManager
@@ -335,7 +335,7 @@ class HomeActivity : SentinelActivity() {
         val alertMenuItem: MenuItem = menu.findItem(R.id.activity_home_menu_network)
         val rootView = alertMenuItem.actionView
         val statusCircle = rootView.findViewById<View>(R.id.home_menu_network_shape) as FrameLayout
-        val shape = ContextCompat.getDrawable(applicationContext, R.drawable.circle_shape);
+        val shape = ContextCompat.getDrawable(applicationContext, R.drawable.circle_shape)
         shape?.setTint(ContextCompat.getColor(applicationContext, R.color.red))
         statusCircle.background = shape
         statusCircle.visibility = View.VISIBLE

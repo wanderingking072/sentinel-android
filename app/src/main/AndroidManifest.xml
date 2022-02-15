@@ -32,13 +32,12 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning"
-        tools:replace="android:allowBackup" >
+        tools:replace="android:allowBackup">
         <activity
-            android:theme="@style/AppThemeV3"
+            android:name=".ui.settings.ImportBackUpActivity"
             android:label="Import"
-            android:windowSoftInputMode="adjustPan"
-            android:name=".ui.settings.ImportBackUpActivity" >
-        </activity>
+            android:theme="@style/AppThemeV3"
+            android:windowSoftInputMode="adjustPan"></activity>
         <activity
             android:name=".ui.utxos.UtxosActivity"
             android:label=""
@@ -109,7 +108,7 @@
             android:name=".util.GenericFileProvider"
             android:authorities="${applicationId}.provider"
             android:exported="false"
-            android:grantUriPermissions="true" >
+            android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
