@@ -1,7 +1,6 @@
 package com.samourai.sentinel.ui.home
 
 import android.Manifest
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -21,6 +20,7 @@ import com.samourai.sentinel.service.WebSocketHandler
 import com.samourai.sentinel.service.WebSocketService
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
+import com.samourai.sentinel.ui.broadcast.BroadcastTx
 import com.samourai.sentinel.ui.collectionDetails.CollectionDetailsActivity
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
@@ -301,6 +301,9 @@ class HomeActivity : SentinelActivity() {
         when (item.itemId) {
             R.id.home_options_settings -> {
                 startActivity(Intent(this, SettingsActivity::class.java))
+            }
+            R.id.home_options_broadcast -> {
+                startActivity(Intent(this, BroadcastTx::class.java))
             }
         }
         return super.onOptionsItemSelected(item)

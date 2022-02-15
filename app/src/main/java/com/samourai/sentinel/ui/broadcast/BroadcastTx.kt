@@ -1,28 +1,32 @@
 package com.samourai.sentinel.ui.broadcast
 
+import android.content.Context
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
+import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
+import kotlinx.android.synthetic.main.content_choose_address_type.*
 import kotlinx.android.synthetic.main.layout_broadcast_bottom_sheet.*
 import kotlinx.coroutines.*
 import org.bitcoinj.core.Transaction
 import org.bouncycastle.util.encoders.Hex
 import org.koin.java.KoinJavaComponent.inject
 
-
-class BroadcastTx : GenericBottomSheet() {
-
+class BroadcastTx : SentinelActivity() {
 
     class BroadcastVm : ViewModel() {
 
@@ -51,21 +55,14 @@ class BroadcastTx : GenericBottomSheet() {
     private val model: BroadcastVm by viewModels()
     private var hash = "";
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.layout_broadcast_bottom_sheet, container);
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.layout_broadcast_bottom_sheet);
 
         disableBtn(broadCastTransactionBtn, false)
 
         pasteHex.setOnClickListener { _ ->
-            val string = AndroidUtil.getClipBoardString(requireContext())
+            val string = AndroidUtil.getClipBoardString(applicationContext)
             string?.let {
                 model.viewModelScope.launch(Dispatchers.Default) {
                     validate(it)
@@ -75,28 +72,27 @@ class BroadcastTx : GenericBottomSheet() {
 
         hexTextView.movementMethod = ScrollingMovementMethod()
 
-        model.hex.observe(viewLifecycleOwner, Observer {
+        model.hex.observe({ lifecycle }, {
             hexTextView.text = it
         })
 
         pasteHex.setOnClickListener {
-            val clipboardData = AndroidUtil.getClipBoardString(requireContext());
+            val clipboardData = AndroidUtil.getClipBoardString(applicationContext);
             clipboardData?.takeIf { it.isNotEmpty() }?.let { string ->
                 model.viewModelScope.launch(Dispatchers.Default) {
                     validate(string)
                 }
             }
-
         }
         scanHex.setOnClickListener {
             val camera = CameraFragmentBottomSheet()
-            camera.show(requireActivity().supportFragmentManager, camera.tag)
+            camera.show(supportFragmentManager, camera.tag)
             camera.setQrCodeScanLisenter {
                 model.viewModelScope.launch(Dispatchers.Default) {
                     validate(it)
+                    camera.dismiss()
                 }
             }
-
         }
 
         broadCastTransactionBtn.setOnClickListener {
@@ -106,12 +102,17 @@ class BroadcastTx : GenericBottomSheet() {
                     showLoading(false)
                     if (it == null) {
                         onBroadcastSuccess?.invoke(hash)
-                        dismiss()
+                        Toast.makeText(
+                                applicationContext,
+                                hash,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        model.setHex("")
                     } else {
                         Toast.makeText(
-                            requireContext(),
-                            "Unable to broadcast ${it.message}",
-                            Toast.LENGTH_LONG
+                                applicationContext,
+                                "Unable to broadcast ${it.message}",
+                                Toast.LENGTH_LONG
                         ).show()
                     }
                 }
@@ -128,9 +129,11 @@ class BroadcastTx : GenericBottomSheet() {
                 disableAllButtons(true)
                 model.setHex(hex)
             }
+
         } catch (ex: Exception) {
             withContext(Dispatchers.Main) {
-                disableAllButtons(false)
+                Toast.makeText(applicationContext, "Text in clipboard is not a hex transaction", Toast.LENGTH_LONG).show( )
+                disableBtn(broadCastTransactionBtn, false)
             }
         }
     }
