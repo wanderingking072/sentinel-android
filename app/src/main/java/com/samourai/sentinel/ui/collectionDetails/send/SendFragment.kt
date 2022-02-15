@@ -256,7 +256,7 @@ class SendFragment : Fragment() {
 
     private fun watchAddressAndAmount() {
         fiatEditTextLayout.hint = exchangeRateRepository.getRateLive().value?.currency;
-        fiatEditText.addTextChangedListener { onFiatValueChange(it.toString()) }
+        fiatEditText.addTextChangedListener { onFiatValueChange(it.toString(), btcEditText.toString()) }
         btcEditText.addTextChangedListener { onBtcValueChanged(it.toString()) }
         btcAddress.addTextChangedListener {
             if (it.toString().isNotEmpty()) {
@@ -292,13 +292,13 @@ class SendFragment : Fragment() {
             val fiatRate = btc.times(rate.rate)
             setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
             viewModel.setAmount(amount)
+            print("Setting amount: " + amount)
         } catch (Ex: Exception) {
 
         }
     }
 
-    private fun onFiatValueChange(fiatString: String) {
-
+    private fun onFiatValueChange(fiatString: String, btcString: String) {
         if (isFiatEditing) {
             return
         }
@@ -314,8 +314,13 @@ class SendFragment : Fragment() {
                 setFiatEdit("")
                 return
             }
+
             setBtcEdit(MonetaryUtil.getInstance().formatToBtc((btcRate * 1e8).toLong()))
             setFiatEdit(DecimalFormat.getNumberInstance().format(fiat))
+            val btc: Double =  MonetaryUtil.getInstance().formatToBtc((btcRate * 1e8).toLong()).toDouble()
+            amount = btc
+            viewModel.setAmount(amount)
+            print("Setting amount: " + amount)
         } catch (Ex: Exception) {
 
         }
@@ -367,8 +372,10 @@ class SendFragment : Fragment() {
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
                 if (selectPubKeyModel!!.type != AddressTypes.BIP84) {
-                    view?.isEnabled = false;
-                    view?.alpha = 0.5f;
+                    //view?.isEnabled = false;
+                    //view?.alpha = 0.5f;
+                    view?.isEnabled = true;
+                    view?.alpha = 1f;
                 } else {
                     view?.isEnabled = true;
                     view?.alpha = 1f;
