@@ -28,12 +28,12 @@ class BroadcastFromComposeTx : SentinelActivity() {
         }
 
         launchQRScanner.setOnClickListener { _ ->
+            step_view.setStep(3)
             val camera = CameraFragmentBottomSheet()
             camera.show(supportFragmentManager, camera.tag)
             camera.setQrCodeScanLisenter {
                 signedTxHex = it
                 val intent = Intent(applicationContext, BroadcastTx::class.java).putExtra("signedTxHex", signedTxHex)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK.or(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
                 camera.dismiss()
             }
