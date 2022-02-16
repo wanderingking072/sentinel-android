@@ -38,6 +38,9 @@ import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.send.SuggestedFee
+import com.samourai.sentinel.ui.broadcast.BroadcastFromComposeTx
+import com.samourai.sentinel.ui.broadcast.BroadcastTx
+import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.hideKeyboard
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
@@ -74,6 +77,7 @@ class SendFragment : Fragment() {
     private var feeHigh: Long = 0L
     var mCollection: PubKeyCollection? = null
     private val decimalFormat = DecimalFormat("##.00")
+    private var qrCodeString: String? = null
 
     private val viewModel: SendViewModel by viewModels()
 
@@ -112,11 +116,12 @@ class SendFragment : Fragment() {
         setUpFee()
 
         broadCastTransactionBtn.setOnClickListener {
-
+            startActivity(Intent(context, BroadcastFromComposeTx::class.java).putExtra("qrString", qrCodeString))
         }
 
         viewModel.psbtLive.observe(viewLifecycleOwner, {
             generateQRCode(it)
+            qrCodeString = it
             psbtText.text = it
             psbtText.movementMethod = ScrollingMovementMethod()
         })

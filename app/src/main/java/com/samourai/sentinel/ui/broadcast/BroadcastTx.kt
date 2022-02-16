@@ -56,6 +56,15 @@ class BroadcastTx : SentinelActivity() {
 
         disableBtn(broadCastTransactionBtn, false)
 
+        if (intent.hasExtra("signedTxHex")) {
+            val signedTxHex: String = intent.getStringExtra("signedTxHex").toString()
+            signedTxHex.let {
+                model.viewModelScope.launch(Dispatchers.Default) {
+                    validate(it)
+                }
+            }
+        }
+
         pasteHex.setOnClickListener { _ ->
             val string = AndroidUtil.getClipBoardString(applicationContext)
             string?.let {

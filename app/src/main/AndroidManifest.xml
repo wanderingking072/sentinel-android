@@ -78,6 +78,10 @@
             android:label=""
             android:theme="@style/AppThemeV3" />
         <activity
+            android:name=".ui.broadcast.BroadcastFromComposeTx"
+            android:label=""
+            android:theme="@style/AppThemeV3" />
+        <activity
             android:name=".ui.MainActivity"
             android:theme="@style/AppTheme.Splash">
             <intent-filter>
