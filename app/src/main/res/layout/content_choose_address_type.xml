@@ -71,21 +71,21 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginBottom="24dp"
-            android:text='Address starting with the number "1"' />
+            android:text='@string/address_number1_bip44' />
 
         <RadioButton
             android:id="@+id/buttonBIP49"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginBottom="24dp"
-            android:text='Address starting with the number "3"   (BIP49)' />
+            android:text='@string/address_number3_bip49' />
 
         <RadioButton
             android:id="@+id/buttonBIP84"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginBottom="24dp"
-            android:text='Address starting with the number "bc" (BIP84)' />
+            android:text='@string/address_starting_bc_bip84' />
 
     </RadioGroup>
 
