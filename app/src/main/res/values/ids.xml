@@ -26,4 +26,8 @@
         <item name="alpha" type="id"/>
         <item name="scroll_x" type="id"/>
         <item name="scroll_y" type="id"/>
+        <item name="step1" type="id"/>
+        <item name="step1_text" type="id"/>
+        <item name="step2" type="id"/>
+        <item name="step2_text" type="id"/>
 </resources>

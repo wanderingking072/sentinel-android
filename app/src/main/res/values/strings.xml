@@ -288,6 +288,11 @@
     <string name="import_supports">Import Supports Samourai backup or Sentinel backup</string>
     <string name="show_qr_code">SHOW QR CODE</string>
     <string name="launch_qr_scanner">LAUNCH QR SCANNER</string>
+    <string name="compose_unsigned_transaction">Compose Unsigned Transaction</string>
+    <string name="step1">Step 1</string>
+    <string name="step1_text">Display the QR code of this unsigned transaction and scan it with your wallet</string>
+    <string name="step2">Step 2</string>
+    <string name="step2_text">Scan the QR code of the signed transaction that your wallet provides you with the Sentinel app</string>
 
 
 </resources>
