@@ -188,7 +188,7 @@ class FeeRepository : FeeUtil() {
         return calculateFee(size, feePerKb)
     }
 
-    fun calculateFee(txSize: Int, feePerKb: BigInteger): BigInteger {
+    override fun calculateFee(txSize: Int, feePerKb: BigInteger): BigInteger {
         val feePerB: Long = toFeePerB(feePerKb)
         val fee: Long = calculateFee(txSize, feePerB)
         return BigInteger.valueOf(fee)
@@ -197,7 +197,7 @@ class FeeRepository : FeeUtil() {
         return fees
     }
 
-    private fun toFeePerB(feePerKb: BigInteger): Long {
+    override fun toFeePerB(feePerKb: BigInteger): Long {
         return (feePerKb.toDouble() / 1000.0) .toLong()
     }
     fun sanitizeFee() {

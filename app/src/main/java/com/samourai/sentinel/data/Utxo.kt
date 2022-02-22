@@ -60,7 +60,7 @@ data class Utxo(
             Script(scriptBytes).getToAddress(SentinelState.getNetworkParam()).toString()
         }
         // Construct the output
-        val outPoint = MyTransactionOutPoint(SentinelState.getNetworkParam(), txHash, txOutputN!!, value, scriptBytes, address)
+        val outPoint = MyTransactionOutPoint(SentinelState.getNetworkParam(), txHash, txOutputN!!, value, scriptBytes, address, confirmations!!)
         outPoint.confirmations = confirmations!!
         return outPoint
     }

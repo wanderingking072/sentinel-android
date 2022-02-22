@@ -207,12 +207,13 @@ class TransactionComposer {
         val type = if (networkParameters is MainNetParams) 0 else 1
 
         val purpose = selectPubKeyModel?.getPurpose();
+        val data : CharArray = "0d8c85ab".toCharArray()
 
         try {
             //The chain parameter will be always 1 since its a change back output
             psbt?.addOutput(
                 SentinelState.getNetworkParam(),
-                Hex.decodeHex("0d8c85ab"), changeECKey, purpose!!, type, 0, 1, changeIndex!!
+                Hex.decodeHex(data), changeECKey, purpose!!, type, 0, 1, changeIndex!!
             )
             psbt?.addOutputSeparator()
         } catch (e: java.lang.Exception) {
@@ -233,7 +234,7 @@ class TransactionComposer {
                         }
                         psbt?.addInput(
                             networkParameters,
-                            Hex.decodeHex("0d8c85ab"),
+                            Hex.decodeHex(data),
                             eckeyInput,
                             outPoint.value.value,
                             purpose!!,

@@ -81,7 +81,7 @@ dependencies {
     def room_version = "2.2.6"
     def paging_version = "2.1.2"
 
-    implementation ('io.samourai.code.wallet:ExtLibJ:0.0.16-aes') {
+    implementation ('io.samourai.code.wallet:ExtLibJ:0.0.29') {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
         exclude group: 'net.jcip', module: 'jcip-annotations'
