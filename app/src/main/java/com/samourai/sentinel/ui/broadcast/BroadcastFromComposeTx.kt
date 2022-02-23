@@ -2,33 +2,37 @@ package com.samourai.sentinel.ui.broadcast
 
 import android.content.Intent
 import android.os.Bundle
-import com.samourai.sentinel.R
+import com.samourai.sentinel.databinding.ActivityBroadcastUnsignedTxBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.fragments.QRBottomSheetDialog
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
-import kotlinx.android.synthetic.main.activity_broadcast_unsigned_tx.*
 
 
 class BroadcastFromComposeTx : SentinelActivity() {
 
+    private lateinit var binding: ActivityBroadcastUnsignedTxBinding
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_broadcast_unsigned_tx)
+        binding = ActivityBroadcastUnsignedTxBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
         val qrString: String = intent.getStringExtra("qrString").toString()
         var signedTxHex: String
 
-        showQrCode.setOnClickListener { _ ->
+        binding.showQrCode.setOnClickListener { _ ->
             val dialog = QRBottomSheetDialog(
                     qrString,
                     "Unsigned Transaction",
                     qrString)
             dialog.show(supportFragmentManager, dialog.tag)
-            step_view.setStep(2)
+            binding.stepView.setStep(2)
         }
 
-        launchQRScanner.setOnClickListener { _ ->
-            step_view.setStep(3)
+        binding.launchQRScanner.setOnClickListener { _ ->
+            binding.stepView.setStep(3)
             val camera = CameraFragmentBottomSheet()
             camera.show(supportFragmentManager, camera.tag)
             camera.setQrCodeScanLisenter {

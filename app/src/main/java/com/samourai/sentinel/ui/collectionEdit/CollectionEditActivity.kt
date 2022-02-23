@@ -7,7 +7,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
@@ -22,6 +22,7 @@ import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
+import com.samourai.sentinel.databinding.ActivityCollectionEditBinding
 import com.samourai.sentinel.service.ImportSegWitService
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
@@ -33,11 +34,8 @@ import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.alertWithInput
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.apiScope
-import kotlinx.android.synthetic.main.activity_collection_edit.*
-import kotlinx.android.synthetic.main.fragment_keypad_view.*
 import kotlinx.coroutines.*
 import org.koin.java.KoinJavaComponent.inject
-import timber.log.Timber
 
 
 class CollectionEditActivity : SentinelActivity() {
@@ -48,11 +46,14 @@ class CollectionEditActivity : SentinelActivity() {
     private val transactionsRepository: TransactionsRepository by inject(TransactionsRepository::class.java)
     private val viewModel: CollectionEditViewModel by viewModels()
     private val pubKeyAdapter: PubKeyAdapter = PubKeyAdapter()
+    private lateinit var binding: ActivityCollectionEditBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_collection_edit)
-        setSupportActionBar(toolbarCollectionDetails)
+        binding = ActivityCollectionEditBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
+        setSupportActionBar(binding.toolbarCollectionDetails)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         checkIntent()
@@ -60,8 +61,8 @@ class CollectionEditActivity : SentinelActivity() {
         setUpPubKeyList()
 
         viewModel.getCollection().observe(this, {
-            collectionEdiText.setText(it.collectionLabel)
-            collectionEdiText.doOnTextChanged { text, _, _, _ ->
+            binding.collectionEdiText.setText(it.collectionLabel)
+            binding.collectionEdiText.doOnTextChanged { text, _, _, _ ->
                 it.collectionLabel = text.toString()
             }
         })
@@ -77,13 +78,13 @@ class CollectionEditActivity : SentinelActivity() {
                 }
                 AndroidUtil.hideKeyboard(this)
                 this@CollectionEditActivity.showFloatingSnackBar(
-                    collectionEdiText.parent as ViewGroup,
+                    binding.collectionEdiText.parent as ViewGroup,
                     text = "Success", duration = Snackbar.LENGTH_LONG
                 )
             }
         })
 
-        addNewPubFab.setOnClickListener {
+        binding.addNewPubFab.setOnClickListener {
             if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
                 this.askCameraPermission()
             } else {
@@ -91,15 +92,15 @@ class CollectionEditActivity : SentinelActivity() {
             }
         }
 
-        collectionEditNestedScroll.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
-            if (scrollY > oldScrollY + 12 && addNewPubFab.isExtended) {
-                addNewPubFab.shrink()
+        binding.collectionEditNestedScroll.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+            if (scrollY > oldScrollY + 12 && binding.addNewPubFab.isExtended) {
+                binding.addNewPubFab.shrink()
             }
-            if (scrollY < oldScrollY - 12 && !addNewPubFab.isExtended) {
-                addNewPubFab.extend()
+            if (scrollY < oldScrollY - 12 && !binding.addNewPubFab.isExtended) {
+                binding.addNewPubFab.extend()
             }
             if (scrollY == 0) {
-                addNewPubFab.extend()
+                binding.addNewPubFab.extend()
             }
         })
     }
@@ -120,7 +121,7 @@ class CollectionEditActivity : SentinelActivity() {
 
                     if (newPubKey?.pubKey?.let { model.getPubKey(it) } != null) {
                         this@CollectionEditActivity.showFloatingSnackBar(
-                            collectionDetailsRootLayout,
+                                binding.collectionDetailsRootLayout,
                             text = "Public key already exists in this collection",
                             duration = Snackbar.LENGTH_LONG
                         )
@@ -141,7 +142,7 @@ class CollectionEditActivity : SentinelActivity() {
         } else {
             val collectionModel = PubKeyCollection()
             collectionModel.balance = 0
-            collectionModel.collectionLabel = collectionEdiText.text.toString()
+            collectionModel.collectionLabel = binding.collectionEdiText.text.toString()
             viewModel.setCollection(collectionModel)
             if (intent.extras!!.containsKey("pubKey")) {
                 val newPubKey = intent.extras!!.getParcelable<PubKeyModel>("pubKey")
@@ -169,7 +170,7 @@ class CollectionEditActivity : SentinelActivity() {
         val linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
 
-        pubKeyRecyclerView.apply {
+        binding.pubKeyRecyclerView.apply {
             layoutManager = linearLayoutManager
             adapter = pubKeyAdapter
         }
@@ -178,7 +179,7 @@ class CollectionEditActivity : SentinelActivity() {
         fun edit(pubKeyModel: PubKeyModel, i: Int){
             if (viewModel.getCollection().value?.collectionLabel.isNullOrEmpty()) {
                 this@CollectionEditActivity.showFloatingSnackBar(
-                    collectionDetailsRootLayout,
+                        binding.collectionDetailsRootLayout,
                     text = "Please enter a collection label first",
                     duration = Snackbar.LENGTH_LONG
                 )
@@ -278,7 +279,7 @@ class CollectionEditActivity : SentinelActivity() {
                 val items: ArrayList<PubKeyModel> = arrayListOf()
                 if (viewModel.getCollection().value?.getPubKey(it.pubKey) != null) {
                     this@CollectionEditActivity.showFloatingSnackBar(
-                        collectionDetailsRootLayout,
+                            binding.collectionDetailsRootLayout,
                         text = "Public key already exists in this collection",
                         duration = Snackbar.LENGTH_LONG
                     )
@@ -298,9 +299,9 @@ class CollectionEditActivity : SentinelActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.saveCollectionMenuItem) {
-            if (collectionEdiText.text.isNullOrEmpty() || collectionEdiText.text.isBlank()) {
+            if (binding.collectionEdiText.text.isNullOrEmpty() || binding.collectionEdiText.text.isBlank()) {
                 this@CollectionEditActivity.showFloatingSnackBar(
-                    collectionEdiText.parent as ViewGroup,
+                        binding.collectionEdiText.parent as ViewGroup,
                     text = "Please enter collection label",
                     duration = Snackbar.LENGTH_SHORT
                 )

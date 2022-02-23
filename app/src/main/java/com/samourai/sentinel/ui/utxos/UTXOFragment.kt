@@ -13,11 +13,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.Utxo
+import com.samourai.sentinel.databinding.ContentUtxosFragmentBinding
 import com.samourai.sentinel.ui.utils.SlideInItemAnimator
-import com.samourai.sentinel.util.UtxoMetaUtil
 import com.samourai.sentinel.util.ItemDividerDecorator
 import com.samourai.sentinel.util.MonetaryUtil
-import kotlinx.android.synthetic.main.content_utxos_fragment.*
+import com.samourai.sentinel.util.UtxoMetaUtil
 import timber.log.Timber
 
 class UTXOFragment : Fragment(), ActionMode.Callback {
@@ -25,9 +25,14 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
     private val utxoAdapter: UTXOAdapter = UTXOAdapter()
     private val utxos: ArrayList<Utxo> = arrayListOf()
     private var actionMode: ActionMode? = null
+    private var _binding: ContentUtxosFragmentBinding? = null
+    private val binding get() = _binding!!
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.content_utxos_fragment, null, false)
+        _binding = ContentUtxosFragmentBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
     }
 
 
@@ -38,7 +43,7 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        utxoRecyclerView.apply {
+        binding.utxoRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = utxoAdapter
             itemAnimator = SlideInItemAnimator()

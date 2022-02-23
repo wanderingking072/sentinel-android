@@ -5,31 +5,24 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.viewModels
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.transition.TransitionManager
 import com.google.android.material.transition.MaterialSharedAxis
 import com.samourai.sentinel.R
-import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.databinding.ActivityImportBackUpBinding
 import com.samourai.sentinel.ui.SentinelActivity
-import com.samourai.sentinel.ui.collectionDetails.send.SendViewModel
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
-import com.samourai.sentinel.ui.utils.logThreadInfo
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.util.ExportImportUtil
-import com.samourai.sentinel.util.FormatsUtil
-import kotlinx.android.synthetic.main.activity_import_back_up.*
-import kotlinx.android.synthetic.main.content_choose_address_type.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import org.koin.ext.scope
 import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
 import java.io.BufferedReader
@@ -49,39 +42,42 @@ class ImportBackUpActivity : SentinelActivity() {
 
     private var payloadObject: JSONObject? = null
     private var importType = ImportType.SENTINEL
-    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java);
+    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
     private var requireRestart = false
     private val viewModel: ImportBackUpViewModel by viewModels()
+    private lateinit var binding: ActivityImportBackUpBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_import_back_up)
-        setSupportActionBar(toolbarImportActivity)
+        binding = ActivityImportBackUpBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
+        setSupportActionBar(binding.toolbarImportActivity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
 
-        importChoosePayloadBtn.setOnClickListener {
+        binding.importChoosePayloadBtn.setOnClickListener {
             var intent = Intent(Intent.ACTION_GET_CONTENT)
             intent.type = "*/*"
             intent = Intent.createChooser(intent, "Choose a file")
             startActivityForResult(intent, REQUEST_FILE_CODE)
-            importPayloadTextView.text = ""
+            binding.importPayloadTextView.text = ""
         }
 
-        importPastePayloadBtn.setOnClickListener {
+        binding.importPastePayloadBtn.setOnClickListener {
             if (AndroidUtil.getClipBoardString(applicationContext) != null) {
                 AndroidUtil.getClipBoardString(applicationContext)?.let {
-                    importPayloadTextView.text = ""
+                    binding.importPayloadTextView.text = ""
                     validatePayload(it)
                 }
             }
         }
 
-        importStartBtn.isEnabled = false
+        binding.importStartBtn.isEnabled = false
 
-        importStartBtn.setOnClickListener {
-            if (importPasswordInput.text?.length == 0) {
-                importPasswordInput.error = "Please type payload password"
+        binding.importStartBtn.setOnClickListener {
+            if (binding.importPasswordInput.text?.length == 0) {
+                binding.importPasswordInput.error = "Please type payload password"
             } else {
                 decryptPayload()
             }
@@ -90,11 +86,11 @@ class ImportBackUpActivity : SentinelActivity() {
     }
 
 
-    private fun showImportButton(hide: Boolean){
+    private fun showImportButton(hide: Boolean) {
         val sharedAxis = MaterialSharedAxis(MaterialSharedAxis.Y, !hide)
-        TransitionManager.beginDelayedTransition(importStartBtn.rootView as ViewGroup, sharedAxis)
-        importStartBtn.isEnabled  = !hide
-        importStartBtn.visibility  = if(hide) View.GONE else View.VISIBLE
+        TransitionManager.beginDelayedTransition(binding.importStartBtn.rootView as ViewGroup, sharedAxis)
+        binding.importStartBtn.isEnabled = !hide
+        binding.importStartBtn.visibility = if (hide) View.GONE else View.VISIBLE
     }
 
     private fun decryptPayload() {
@@ -103,27 +99,27 @@ class ImportBackUpActivity : SentinelActivity() {
                 viewModel.viewModelScope.launch(Dispatchers.IO) {
                     try {
                         val payload = ExportImportUtil().decryptSentinel(
-                            payloadObject.toString(),
-                            importPasswordInput.text.toString()
+                                payloadObject.toString(),
+                                binding.importPasswordInput.text.toString()
                         )
                         withContext(Dispatchers.Main) {
-                            importPasswordInputLayout.visibility = View.INVISIBLE
-                            importSentinelBackUpLayout.visibility = View.VISIBLE
-                            importCollections.text =
-                                "${importCollections.text} (${payload.first?.size})"
+                            binding.importPasswordInputLayout.visibility = View.INVISIBLE
+                            binding.importSentinelBackUpLayout.visibility = View.VISIBLE
+                            binding.importCollections.text =
+                                    "${binding.importCollections.text} (${payload.first?.size})"
                         }
-                        if (importCollections.isChecked) {
+                        if (binding.importCollections.isChecked) {
                             payload.first?.let {
                                 ExportImportUtil().startImportCollections(
-                                    it,
-                                    importClearExisting.isChecked
+                                        it,
+                                        binding.importClearExisting.isChecked
                                 )
                             }
                         }
-                        if (importPrefs.isChecked) {
+                        if (binding.importPrefs.isChecked) {
                             payload.second.let { ExportImportUtil().importPrefs(it) }
                         }
-                        if (importDojo.isChecked) {
+                        if (binding.importDojo.isChecked) {
                             payload.third?.let { ExportImportUtil().importDojo(it) }
                             prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")
                             prefsUtil.apiEndPoint = payload.second.getString("apiEndPoint")
@@ -136,16 +132,16 @@ class ImportBackUpActivity : SentinelActivity() {
                     if (it == null) {
                         requireRestart = true
                         showFloatingSnackBar(
-                            importPastePayloadBtn, "Successfully imported",
-                            anchorView = importStartBtn.id,
-                            actionText = "restart"
+                                binding.importPastePayloadBtn, "Successfully imported",
+                                anchorView = binding.importStartBtn.id,
+                                actionText = "restart"
                         )
                     } else {
                         Timber.e(it)
                         showFloatingSnackBar(
-                            importPastePayloadBtn,
-                            "Error: ${it.message}",
-                            anchorView = importStartBtn.id
+                                binding.importPastePayloadBtn,
+                                "Error: ${it.message}",
+                                anchorView = binding.importStartBtn.id
                         )
                     }
                 }
@@ -154,19 +150,19 @@ class ImportBackUpActivity : SentinelActivity() {
                 viewModel.viewModelScope.launch(Dispatchers.IO) {
                     try {
                         val payload = ExportImportUtil().decryptSentinelLegacy(
-                            payloadObject.toString(),
-                            importPasswordInput.text.toString()
+                                payloadObject.toString(),
+                                binding.importPasswordInput.text.toString()
                         )
                         val pubKeys = payload.first
-                        if(pubKeys.isNotEmpty()){
+                        if (pubKeys.isNotEmpty()) {
                             val collection = PubKeyCollection()
                             collection.pubs = pubKeys
                             collection.collectionLabel = "Sentinel Import"
                             ExportImportUtil().startImportCollections(
-                                arrayListOf(collection),
-                                false
+                                    arrayListOf(collection),
+                                    false
                             )
-                        }else{
+                        } else {
                             throw  CancellationException("0 public keys found")
                         }
                     } catch (e: Exception) {
@@ -174,27 +170,27 @@ class ImportBackUpActivity : SentinelActivity() {
                         throw CancellationException(e.message)
                     }
                 }
-                    .invokeOnCompletion {
-                    if (it == null) {
-                        requireRestart = true
-                        showFloatingSnackBar(
-                            importPastePayloadBtn, "Successfully imported",
-                            anchorView = importStartBtn.id,
-                            actionText = "restart"
-                        )
-                    } else {
-                        showFloatingSnackBar(
-                            importPastePayloadBtn,
-                            "Error: ${it.message}",
-                            anchorView = importStartBtn.id
-                        )
-                    }
-                }
+                        .invokeOnCompletion {
+                            if (it == null) {
+                                requireRestart = true
+                                showFloatingSnackBar(
+                                        binding.importPastePayloadBtn, "Successfully imported",
+                                        anchorView = binding.importStartBtn.id,
+                                        actionText = "restart"
+                                )
+                            } else {
+                                showFloatingSnackBar(
+                                        binding.importPastePayloadBtn,
+                                        "Error: ${it.message}",
+                                        anchorView = binding.importStartBtn.id
+                                )
+                            }
+                        }
             }
             else -> {
                 val payload = ExportImportUtil().decryptAndParseSamouraiPayload(
-                    payloadObject.toString(),
-                    importPasswordInput.text.toString()
+                        payloadObject.toString(),
+                        binding.importPasswordInput.text.toString()
                 )
                 viewModel.viewModelScope.launch(Dispatchers.IO) {
                     ExportImportUtil().startImportCollections(arrayListOf(payload), false)
@@ -202,13 +198,13 @@ class ImportBackUpActivity : SentinelActivity() {
                     if (it == null) {
                         requireRestart = true
                         showFloatingSnackBar(
-                            importPastePayloadBtn,
-                            "Successfully imported",
-                            actionClick = { restart() },
-                            actionText = "restart"
+                                binding.importPastePayloadBtn,
+                                "Successfully imported",
+                                actionClick = { restart() },
+                                actionText = "restart"
                         )
                     } else {
-                        showFloatingSnackBar(importPastePayloadBtn, "Error: ${it.message}")
+                        showFloatingSnackBar(binding.importPastePayloadBtn, "Error: ${it.message}")
                     }
                 }
             }
@@ -220,7 +216,7 @@ class ImportBackUpActivity : SentinelActivity() {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         })
-        overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out);
+        overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out)
         finish()
     }
 
@@ -233,7 +229,7 @@ class ImportBackUpActivity : SentinelActivity() {
             try {
                 val json = JSONObject(string)
                 withContext(Dispatchers.Main) {
-                    importPayloadTextView.text = "${importPayloadTextView.text}${json.toString(2)}"
+                    binding.importPayloadTextView.text = "${binding.importPayloadTextView.text}${json.toString(2)}"
                     if (json.has("external") && json.has("payload")) {
                         payloadObject = json
                         importType = ImportType.SAMOURAI
@@ -242,14 +238,14 @@ class ImportBackUpActivity : SentinelActivity() {
                         payloadObject = json
                         importType = ImportType.SENTINEL
                         showImportButton(false)
-                        importSentinelBackUpLayout.visibility = View.VISIBLE
+                        binding.importSentinelBackUpLayout.visibility = View.VISIBLE
                     } else if (json.has("payload")) {
                         payloadObject = json
                         importType = ImportType.SENTINEL_LEGACY
                         showImportButton(false)
                     } else {
                         showImportButton(false)
-                        showFloatingSnackBar(importStartBtn, text = "Invalid payload")
+                        showFloatingSnackBar(binding.importStartBtn, text = "Invalid payload")
                     }
                 }
             } catch (e: Exception) {
@@ -267,35 +263,35 @@ class ImportBackUpActivity : SentinelActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (data != null && data.data != null && data.data!!.path != null && requestCode == REQUEST_FILE_CODE) {
             val job =
-                viewModel.viewModelScope.launch(Dispatchers.Main) {
-                    try {
-                        val inputStream = contentResolver.openInputStream(data.data!!);
-                        val reader = BufferedReader(InputStreamReader(inputStream))
-                        val size = inputStream?.available()
-                        if (size != null) {
-                            if (size > 5e+6) {
-                                throw  IOException("File size is too large to open")
+                    viewModel.viewModelScope.launch(Dispatchers.Main) {
+                        try {
+                            val inputStream = contentResolver.openInputStream(data.data!!)
+                            val reader = BufferedReader(InputStreamReader(inputStream))
+                            val size = inputStream?.available()
+                            if (size != null) {
+                                if (size > 5e+6) {
+                                    throw  IOException("File size is too large to open")
+                                }
                             }
+                            var string = ""
+                            string = reader.buffered().readText()
+                            withContext(Dispatchers.Main) {
+                                validatePayload(string)
+                            }
+                        } catch (fn: FileNotFoundException) {
+                            fn.printStackTrace()
+                            throw CancellationException((fn.message))
+                        } catch (ioe: IOException) {
+                            ioe.printStackTrace()
+                            throw CancellationException((ioe.message))
+                        } catch (ex: Exception) {
+                            ex.printStackTrace()
+                            throw CancellationException((ex.message))
                         }
-                        var string = ""
-                        string = reader.buffered().readText();
-                        withContext(Dispatchers.Main) {
-                            validatePayload(string)
-                        }
-                    } catch (fn: FileNotFoundException) {
-                        fn.printStackTrace()
-                        throw CancellationException((fn.message))
-                    } catch (ioe: IOException) {
-                        ioe.printStackTrace()
-                        throw CancellationException((ioe.message))
-                    } catch (ex: Exception) {
-                        ex.printStackTrace()
-                        throw CancellationException((ex.message))
                     }
-                }
             job.invokeOnCompletion {
                 if (it != null) {
-                    this.showFloatingSnackBar(importPastePayloadBtn, "Error ${it.message}")
+                    this.showFloatingSnackBar(binding.importPastePayloadBtn, "Error ${it.message}")
                 }
             }
         }
@@ -307,7 +303,7 @@ class ImportBackUpActivity : SentinelActivity() {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             })
-            overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out);
+            overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out)
             finish()
         } else
             super.onBackPressed()

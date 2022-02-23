@@ -9,40 +9,45 @@ import androidx.transition.Fade
 import androidx.transition.Slide
 import androidx.transition.TransitionSet
 import com.samourai.sentinel.R
+import com.samourai.sentinel.databinding.SettingsActivityBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.home.HomeActivity
-import kotlinx.android.synthetic.main.settings_activity.*
 
 
 class SettingsActivity : SentinelActivity(),
         PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
 
-    private var requireRestart: Boolean = false;
+    private var requireRestart: Boolean = false
+    private lateinit var binding: SettingsActivityBinding
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.settings_activity)
-        setSupportActionBar(toolbarSettings)
+        binding = SettingsActivityBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
+        setSupportActionBar(binding.toolbarSettings)
         if (savedInstanceState == null) {
             showFragment(MainSettingsFragment())
         }
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    private fun showFragment(fragment:PreferenceFragmentCompat){
+    private fun showFragment(fragment: PreferenceFragmentCompat) {
         supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.settings, fragment)
                 .commit()
     }
+
     override fun onBackPressed() {
         if (requireRestart) {
             startActivity(Intent(this, HomeActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             })
-            overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out);
+            overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out)
             finish()
         } else
             super.onBackPressed()
@@ -56,9 +61,10 @@ class SettingsActivity : SentinelActivity(),
     }
 
 
-    fun setRequireRestart(enable:Boolean){
+    fun setRequireRestart(enable: Boolean) {
         requireRestart = enable
     }
+
     override fun onPreferenceStartFragment(
             caller: PreferenceFragmentCompat,
             pref: Preference

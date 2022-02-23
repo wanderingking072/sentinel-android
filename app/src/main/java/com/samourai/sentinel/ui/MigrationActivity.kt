@@ -1,50 +1,47 @@
 package com.samourai.sentinel.ui
 
 import android.content.Context
-import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.CycleInterpolator
-import android.widget.Toast
-import com.samourai.sentinel.R
+import androidx.appcompat.app.AppCompatActivity
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
+import com.samourai.sentinel.databinding.ActivityMigrationBinding
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.dojo.DojoUtility
-import com.samourai.sentinel.ui.home.HomeActivity
-import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.FormatsUtil
-import kotlinx.android.synthetic.main.activity_migration.*
-import kotlinx.android.synthetic.main.fragment_bottomsheet_view_pager.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import org.koin.java.KoinJavaComponent
 import org.koin.java.KoinJavaComponent.inject
 import java.io.File
-import java.lang.Exception
 
 class MigrationActivity : AppCompatActivity() {
 
     private val scope = CoroutineScope(Dispatchers.IO)
     private val publicKeys: ArrayList<PubKeyModel> = arrayListOf()
     private var dojoPayload: String? = null
-    private val collectionRepo: CollectionRepository by inject(CollectionRepository::class.java);
-    private val dojoUtil: DojoUtility by inject(DojoUtility::class.java);
+    private val collectionRepo: CollectionRepository by inject(CollectionRepository::class.java)
+    private val dojoUtil: DojoUtility by inject(DojoUtility::class.java)
+    private lateinit var binding: ActivityMigrationBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_migration)
+        binding = ActivityMigrationBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        importBtn.setOnClickListener {
+        binding.importBtn.setOnClickListener {
             startMigrating()
         }
-        startAsFresh.setOnClickListener {
+        binding.startAsFresh.setOnClickListener {
             confirm(label = "Confirm", message = "This will reset current sentinel database and starts with fresh one", positiveText = "Yes", negativeText = "No") {
                 if (it) {
                     try {
@@ -54,7 +51,7 @@ class MigrationActivity : AppCompatActivity() {
                         setResult(RESULT_CANCELED)
                         finish()
                     } catch (e: Exception) {
-                        showFloatingSnackBar(startAsFresh, "Error ${e.message}")
+                        showFloatingSnackBar(binding.startAsFresh, "Error ${e.message}")
                     }
                 }
             }
@@ -63,10 +60,10 @@ class MigrationActivity : AppCompatActivity() {
     }
 
     private fun startMigrating() {
-        importBtn.isEnabled = false
-        startAsFresh.isEnabled = false
-        progressBar.isIndeterminate = true
-        progressBar.visibility = View.VISIBLE
+        binding.importBtn.isEnabled = false
+        binding.startAsFresh.isEnabled = false
+        binding.progressBar.isIndeterminate = true
+        binding.progressBar.visibility = View.VISIBLE
 
         if (dojoPayload != null) {
             showDojoDialog()
@@ -103,8 +100,8 @@ class MigrationActivity : AppCompatActivity() {
                 val file = File(dir, "sentinel.dat")
                 file.delete()
             }
-            progressBar.isIndeterminate = false
-            showFloatingSnackBar(importBtn, text = "Migrated ${publicKeys.size} public keys", actionText = "Ok", actionClick = {
+            binding.progressBar.isIndeterminate = false
+            showFloatingSnackBar(binding.importBtn, text = "Migrated ${publicKeys.size} public keys", actionText = "Ok", actionClick = {
                 setResult(RESULT_OK)
                 finish()
             })
@@ -113,7 +110,7 @@ class MigrationActivity : AppCompatActivity() {
 
     private fun readOldData() {
 
-        restoreImg.animate()
+        binding.restoreImg.animate()
                 .rotation(-360f)
                 .setDuration(1100)
                 .setInterpolator(AccelerateDecelerateInterpolator())
@@ -133,7 +130,7 @@ class MigrationActivity : AppCompatActivity() {
                     repeat(xpubs.length()) {
                         val xpubObject = xpubs.getJSONObject(it)
                         xpubObject.keys().forEach { key ->
-                            val type = validate(key);
+                            val type = validate(key)
                             if (type == AddressTypes.BIP44) {
                                 val pubKeyModel = PubKeyModel(pubKey = key,
                                         label = xpubObject.getString(key), type = AddressTypes.BIP44)
@@ -148,7 +145,7 @@ class MigrationActivity : AppCompatActivity() {
                     repeat(xpubs.length()) {
                         val xpubObject = xpubs.getJSONObject(it)
                         xpubObject.keys().forEach { key ->
-                            val type = validate(key);
+                            val type = validate(key)
                             if (type == AddressTypes.BIP49) {
                                 val pubKeyModel = PubKeyModel(pubKey = key,
                                         label = xpubObject.getString(key), type = AddressTypes.BIP49)
@@ -163,7 +160,7 @@ class MigrationActivity : AppCompatActivity() {
                     repeat(xpubs.length()) {
                         val xpubObject = xpubs.getJSONObject(it)
                         xpubObject.keys().forEach { key ->
-                            val type = validate(key);
+                            val type = validate(key)
                             if (type == AddressTypes.BIP84) {
                                 val pubKeyModel = PubKeyModel(pubKey = key,
                                         label = xpubObject.getString(key), type = AddressTypes.BIP84)
@@ -178,7 +175,7 @@ class MigrationActivity : AppCompatActivity() {
                     repeat(xpubs.length()) {
                         val xpubObject = xpubs.getJSONObject(it)
                         xpubObject.keys().forEach { key ->
-                            val type = validate(key);
+                            val type = validate(key)
                             if (type == AddressTypes.ADDRESS) {
                                 val pubKeyModel = PubKeyModel(pubKey = key,
                                         label = xpubObject.getString(key), type = AddressTypes.ADDRESS)
@@ -197,7 +194,7 @@ class MigrationActivity : AppCompatActivity() {
             } catch (ex: Exception) {
 
                 withContext(Dispatchers.Main) {
-                    showFloatingSnackBar(startAsFresh, "Error: ${ex.message}")
+                    showFloatingSnackBar(binding.startAsFresh, "Error: ${ex.message}")
                 }
             }
         }

@@ -14,16 +14,15 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Observer
 import androidx.webkit.*
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.core.SentinelState.TorState.*
 import com.samourai.sentinel.data.Tx
+import com.samourai.sentinel.databinding.ActivityExplorerWebViewBinding
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
 import io.matthewnelson.topl_service.TorServiceController
-import kotlinx.android.synthetic.main.activity_explorer_web_view.*
 import timber.log.Timber
 
 
@@ -32,11 +31,15 @@ class ExplorerWebViewActivity : AppCompatActivity() {
     lateinit var client: WebViewClient
     var tx: Tx? = null
     var url = ""
+    lateinit var binding: ActivityExplorerWebViewBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_explorer_web_view)
+        binding = ActivityExplorerWebViewBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        setSupportActionBar(toolBar)
+        setSupportActionBar(binding.toolBar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if (SentinelState.selectedTx != null) {
@@ -46,13 +49,13 @@ class ExplorerWebViewActivity : AppCompatActivity() {
             finish()
         }
 
-        webView.setBackgroundColor(0)
+        binding.webView.setBackgroundColor(0)
 
         if (WebViewFeature.isFeatureSupported(WebViewFeature.START_SAFE_BROWSING)) {
             WebViewCompat.startSafeBrowsing(applicationContext) { }
         }
         if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-            WebSettingsCompat.setForceDark(webView.settings, WebSettingsCompat.FORCE_DARK_ON)
+            WebSettingsCompat.setForceDark(binding.webView.settings, WebSettingsCompat.FORCE_DARK_ON)
         }
         //Check webkit supports proxy
         if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
@@ -71,7 +74,7 @@ class ExplorerWebViewActivity : AppCompatActivity() {
                 }
             }
         } else {
-            this.showFloatingSnackBar(webView, text = "Your android does not support proxy enabled WebView", actionText = "Continue", actionClick = {
+            this.showFloatingSnackBar(binding.webView, text = "Your android does not support proxy enabled WebView", actionText = "Continue", actionClick = {
                 load()
             }
             )
@@ -106,26 +109,26 @@ class ExplorerWebViewActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun load() {
-        webView.settings.builtInZoomControls = true
-        webView.settings.javaScriptEnabled = true
-        webView.settings.domStorageEnabled = true
+        binding.webView.settings.builtInZoomControls = true
+        binding.webView.settings.javaScriptEnabled = true
+        binding.webView.settings.domStorageEnabled = true
 
-        webView.webViewClient = object : WebViewClient() {
+        binding.webView.webViewClient = object : WebViewClient() {
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                progressWeb.visibility = View.VISIBLE
+                binding.progressWeb.visibility = View.VISIBLE
             }
 
             override fun onPageCommitVisible(view: WebView?, url: String?) {
                 super.onPageCommitVisible(view, url)
                 Timber.i("onPageCommitVisible: ")
-                progressWeb.visibility = View.INVISIBLE
+                binding.progressWeb.visibility = View.INVISIBLE
             }
         }
         tx?.let {
             url = ExplorerRepository.getExplorer(it.hash)
-            webView.loadUrl(url)
+            binding.webView.loadUrl(url)
         }
 
     }
@@ -155,8 +158,8 @@ class ExplorerWebViewActivity : AppCompatActivity() {
 
 
     override fun onDestroy() {
-        webView.stopLoading()
-        webView.destroy()
+        binding.webView.stopLoading()
+        binding.webView.destroy()
         super.onDestroy()
     }
 
@@ -169,15 +172,15 @@ class ExplorerWebViewActivity : AppCompatActivity() {
                 tx?.hash?.let { copyText(it) }
             }
             R.id.menu_web_copy_url -> {
-                webView.url?.let { copyText(it) }
+                binding.webView.url?.let { copyText(it) }
             }
         }
         return super.onOptionsItemSelected(item)
     }
 
     override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
+        if (binding.webView.canGoBack()) {
+            binding.webView.goBack()
         } else
             super.onBackPressed()
     }

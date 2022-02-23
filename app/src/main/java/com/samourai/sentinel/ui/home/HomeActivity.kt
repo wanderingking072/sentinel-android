@@ -16,6 +16,7 @@ import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.databinding.ActivityHomeBinding
 import com.samourai.sentinel.service.WebSocketHandler
 import com.samourai.sentinel.service.WebSocketService
 import com.samourai.sentinel.ui.SentinelActivity
@@ -32,7 +33,6 @@ import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import io.matthewnelson.topl_service.TorServiceController
 import io.matthewnelson.topl_service_base.TorServicePrefs
-import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.coroutines.*
 import org.koin.java.KoinJavaComponent.inject
 
@@ -45,12 +45,15 @@ class HomeActivity : SentinelActivity() {
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
     private var connectingDojo = false
     private lateinit var torServicePrefs: TorServicePrefs
+    private lateinit var binding: ActivityHomeBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        binding = ActivityHomeBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
         setSwipeBackEnable(false)
-        setContentView(R.layout.activity_home)
-        setSupportActionBar(toolbarHome)
+        setSupportActionBar(binding.toolbarHome)
         torServicePrefs = TorServicePrefs(this)
 
         val model: HomeViewModel by viewModels()
@@ -61,9 +64,9 @@ class HomeActivity : SentinelActivity() {
 
         model.getCollections().observe(this, {
             if (it.isNotEmpty())
-                welcomeMessage.visibility = View.GONE
+                binding.welcomeMessage.visibility = View.GONE
             else
-                welcomeMessage.visibility = View.VISIBLE
+                binding.welcomeMessage.visibility = View.VISIBLE
 
             collectionsAdapter.update(it)
         })
@@ -74,9 +77,9 @@ class HomeActivity : SentinelActivity() {
 
         model.getFiatBalance().observe(this, { updateFiat(it) })
 
-        fab.setOnClickListener {
+        binding.fab.setOnClickListener {
             if (prefsUtil.haptics!!) {
-                fab.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                binding.fab.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             }
             connectingDojo = false
             if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
@@ -88,22 +91,22 @@ class HomeActivity : SentinelActivity() {
         }
 
         model.loading().observe(this, {
-            swipeRefreshCollection.isRefreshing = it
+            binding.swipeRefreshCollection.isRefreshing = it
         })
         model.getErrorMessage().observe(this, {
             if (it != "null")
-                this@HomeActivity.showFloatingSnackBar(fab, text = "Error: $it")
+                this@HomeActivity.showFloatingSnackBar(binding.fab, text = "Error: $it")
         })
 
-        swipeRefreshCollection.setOnRefreshListener {
-            swipeRefreshCollection.isRefreshing = false
+        binding.swipeRefreshCollection.setOnRefreshListener {
+            binding.swipeRefreshCollection.isRefreshing = false
             if (SentinelState.isTorRequired()) {
                 if (SentinelState.torState == SentinelState.TorState.WAITING) {
-                    this.showFloatingSnackBar(fab, anchorView = fab.id,
+                    this.showFloatingSnackBar(binding.fab, anchorView = binding.fab.id,
                             text = "Tor is bootstrapping! please wait and try again")
                 }
                 if (SentinelState.torState == SentinelState.TorState.OFF) {
-                    this.showFloatingSnackBar(fab,
+                    this.showFloatingSnackBar(binding.fab,
                             "Tor is required! Please turn on Tor",
                             actionText = "Turn on",
                             actionClick = {
@@ -214,7 +217,7 @@ class HomeActivity : SentinelActivity() {
         if (clipData != null) {
             val formatted = FormatsUtil.extractPublicKey(clipData)
             if (FormatsUtil.isValidBitcoinAddress(formatted) || FormatsUtil.isValidXpub(formatted)) {
-                showFloatingSnackBar(fab, text = "Public Key detected in clipboard", actionText = "Add", actionClick = {
+                showFloatingSnackBar(binding.fab, text = "Public Key detected in clipboard", actionText = "Add", actionClick = {
                     val bottomSheetFragment = AddNewPubKeyBottomSheet(formatted)
                     bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)
                 })
@@ -236,11 +239,11 @@ class HomeActivity : SentinelActivity() {
     }
 
     private fun updateBalance(it: Long) {
-        homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(it)} BTC"
+        binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(it)} BTC"
     }
 
     private fun updateFiat(it: String) {
-        exchangeRateTxt.text = it
+        binding.exchangeRateTxt.text = it
     }
 
     private fun showPubKeyBottomSheet() {
@@ -260,7 +263,7 @@ class HomeActivity : SentinelActivity() {
         linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
         val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(applicationContext, R.drawable.divider_home)!!)
-        collectionRecyclerView.apply {
+        binding.collectionRecyclerView.apply {
             adapter = collectionsAdapter
             layoutManager = linearLayoutManager
             itemAnimator = SlideInItemAnimator(slideFromEdge = Gravity.TOP)

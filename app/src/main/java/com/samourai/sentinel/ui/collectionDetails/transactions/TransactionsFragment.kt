@@ -4,32 +4,21 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.paging.LivePagedListBuilder
-import androidx.paging.PagedList
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
-import com.samourai.sentinel.data.Tx
-import com.samourai.sentinel.data.db.dao.TxDao
+import com.samourai.sentinel.databinding.FragmentTransactionsBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
-import com.samourai.sentinel.ui.fragments.TransactionsDetailsBottomSheet
-import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.utxos.UtxosActivity
 import com.samourai.sentinel.util.MonetaryUtil
-import kotlinx.android.synthetic.main.fragment_transactions.*
 import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent.inject
 
@@ -39,15 +28,20 @@ class TransactionsFragment : Fragment() {
     private lateinit var fiatBalanceLiveData: LiveData<String>
     private lateinit var balanceLiveData: LiveData<Long>
     private val transactionsViewModel: TransactionsViewModel by viewModels()
-    private lateinit var collection: PubKeyCollection;
+    private lateinit var collection: PubKeyCollection
     private val monetaryUtil: MonetaryUtil by inject(MonetaryUtil::class.java)
+    private var _binding: FragmentTransactionsBinding? = null
+    private val binding get() = _binding!!
+
 
     override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
             savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_transactions, container, false)
+    ): View {
+        _binding = FragmentTransactionsBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -62,18 +56,18 @@ class TransactionsFragment : Fragment() {
     private fun initViewModel() {
         transactionsViewModel.setCollection(collection)
 
-        txViewPager.adapter = CollectionPubKeysViewpager(this.activity, collection)
-        txViewPager.offscreenPageLimit = 5
-        TabLayoutMediator(tabLayout, txViewPager) { tab, position ->
+        binding.txViewPager.adapter = CollectionPubKeysViewpager(this.activity, collection)
+        binding.txViewPager.offscreenPageLimit = 5
+        TabLayoutMediator(binding.tabLayout, binding.txViewPager) { tab, position ->
             tab.text = collection.pubs[position].label
         }.attach()
 
         balanceLiveData.observe(viewLifecycleOwner, {
-            collectionBalanceBtc.text = "${getBTCDisplayAmount(it)} BTC"
+            binding.collectionBalanceBtc.text = "${getBTCDisplayAmount(it)} BTC"
         })
         fiatBalanceLiveData.observe(viewLifecycleOwner, Observer {
             if (isAdded) {
-                collectionBalanceFiat.text = it
+                binding.collectionBalanceFiat.text = it
             }
         })
         transactionsViewModel.getMessage().observe(
@@ -81,7 +75,7 @@ class TransactionsFragment : Fragment() {
                 {
                     if (it != "null")
                         (requireActivity() as AppCompatActivity)
-                                .showFloatingSnackBar(collectionBalanceBtc, "Error : $it")
+                                .showFloatingSnackBar(binding.collectionBalanceBtc, "Error : $it")
                 }
         )
     }
@@ -93,10 +87,10 @@ class TransactionsFragment : Fragment() {
     }
 
     private fun setUpToolBar() {
-        (activity as SentinelActivity).setSupportActionBar(toolbarCollectionDetails)
+        (activity as SentinelActivity).setSupportActionBar(binding.toolbarCollectionDetails)
         (activity as SentinelActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbarCollectionDetails.title = collection.collectionLabel
-        collectionBalanceBtc.text = monetaryUtil.formatToBtc(collection.balance)
+        binding.toolbarCollectionDetails.title = collection.collectionLabel
+        binding.collectionBalanceBtc.text = monetaryUtil.formatToBtc(collection.balance)
     }
 
     fun initViewModel(collection: PubKeyCollection) {
@@ -144,7 +138,7 @@ class TransactionsFragment : Fragment() {
     }
 
     companion object {
-        const val EDIT_REQUEST_ID = 11;
+        const val EDIT_REQUEST_ID = 11
     }
 
     private class CollectionPubKeysViewpager(

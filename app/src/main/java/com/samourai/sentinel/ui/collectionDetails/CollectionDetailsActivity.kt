@@ -11,11 +11,11 @@ import androidx.viewpager2.widget.ViewPager2
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.repository.CollectionRepository
+import com.samourai.sentinel.databinding.ActivityCollectionDetailsBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.collectionDetails.receive.ReceiveFragment
 import com.samourai.sentinel.ui.collectionDetails.send.SendFragment
 import com.samourai.sentinel.ui.collectionDetails.transactions.TransactionsFragment
-import kotlinx.android.synthetic.main.activity_collection_details.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -26,27 +26,30 @@ import org.koin.java.KoinJavaComponent.inject
 class CollectionDetailsActivity : SentinelActivity() {
 
 
-    private lateinit var pagerAdapter: PagerAdapter;
+    private lateinit var pagerAdapter: PagerAdapter
     private val receiveFragment: ReceiveFragment = ReceiveFragment()
     private val sendFragment: SendFragment = SendFragment()
     private val transactionsFragment: TransactionsFragment = TransactionsFragment()
     private var collection: PubKeyCollection? = null
     private val repository: CollectionRepository by inject(CollectionRepository::class.java)
+    private lateinit var binding: ActivityCollectionDetailsBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_collection_details)
+        binding = ActivityCollectionDetailsBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
         pagerAdapter = PagerAdapter(this)
-        fragmentHostContainerPager.adapter = pagerAdapter
-        fragmentHostContainerPager.isUserInputEnabled = false
+        binding.fragmentHostContainerPager.adapter = pagerAdapter
+        binding.fragmentHostContainerPager.isUserInputEnabled = false
 
         checkIntent()
         val receiveViewModel: CollectionDetailsViewModel by viewModels(factoryProducer = {
             CollectionDetailsViewModel.getFactory(
-                collection!!
+                    collection!!
             )
         })
-        linearLayout.setPadding(0, 0, 0, getNavHeight().toInt())
+        binding.linearLayout.setPadding(0, 0, 0, getNavHeight().toInt())
         receiveViewModel.getCollections().observe(this, Observer {
             intent.extras?.getString("collection")?.let { it1 ->
                 receiveViewModel.getRepository().findById(it1)?.let {
@@ -71,56 +74,56 @@ class CollectionDetailsActivity : SentinelActivity() {
             transactionsFragment.setBalanceFiat(receiveViewModel.getFiatBalance())
         })
 
-        bottomNav.setOnNavigationItemSelectedListener { item ->
+        binding.bottomNav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.bottom_nav_receive -> {
-                    fragmentHostContainerPager.setCurrentItem(0, true)
+                    binding.fragmentHostContainerPager.setCurrentItem(0, true)
                 }
                 R.id.bottom_nav_send -> {
-                    fragmentHostContainerPager.setCurrentItem(2, true)
+                    binding.fragmentHostContainerPager.setCurrentItem(2, true)
                 }
                 R.id.bottom_nav_transaction -> {
-                    fragmentHostContainerPager.setCurrentItem(1, true)
+                    binding.fragmentHostContainerPager.setCurrentItem(1, true)
                 }
             }
             true
         }
 
-        fragmentHostContainerPager.registerOnPageChangeCallback(object :
-            ViewPager2.OnPageChangeCallback() {
+        binding.fragmentHostContainerPager.registerOnPageChangeCallback(object :
+                ViewPager2.OnPageChangeCallback() {
 
             override fun onPageSelected(position: Int) {
                 invalidateOptionsMenu()
                 when (position) {
                     0 -> {
-                        bottomNav.selectedItemId = R.id.bottom_nav_receive
+                        binding.bottomNav.selectedItemId = R.id.bottom_nav_receive
                     }
                     1 -> {
-                        bottomNav.selectedItemId = R.id.bottom_nav_transaction
+                        binding.bottomNav.selectedItemId = R.id.bottom_nav_transaction
                     }
                     else -> {
-                        bottomNav.selectedItemId = R.id.bottom_nav_send
+                        binding.bottomNav.selectedItemId = R.id.bottom_nav_send
                     }
                 }
             }
 
         })
 
-        fragmentHostContainerPager.visibility = View.INVISIBLE
-        GlobalScope.launch(Dispatchers.Main){
+        binding.fragmentHostContainerPager.visibility = View.INVISIBLE
+        GlobalScope.launch(Dispatchers.Main) {
             delay(1)
-            fragmentHostContainerPager.setCurrentItem(1, false)
-            fragmentHostContainerPager.visibility = View.VISIBLE
+            binding.fragmentHostContainerPager.setCurrentItem(1, false)
+            binding.fragmentHostContainerPager.visibility = View.VISIBLE
         }
     }
 
 
     override fun onBackPressed() {
         if (sendFragment.isVisible) {
-            if(sendFragment.onBackPressed()){
+            if (sendFragment.onBackPressed()) {
                 super.onBackPressed()
             }
-        }else{
+        } else {
             super.onBackPressed()
         }
     }
