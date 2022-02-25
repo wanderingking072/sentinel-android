@@ -12,10 +12,10 @@ import androidx.lifecycle.viewModelScope
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.databinding.LayoutBroadcastBottomSheetBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
-import kotlinx.android.synthetic.main.layout_broadcast_bottom_sheet.*
 import kotlinx.coroutines.*
 import org.bitcoinj.core.Transaction
 import org.bouncycastle.util.encoders.Hex
@@ -49,12 +49,15 @@ class BroadcastTx : SentinelActivity() {
 
     private val model: BroadcastVm by viewModels()
     private var hash = ""
+    private lateinit var binding: LayoutBroadcastBottomSheetBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.layout_broadcast_bottom_sheet)
+        binding = LayoutBroadcastBottomSheetBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        disableBtn(broadCastTransactionBtn, false)
+        disableBtn(binding.broadCastTransactionBtn, false)
 
         if (intent.hasExtra("signedTxHex")) {
             val signedTxHex: String = intent.getStringExtra("signedTxHex").toString()
@@ -65,7 +68,7 @@ class BroadcastTx : SentinelActivity() {
             }
         }
 
-        pasteHex.setOnClickListener { _ ->
+        binding.pasteHex.setOnClickListener { _ ->
             val string = AndroidUtil.getClipBoardString(applicationContext)
             string?.let {
                 model.viewModelScope.launch(Dispatchers.Default) {
@@ -74,13 +77,13 @@ class BroadcastTx : SentinelActivity() {
             }
         }
 
-        hexTextView.movementMethod = ScrollingMovementMethod()
+        binding.hexTextView.movementMethod = ScrollingMovementMethod()
 
         model.hex.observe({ lifecycle }, {
-            hexTextView.text = it
+            binding.hexTextView.text = it
         })
 
-        pasteHex.setOnClickListener {
+        binding.pasteHex.setOnClickListener {
             val clipboardData = AndroidUtil.getClipBoardString(applicationContext)
             clipboardData?.takeIf { it.isNotEmpty() }?.let { string ->
                 model.viewModelScope.launch(Dispatchers.Default) {
@@ -88,7 +91,7 @@ class BroadcastTx : SentinelActivity() {
                 }
             }
         }
-        scanHex.setOnClickListener {
+        binding.scanHex.setOnClickListener {
             val camera = CameraFragmentBottomSheet()
             camera.show(supportFragmentManager, camera.tag)
             camera.setQrCodeScanLisenter {
@@ -99,7 +102,7 @@ class BroadcastTx : SentinelActivity() {
             }
         }
 
-        broadCastTransactionBtn.setOnClickListener {
+        binding.broadCastTransactionBtn.setOnClickListener {
             showLoading(true)
             model.broadCast().invokeOnCompletion {
                 model.viewModelScope.launch(Dispatchers.Main) {
@@ -137,14 +140,14 @@ class BroadcastTx : SentinelActivity() {
         } catch (ex: Exception) {
             withContext(Dispatchers.Main) {
                 Toast.makeText(applicationContext, "Text in clipboard is not a hex transaction", Toast.LENGTH_LONG).show()
-                disableBtn(broadCastTransactionBtn, false)
+                disableBtn(binding.broadCastTransactionBtn, false)
             }
         }
     }
 
     private fun showLoading(show: Boolean) {
-        broadcastProgress.visibility = if (show) View.VISIBLE else View.GONE
-        broadCastTransactionBtn?.text = if (show) " " else getString(R.string.broadcast_transaction)
+        binding.broadcastProgress.visibility = if (show) View.VISIBLE else View.GONE
+        binding.broadCastTransactionBtn?.text = if (show) " " else getString(R.string.broadcast_transaction)
         disableAllButtons(!show)
     }
 
@@ -153,10 +156,10 @@ class BroadcastTx : SentinelActivity() {
     }
 
     private fun disableAllButtons(enable: Boolean) {
-        disableBtn(hexTextView, enable)
-        disableBtn(scanHex, enable)
-        disableBtn(pasteHex, enable)
-        disableBtn(broadCastTransactionBtn, enable)
+        disableBtn(binding.hexTextView, enable)
+        disableBtn(binding.scanHex, enable)
+        disableBtn(binding.pasteHex, enable)
+        disableBtn(binding.broadCastTransactionBtn, enable)
     }
 
     private fun disableBtn(button: View, enable: Boolean) {
