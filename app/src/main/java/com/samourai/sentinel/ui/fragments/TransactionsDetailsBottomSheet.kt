@@ -15,16 +15,15 @@ import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
+import com.samourai.sentinel.databinding.ContentTransactionsDetailsBinding
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.ui.webview.ExplorerWebViewActivity
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.apiScope
-import kotlinx.android.synthetic.main.content_transactions_details.*
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,55 +39,64 @@ class TransactionsDetailsBottomSheet(private var tx: Tx) : GenericBottomSheet() 
 
     data class TxFeeData(val fee: Long?, val feeRate: Long?, val size: Long?)
 
-    private val apiService: ApiService by inject(ApiService::class.java);
-    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java);
-    private val exchangeRateRepository: ExchangeRateRepository by inject(ExchangeRateRepository::class.java);
+    private val apiService: ApiService by inject(ApiService::class.java)
+    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
+    private val exchangeRateRepository: ExchangeRateRepository by inject(ExchangeRateRepository::class.java)
     var job: Job? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.content_transactions_details, null)
+    private var _binding: ContentTransactionsDetailsBinding? = null
+    private val binding get() = _binding!!
+
+    override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+    ): View? {
+        _binding = ContentTransactionsDetailsBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        txDetailsOpenInExplorerBtn.setOnClickListener {
+        binding.txDetailsOpenInExplorerBtn.setOnClickListener {
             SentinelState.selectedTx = tx
             startActivity(Intent(requireContext(), ExplorerWebViewActivity::class.java))
         }
-        txDetailsOpenInExplorerBtn2.setOnClickListener {
+        binding.txDetailsOpenInExplorerBtn2.setOnClickListener {
             SentinelState.selectedTx = tx
             startActivity(Intent(requireContext(), ExplorerWebViewActivity::class.java))
         }
         setTx(tx)
         fetchFee()
 
-        txDetailsBlockId.setOnClickListener { copyToClipBoard(txDetailsBlockId) }
-        txDetailsConfirmation.setOnClickListener { copyToClipBoard(txDetailsConfirmation) }
-        txDetailsFees.setOnClickListener { copyToClipBoard(txDetailsFees) }
-        txDetailsHash.setOnClickListener { copyToClipBoard(txDetailsHash) }
-        txDetailsFeeRate.setOnClickListener { copyToClipBoard(txDetailsFeeRate) }
-        txDetailsAmount.setOnClickListener { copyToClipBoard(txDetailsAmount) }
+        binding.txDetailsBlockId.setOnClickListener { copyToClipBoard(binding.txDetailsBlockId) }
+        binding.txDetailsConfirmation.setOnClickListener { copyToClipBoard(binding.txDetailsConfirmation) }
+        binding.txDetailsFees.setOnClickListener { copyToClipBoard(binding.txDetailsFees) }
+        binding.txDetailsHash.setOnClickListener { copyToClipBoard(binding.txDetailsHash) }
+        binding.txDetailsFeeRate.setOnClickListener { copyToClipBoard(binding.txDetailsFeeRate) }
+        binding.txDetailsAmount.setOnClickListener { copyToClipBoard(binding.txDetailsAmount) }
     }
 
     private fun setTx(tx: Tx) {
         val fmt = SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH)
         fmt.timeZone = TimeZone.getDefault()
-        txDetailsAmount.text = "${MonetaryUtil.getInstance().formatToBtc(tx.result)} BTC | ${getFiatBalance(tx.result, exchangeRateRepository.getRateLive().value)} "
-        txDetailsBlockId.text = "${ tx.block_height ?: "__"}"
-        txDetailsConfirmation.text = tx.confirmations.toString()
+        binding.txDetailsAmount.text = "${MonetaryUtil.getInstance().formatToBtc(tx.result)} BTC | ${getFiatBalance(tx.result, exchangeRateRepository.getRateLive().value)} "
+        binding.txDetailsBlockId.text = "${tx.block_height ?: "__"}"
+        binding.txDetailsConfirmation.text = tx.confirmations.toString()
         if (tx.result != null)
-            txDetailsTime.text = "${fmt.format(Date(tx.time* 1000))} "
-        txDetailsHash.text = tx.hash
+            binding.txDetailsTime.text = "${fmt.format(Date(tx.time * 1000))} "
+        binding.txDetailsHash.text = tx.hash
 
     }
 
 
     private fun setFeeDetails(txFeeData: TxFeeData) {
-        txDetailsFeesProgress.visibility = View.GONE
-        txDetailsFeesRateProgress.visibility = View.GONE
-        txDetailsFees.text = txFeeData.fee.toString()
-        txDetailsFeeRate.text = txFeeData.feeRate.toString()
-        txDetailsSize.text = txFeeData.size.toString()
+        binding.txDetailsFeesProgress.visibility = View.GONE
+        binding.txDetailsFeesRateProgress.visibility = View.GONE
+        binding.txDetailsFees.text = txFeeData.fee.toString()
+        binding.txDetailsFeeRate.text = txFeeData.feeRate.toString()
+        binding.txDetailsSize.text = txFeeData.size.toString()
     }
 
     private fun fetchFee() {
@@ -125,7 +133,7 @@ class TransactionsDetailsBottomSheet(private var tx: Tx) : GenericBottomSheet() 
             if (it != null)
                 CoroutineScope(Dispatchers.Main).launch {
                     if (!(it is CancellationException))
-                        Toast.makeText(requireContext(), "Error: ${it?.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Error: ${it.message}", Toast.LENGTH_SHORT).show()
                 }
         }
     }
