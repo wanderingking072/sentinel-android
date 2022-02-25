@@ -14,9 +14,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.access.AccessFactory
+import com.samourai.sentinel.databinding.FragmentLockScreenBinding
 import com.samourai.sentinel.ui.utils.PrefsUtil
-import kotlinx.android.synthetic.main.fragment_lock_screen.*
-import org.koin.java.KoinJavaComponent
 import org.koin.java.KoinJavaComponent.inject
 
 /**
@@ -25,66 +24,69 @@ import org.koin.java.KoinJavaComponent.inject
  * @author Sarath
  */
 class LockScreenDialog(private val cancelable: Boolean = false, private val lockScreenMessage: String = "") : DialogFragment() {
-    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java);
+    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
     private var userInput = StringBuilder()
     private var strPassphrase = ""
     private var onConfirm: ((String) -> Unit)? = null
 
-    override
-    fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_lock_screen, container, false)
+    private var _binding: FragmentLockScreenBinding? = null
+    private val binding get() = _binding!!
+
+    override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+    ): View? {
+        _binding = FragmentLockScreenBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
-        pinEntryView.setConfirmClickListener {
+        binding.pinEntryView.setConfirmClickListener {
             onConfirm.let { it?.invoke(userInput.toString()) }
         }
-        lockScreenText.text = lockScreenMessage
-        prefsUtil.scramblePin?.let { pinEntryView.setScramble(it) }
-        prefsUtil.haptics?.let { pinEntryView.isHapticFeedbackEnabled = it }
-        pinEntryView.setEntryListener { key, _ ->
+        binding.lockScreenText.text = lockScreenMessage
+        prefsUtil.scramblePin?.let { binding.pinEntryView.setScramble(it) }
+        prefsUtil.haptics?.let { binding.pinEntryView.isHapticFeedbackEnabled = it }
+        binding.pinEntryView.setEntryListener { key, _ ->
             if (userInput.length <= AccessFactory.MAX_PIN_LENGTH - 1) {
                 userInput = userInput.append(key)
                 if (userInput.length >= AccessFactory.MIN_PIN_LENGTH) {
-                    pinEntryView.showCheckButton()
+                    binding.pinEntryView.showCheckButton()
                 } else {
-                    pinEntryView.hideCheckButton()
+                    binding.pinEntryView.hideCheckButton()
                 }
                 setPinMaskView()
             }
         }
-        pinEntryView.setClearListener { clearType ->
+        binding.pinEntryView.setClearListener { clearType ->
             if (clearType === PinEntryView.KeyClearTypes.CLEAR) {
                 if (userInput.isNotEmpty()) userInput = java.lang.StringBuilder(userInput.substring(0, userInput.length - 1))
                 if (userInput.length >= AccessFactory.MIN_PIN_LENGTH) {
-                    pinEntryView.showCheckButton()
+                    binding.pinEntryView.showCheckButton()
                 } else {
-                    pinEntryView.hideCheckButton()
+                    binding.pinEntryView.hideCheckButton()
                 }
             } else {
                 strPassphrase = ""
                 userInput = java.lang.StringBuilder()
-                pinEntryMaskLayout.removeAllViews()
-                pinEntryView.hideCheckButton()
+                binding.pinEntryMaskLayout.removeAllViews()
+                binding.pinEntryView.hideCheckButton()
             }
             setPinMaskView()
         }
     }
 
-    public fun setOnPinEntered(callback: ((String) -> Unit)) {
+    fun setOnPinEntered(callback: ((String) -> Unit)) {
         this.onConfirm = callback
-    }
-
-    override fun onStart() {
-        super.onStart()
-
     }
 
 
     private fun setPinMaskView() {
-        if (userInput.length > pinEntryMaskLayout.childCount && userInput.isNotEmpty()) {
+        if (userInput.length > binding.pinEntryMaskLayout.childCount && userInput.isNotEmpty()) {
             val image = ImageView(requireContext())
             image.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.circle_dot_white))
             image.drawable.setColorFilter(Color.WHITE, PorterDuff.Mode.ADD)
@@ -93,12 +95,12 @@ class LockScreenDialog(private val cancelable: Boolean = false, private val lock
                     LinearLayout.LayoutParams.WRAP_CONTENT
             )
             params.setMargins(8, 0, 8, 0)
-            TransitionManager.beginDelayedTransition(pinEntryMaskLayout, ChangeBounds().setDuration(50))
-            pinEntryMaskLayout.addView(image, params)
+            TransitionManager.beginDelayedTransition(binding.pinEntryMaskLayout, ChangeBounds().setDuration(50))
+            binding.pinEntryMaskLayout.addView(image, params)
         } else {
-            if (pinEntryMaskLayout.childCount != 0) {
-                TransitionManager.beginDelayedTransition(pinEntryMaskLayout, ChangeBounds().setDuration(200))
-                pinEntryMaskLayout.removeViewAt(pinEntryMaskLayout.childCount - 1)
+            if (binding.pinEntryMaskLayout.childCount != 0) {
+                TransitionManager.beginDelayedTransition(binding.pinEntryMaskLayout, ChangeBounds().setDuration(200))
+                binding.pinEntryMaskLayout.removeViewAt(binding.pinEntryMaskLayout.childCount - 1)
             }
         }
 
@@ -108,8 +110,8 @@ class LockScreenDialog(private val cancelable: Boolean = false, private val lock
         val errorShake = TranslateAnimation(0F, 12F, 0F, 0F)
         errorShake.duration = 420
         errorShake.interpolator = CycleInterpolator(4F)
-        pinEntryMaskLayout.startAnimation(errorShake)
+        binding.pinEntryMaskLayout.startAnimation(errorShake)
         if (prefsUtil.haptics!!)
-            pinEntryMaskLayout.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            binding.pinEntryMaskLayout.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
     }
 }
