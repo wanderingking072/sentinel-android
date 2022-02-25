@@ -20,6 +20,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.widget.addTextChangedListener
@@ -37,10 +38,9 @@ import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
+import com.samourai.sentinel.databinding.FragmentSpendBinding
 import com.samourai.sentinel.send.SuggestedFee
 import com.samourai.sentinel.ui.broadcast.BroadcastFromComposeTx
-import com.samourai.sentinel.ui.broadcast.BroadcastTx
-import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.hideKeyboard
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
@@ -49,7 +49,6 @@ import com.samourai.sentinel.util.MonetaryUtil
 import kotlinx.android.synthetic.main.fee_selector.*
 import kotlinx.android.synthetic.main.fragment_broadcast_tx.*
 import kotlinx.android.synthetic.main.fragment_compose_tx.*
-import kotlinx.android.synthetic.main.fragment_spend.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -79,6 +78,9 @@ class SendFragment : Fragment() {
     private val decimalFormat = DecimalFormat("##.00")
     private var qrCodeString: String? = null
 
+    private var _fragmentSpendBinding: FragmentSpendBinding? = null
+    private val fragmentSpendBinding get() = _fragmentSpendBinding!!
+
     private val viewModel: SendViewModel by viewModels()
 
     override fun onCreateView(
@@ -86,10 +88,13 @@ class SendFragment : Fragment() {
             container: ViewGroup?,
             savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_spend, container, false)
+        _fragmentSpendBinding = FragmentSpendBinding.inflate(inflater, container, false)
+        val view = fragmentSpendBinding.root
+        return view
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -100,13 +105,13 @@ class SendFragment : Fragment() {
 
         watchAddressAndAmount()
 
-        toEditText.setEndIconOnClickListener {
+        fragmentSpendBinding.toEditText.setEndIconOnClickListener {
             val string = AndroidUtil.getClipBoardString(requireContext())
-            btcAddress.setText(string)
+            fragmentSpendBinding.btcAddress.setText(string)
         }
 
-        composeBtn.setOnClickListener {
-            containerTransform(unsignedTxView, composeBtn)
+        fragmentSpendBinding.composeBtn.setOnClickListener {
+            containerTransform(unsignedTxView, fragmentSpendBinding.composeBtn)
         }
 
         if (isAdded) {
@@ -127,8 +132,8 @@ class SendFragment : Fragment() {
         })
 
         viewModel.validSpend.observe(viewLifecycleOwner, {
-            composeBtn.isEnabled = it
-            composeBtn.alpha = if (it) 1f else 0.6f
+            fragmentSpendBinding.composeBtn.isEnabled = it
+            fragmentSpendBinding.composeBtn.alpha = if (it) 1f else 0.6f
         })
 
         psbtCopyBtn.setOnClickListener {
@@ -177,11 +182,11 @@ class SendFragment : Fragment() {
             popup.show()
         }
 
-        composeBtn.setOnClickListener {
+        fragmentSpendBinding.composeBtn.setOnClickListener {
             it.hideKeyboard()
             if (viewModel.makeTx()) {
                 requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.v3_accent)
-                containerTransform(unsignedTxView, composeBtn)
+                containerTransform(unsignedTxView, fragmentSpendBinding.composeBtn)
             }
         }
 
@@ -190,19 +195,19 @@ class SendFragment : Fragment() {
 
     private fun setUpToolbar() {
         unsignedTxToolbar.setNavigationOnClickListener {
-            containerTransform(composeBtn, unsignedTxView)
+            containerTransform(fragmentSpendBinding.composeBtn, unsignedTxView)
         }
 
-        sendAppBar.setNavigationOnClickListener {
+        fragmentSpendBinding.sendAppBar.setNavigationOnClickListener {
             requireActivity().onBackPressed()
         }
 
-        sendAppBar.setOnMenuItemClickListener { menu ->
+        fragmentSpendBinding.sendAppBar.setOnMenuItemClickListener { menu ->
             if (menu.itemId == R.id.action_scan_qr) {
                 val camera = CameraFragmentBottomSheet()
                 camera.setQrCodeScanLisenter {
                     if (it.length < 100) {
-                        btcAddress.setText(it)
+                        fragmentSpendBinding.btcAddress.setText(it)
                     }
                     camera.dismiss()
                 }
@@ -269,10 +274,10 @@ class SendFragment : Fragment() {
     }
 
     private fun watchAddressAndAmount() {
-        fiatEditTextLayout.hint = exchangeRateRepository.getRateLive().value?.currency
-        fiatEditText.addTextChangedListener { onFiatValueChange(it.toString(), btcEditText.toString()) }
-        btcEditText.addTextChangedListener { onBtcValueChanged(it.toString()) }
-        btcAddress.addTextChangedListener {
+        fragmentSpendBinding.fiatEditTextLayout.hint = exchangeRateRepository.getRateLive().value?.currency
+        fragmentSpendBinding.fiatEditText.addTextChangedListener { onFiatValueChange(it.toString(), fragmentSpendBinding.btcEditText.toString()) }
+        fragmentSpendBinding.btcEditText.addTextChangedListener { onBtcValueChanged(it.toString()) }
+        fragmentSpendBinding.btcAddress.addTextChangedListener {
             if (it.toString().isNotEmpty()) {
                 address = it.toString().trim()
                 if (FormatsUtil.isValidBitcoinAddress(address)) {
@@ -342,22 +347,22 @@ class SendFragment : Fragment() {
 
     private fun setBtcEdit(value: String) {
         isBTCEditing = true
-        btcEditText.setText(value)
-        btcEditText.text?.length?.let { btcEditText.setSelection(it) }
+        fragmentSpendBinding.btcEditText.setText(value)
+        fragmentSpendBinding.btcEditText.text?.length?.let { fragmentSpendBinding.btcEditText.setSelection(it) }
         isBTCEditing = false
     }
 
     private fun setFiatEdit(value: String) {
         isFiatEditing = true
-        fiatEditText.setText(value)
-        fiatEditText.text?.length?.let { fiatEditText.setSelection(it) }
+        fragmentSpendBinding.fiatEditText.setText(value)
+        fragmentSpendBinding.fiatEditText.text?.length?.let { fragmentSpendBinding.fiatEditText.setSelection(it) }
         isFiatEditing = false
     }
 
 
     fun onBackPressed(): Boolean {
         if (unsignedTxView.visibility == VISIBLE) {
-            containerTransform(composeBtn, unsignedTxView)
+            containerTransform(fragmentSpendBinding.composeBtn, unsignedTxView)
             return false
         }
         Timber.i("onBackPressed: ")
@@ -505,6 +510,7 @@ class SendFragment : Fragment() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun generateQRCode(uri: String) {
 
         val display = activity?.windowManager?.currentWindowMetrics
