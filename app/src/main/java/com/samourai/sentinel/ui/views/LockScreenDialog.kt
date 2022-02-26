@@ -107,6 +107,9 @@ class LockScreenDialog(private val cancelable: Boolean = false, private val lock
     }
 
     fun showError() {
+        binding.pinEntryMaskLayout.removeAllViews()
+        userInput.delete(0, userInput.length)
+        binding.pinEntryView.hideCheckButton()
         val errorShake = TranslateAnimation(0F, 12F, 0F, 0F)
         errorShake.duration = 420
         errorShake.interpolator = CycleInterpolator(4F)
