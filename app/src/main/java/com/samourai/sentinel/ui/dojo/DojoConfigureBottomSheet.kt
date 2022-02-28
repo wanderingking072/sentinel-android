@@ -17,6 +17,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.tor.TorEventsReceiver
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.ui.views.codeScanner.CodeScanner
@@ -26,7 +27,6 @@ import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.apiScope
 import io.matthewnelson.topl_service.TorServiceController
-import kotlinx.android.synthetic.main.fragment_bottomsheet_view_pager.*
 import kotlinx.coroutines.*
 import org.koin.java.KoinJavaComponent
 
@@ -42,13 +42,16 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
 
     private val dojoUtil: DojoUtility by KoinJavaComponent.inject(DojoUtility::class.java);
 
+    private var _binding: FragmentBottomsheetViewPagerBinding? = null
+    private val binding get() = _binding!!
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.layout_bottom_sheet, container)
-        view.findViewById<TextView>(R.id.dialogTitle).text = "Setup Dojo Node"
-        val configLayout = inflater.inflate(R.layout.fragment_bottomsheet_view_pager, container)
-        val content = view.findViewById<FrameLayout>(R.id.contentContainer)
-        content.addView(configLayout)
+    override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+    ): View? {
+        _binding = FragmentBottomsheetViewPagerBinding.inflate(inflater, container, false)
+        val view = binding.root
         return view
     }
 
@@ -56,12 +59,12 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         super.onViewCreated(view, savedInstanceState)
         setUpViewPager()
         dojoConfigureBottomSheet.setConnectListener(View.OnClickListener {
-            pager.setCurrentItem(1, true)
+            binding.pager.setCurrentItem(1, true)
         })
         scanFragment.setOnScanListener {
             if (dojoUtil.validate(it)) {
                 payload = it
-                pager.setCurrentItem(2, true)
+                binding.pager.setCurrentItem(2, true)
             } else {
                 scanFragment.resetCamera()
                 Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
@@ -71,13 +74,13 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         payloadPassed?.let {
             if (dojoUtil.validate(it)) {
                 payload = it
-                pager.setCurrentItem(2, true)
+                binding.pager.setCurrentItem(2, true)
             } else {
                 scanFragment.resetCamera()
                 Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
             }
         }
-        pager.registerOnPageChangeCallback(pagerCallBack)
+        binding.pager.registerOnPageChangeCallback(pagerCallBack)
     }
 
     private val pagerCallBack = object : ViewPager2.OnPageChangeCallback() {
@@ -142,7 +145,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         item.add(dojoConfigureBottomSheet)
         item.add(scanFragment)
         item.add(dojoConnectFragment)
-        pager.adapter = object : FragmentStateAdapter(this) {
+        binding.pager.adapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int {
                 return item.size
             }
@@ -152,17 +155,17 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             }
 
         }
-        pager.isUserInputEnabled = false
+        binding.pager.isUserInputEnabled = false
 
         //Fix for making BottomSheet same height across all the fragments
-        pager.visibility = View.GONE
-        pager.currentItem = 1
-        pager.currentItem = 0
-        pager.visibility = View.VISIBLE
+        binding.pager.visibility = View.GONE
+        binding.pager.currentItem = 1
+        binding.pager.currentItem = 0
+        binding.pager.visibility = View.VISIBLE
     }
 
     override fun onDestroyView() {
-        pager.unregisterOnPageChangeCallback(pagerCallBack)
+        binding.pager.unregisterOnPageChangeCallback(pagerCallBack)
         super.onDestroyView()
     }
 
