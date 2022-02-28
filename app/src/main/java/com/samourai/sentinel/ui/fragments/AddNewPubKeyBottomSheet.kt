@@ -5,12 +5,10 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -19,29 +17,29 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.samourai.sentinel.R
-import com.samourai.sentinel.ui.views.codeScanner.CodeScanner
-import com.samourai.sentinel.ui.views.codeScanner.CodeScannerView
-import com.samourai.sentinel.ui.views.codeScanner.DecodeCallback
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
+import com.samourai.sentinel.databinding.ContentChooseAddressTypeBinding
+import com.samourai.sentinel.databinding.ContentCollectionSelectBinding
+import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
+import com.samourai.sentinel.ui.views.codeScanner.CodeScanner
+import com.samourai.sentinel.ui.views.codeScanner.CodeScannerView
+import com.samourai.sentinel.ui.views.codeScanner.DecodeCallback
 import com.samourai.sentinel.util.FormatsUtil
-import kotlinx.android.synthetic.main.content_choose_address_type.*
-import kotlinx.android.synthetic.main.content_collection_select.*
-import kotlinx.android.synthetic.main.fragment_bottomsheet_view_pager.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent
 
 
-class AddNewPubKeyBottomSheet(private val pubKey:String= "") : GenericBottomSheet() {
+class AddNewPubKeyBottomSheet(private val pubKey: String = "") : GenericBottomSheet() {
 
     private val scanPubKeyFragment = ScanPubKeyFragment()
     private var newPubKeyListener: ((pubKey: PubKeyModel?) -> Unit)? = null
@@ -51,13 +49,16 @@ class AddNewPubKeyBottomSheet(private val pubKey:String= "") : GenericBottomShee
     private var pubKeyModel: PubKeyModel? = null
     private var selectedPubKeyCollection: PubKeyCollection? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.layout_bottom_sheet, container)
-        view.findViewById<TextView>(R.id.dialogTitle).text = getString(R.string.add_another_public_key)
-        val fragmentLayout = inflater.inflate(R.layout.fragment_bottomsheet_view_pager, container)
-        val content = view.findViewById<FrameLayout>(R.id.contentContainer)
-        content.addView(fragmentLayout)
+    private var _binding: FragmentBottomsheetViewPagerBinding? = null
+    private val binding get() = _binding!!
+
+    override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+    ): View? {
+        _binding = FragmentBottomsheetViewPagerBinding.inflate(inflater, container, false)
+        val view = binding.root
         return view
     }
 
@@ -88,7 +89,7 @@ class AddNewPubKeyBottomSheet(private val pubKey:String= "") : GenericBottomShee
             this.dismiss()
         }
 
-        if(pubKey.isNotEmpty()){
+        if (pubKey.isNotEmpty()) {
             validate(pubKey)
             pubKeyString = pubKey
         }
@@ -118,7 +119,7 @@ class AddNewPubKeyBottomSheet(private val pubKey:String= "") : GenericBottomShee
             })
             this.dismiss()
         } else {
-            pager.setCurrentItem(2, true)
+            binding.pager.setCurrentItem(2, true)
         }
 
     }
@@ -136,13 +137,13 @@ class AddNewPubKeyBottomSheet(private val pubKey:String= "") : GenericBottomShee
                 } else {
                     pubKeyModel = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled")
                     // Skip type selection screen since payload is an address
-                    pager.setCurrentItem(2, true)
+                    binding.pager.setCurrentItem(2, true)
                 }
             }
             FormatsUtil.isValidXpub(code) -> {
                 //show option to choose xpub type
-                pager.setCurrentItem(1, true)
-                pager.post {
+                binding.pager.setCurrentItem(1, true)
+                binding.pager.post {
                     selectAddressTypeFragment.setType(type)
                 }
             }
@@ -157,21 +158,21 @@ class AddNewPubKeyBottomSheet(private val pubKey:String= "") : GenericBottomShee
         item.add(scanPubKeyFragment)
         item.add(selectAddressTypeFragment)
         item.add(chooseCollectionFragment)
-        pager.adapter = object : FragmentStateAdapter(this) {
+        binding.pager.adapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int {
-                return item.size;
+                return item.size
             }
 
             override fun createFragment(position: Int): Fragment {
-                return item[position];
+                return item[position]
             }
 
         }
-        pager.isUserInputEnabled = false
+        binding.pager.isUserInputEnabled = false
     }
 
     fun setPubKeyListener(listener: (pubKey: PubKeyModel?) -> Unit) {
-        newPubKeyListener = listener;
+        newPubKeyListener = listener
     }
 }
 
@@ -179,11 +180,11 @@ class AddNewPubKeyBottomSheet(private val pubKey:String= "") : GenericBottomShee
 class ScanPubKeyFragment : Fragment() {
 
     private var mCodeScanner: CodeScanner? = null
-    private val appContext: Context by KoinJavaComponent.inject(Context::class.java);
+    private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
     private var onScan: (scanData: String) -> Unit = {}
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.content_scan_layout, container, false);
+        return inflater.inflate(R.layout.content_scan_layout, container, false)
     }
 
     fun setOnScanListener(callback: (scanData: String) -> Unit) {
@@ -246,19 +247,28 @@ class SelectAddressTypeFragment : Fragment() {
     private var onSelect: (type: AddressTypes) -> Unit = {}
     var addressType: AddressTypes = AddressTypes.BIP44
 
+    private var _binding: ContentChooseAddressTypeBinding? = null
+    private val binding get() = _binding!!
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.content_choose_address_type, container, false);
+
+    override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+    ): View? {
+        _binding = ContentChooseAddressTypeBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
     }
 
     fun setOnSelectListener(callback: (type: AddressTypes) -> Unit = {}) {
-        this.onSelect = callback;
+        this.onSelect = callback
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        radioGroup.setOnCheckedChangeListener { radioGroup, i ->
+        binding.radioGroup.setOnCheckedChangeListener { radioGroup, i ->
             when (i) {
                 0 -> {
                     addressType = AddressTypes.BIP44
@@ -271,18 +281,18 @@ class SelectAddressTypeFragment : Fragment() {
                 }
             }
         }
-        nextBtn.setOnClickListener {
+        binding.nextBtn.setOnClickListener {
             onSelect(addressType)
         }
         when (addressType) {
             AddressTypes.BIP44 -> {
-                buttonBIP44.isChecked = true
+                binding.buttonBIP44.isChecked = true
             }
             AddressTypes.BIP49 -> {
-                buttonBIP49.isChecked = true
+                binding.buttonBIP49.isChecked = true
             }
             AddressTypes.BIP84 -> {
-                buttonBIP84.isChecked = true
+                binding.buttonBIP84.isChecked = true
             }
             AddressTypes.ADDRESS -> {
                 //No-op
@@ -305,8 +315,18 @@ class ChooseCollectionFragment : Fragment() {
     private val collectionsAdapter = CollectionsAdapter()
     private var onSelect: (PubKeyCollection?) -> Unit = {}
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.content_collection_select, container, false);
+    private var _binding: ContentCollectionSelectBinding? = null
+    private val binding get() = _binding!!
+
+
+    override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+    ): View? {
+        _binding = ContentCollectionSelectBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
     }
 
     fun setOnSelectListener(callback: (PubKeyCollection?) -> Unit = {}) {
@@ -317,7 +337,7 @@ class ChooseCollectionFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         setUpCollectionSelectList()
-        createNewCollection.setOnClickListener {
+        binding.createNewCollection.setOnClickListener {
             this.onSelect(null)
         }
     }
@@ -325,13 +345,13 @@ class ChooseCollectionFragment : Fragment() {
     private fun setUpCollectionSelectList() {
 
         repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
-            collectionsAdapter.update(it);
+            collectionsAdapter.update(it)
         })
         collectionsAdapter.setLayoutType(CollectionsAdapter.Companion.LayoutType.STACKED)
         val linearLayoutManager = LinearLayoutManager(context)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
-        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(requireContext(), R.drawable.divider_grey)!!);
-        collectionSelectRecyclerView.apply {
+        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(requireContext(), R.drawable.divider_grey)!!)
+        binding.collectionSelectRecyclerView.apply {
             adapter = collectionsAdapter
             layoutManager = linearLayoutManager
             setHasFixedSize(true)
