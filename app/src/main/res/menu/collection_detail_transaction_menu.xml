@@ -9,7 +9,7 @@
         app:showAsAction="always"
         android:visible="true" />
     <item
-        android:title="View Unspend outputs"
+        android:title="@string/view_unspend_outputs"
         android:id="@+id/collection_details_transaction_utxos"
         android:visible="true" />
 </menu>
