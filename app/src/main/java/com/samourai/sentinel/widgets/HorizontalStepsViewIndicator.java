@@ -30,7 +30,7 @@ public class HorizontalStepsViewIndicator extends View {
     private Path path = new Path();
     private int points = 2;
     private int animationDuration = 1000;
-    private float circleRadius = dpToPx(14);
+    private float circleRadius = dpToPx(10);
     private float center = 0f;
     private float pathStrokeSize = dpToPx(6);
     private float animatedPoint = dpToPx(10) ;
@@ -61,7 +61,7 @@ public class HorizontalStepsViewIndicator extends View {
     private void init() {
 
         paintCircle = new Paint();
-        paintCircle.setColor(ContextCompat.getColor(getContext(), R.color.green_ui_2));
+        paintCircle.setColor(ContextCompat.getColor(getContext(), R.color.blue_ui_2));
         paintCircle.setStrokeWidth(circleRadius);
         paintCircle.setStyle(Paint.Style.FILL);
         paintCircle.setAntiAlias(true);
