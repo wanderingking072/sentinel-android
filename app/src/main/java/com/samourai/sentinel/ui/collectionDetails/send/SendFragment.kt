@@ -46,9 +46,6 @@ import com.samourai.sentinel.ui.utils.hideKeyboard
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
-import kotlinx.android.synthetic.main.fee_selector.*
-import kotlinx.android.synthetic.main.fragment_broadcast_tx.*
-import kotlinx.android.synthetic.main.fragment_compose_tx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -111,7 +108,7 @@ class SendFragment : Fragment() {
         }
 
         fragmentSpendBinding.composeBtn.setOnClickListener {
-            containerTransform(unsignedTxView, fragmentSpendBinding.composeBtn)
+            containerTransform(fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView, fragmentSpendBinding.composeBtn)
         }
 
         if (isAdded) {
@@ -120,15 +117,15 @@ class SendFragment : Fragment() {
 
         setUpFee()
 
-        broadCastTransactionBtn.setOnClickListener {
+        fragmentSpendBinding.fragmentBroadcastTx.broadCastTransactionBtn.setOnClickListener {
             startActivity(Intent(context, BroadcastFromComposeTx::class.java).putExtra("qrString", qrCodeString))
         }
 
         viewModel.psbtLive.observe(viewLifecycleOwner, {
             generateQRCode(it)
             qrCodeString = it
-            psbtText.text = it
-            psbtText.movementMethod = ScrollingMovementMethod()
+            fragmentSpendBinding.fragmentBroadcastTx.psbtText.text = it
+            fragmentSpendBinding.fragmentBroadcastTx.psbtText.movementMethod = ScrollingMovementMethod()
         })
 
         viewModel.validSpend.observe(viewLifecycleOwner, {
@@ -136,7 +133,7 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.composeBtn.alpha = if (it) 1f else 0.6f
         })
 
-        psbtCopyBtn.setOnClickListener {
+        fragmentSpendBinding.fragmentBroadcastTx.psbtCopyBtn.setOnClickListener {
             val psbt = viewModel.psbtLive.value
             if (psbt?.length == 0) {
                 return@setOnClickListener
@@ -152,10 +149,10 @@ class SendFragment : Fragment() {
         }
 
         viewModel.minerFee.observe(viewLifecycleOwner, {
-            totalMinerFee.text = it
+            fragmentSpendBinding.fragmentComposeTx.feeSelector.totalMinerFee.text = it
         })
 
-        psbtShareBtn.setOnClickListener { view1 ->
+        fragmentSpendBinding.fragmentBroadcastTx.psbtShareBtn.setOnClickListener { view1 ->
             val popup = PopupMenu(requireContext(), view1)
             popup.menuInflater.inflate(R.menu.send_share_menu, popup.menu)
             popup.setOnMenuItemClickListener {
@@ -186,7 +183,7 @@ class SendFragment : Fragment() {
             it.hideKeyboard()
             if (viewModel.makeTx()) {
                 requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.v3_accent)
-                containerTransform(unsignedTxView, fragmentSpendBinding.composeBtn)
+                containerTransform(fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView, fragmentSpendBinding.composeBtn)
             }
         }
 
@@ -194,8 +191,8 @@ class SendFragment : Fragment() {
     }
 
     private fun setUpToolbar() {
-        unsignedTxToolbar.setNavigationOnClickListener {
-            containerTransform(fragmentSpendBinding.composeBtn, unsignedTxView)
+        fragmentSpendBinding.fragmentBroadcastTx.unsignedTxToolbar.setNavigationOnClickListener {
+            containerTransform(fragmentSpendBinding.composeBtn, fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView)
         }
 
         fragmentSpendBinding.sendAppBar.setNavigationOnClickListener {
@@ -265,7 +262,7 @@ class SendFragment : Fragment() {
         TransitionManager.beginDelayedTransition(view as ViewGroup, transition)
         enter.visibility = VISIBLE
         leaving.visibility = GONE
-        if (leaving.id == unsignedTxView.id) {
+        if (leaving.id == fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView.id) {
             requireActivity().window.statusBarColor =
                     ContextCompat.getColor(requireContext(), android.R.color.transparent)
         } else {
@@ -361,8 +358,8 @@ class SendFragment : Fragment() {
 
 
     fun onBackPressed(): Boolean {
-        if (unsignedTxView.visibility == VISIBLE) {
-            containerTransform(fragmentSpendBinding.composeBtn, unsignedTxView)
+        if (fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView.visibility == VISIBLE) {
+            containerTransform(fragmentSpendBinding.composeBtn, fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView)
             return false
         }
         Timber.i("onBackPressed: ")
@@ -383,10 +380,10 @@ class SendFragment : Fragment() {
                     requireContext(),
                     R.layout.dropdown_menu_popup_item, items
             )
-            pubKeySelector.inputType = InputType.TYPE_NULL
-            pubKeySelector.threshold = items.size
-            pubKeySelector.setAdapter(adapter)
-            pubKeySelector.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.inputType = InputType.TYPE_NULL
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.threshold = items.size
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
                 val selectPubKeyModel = it.pubs[index]
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
@@ -403,7 +400,7 @@ class SendFragment : Fragment() {
             if (items.size == 0) {
                 return
             }
-            pubKeySelector.setText(items.first(), false)
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.first(), false)
             viewModel.setPublicKey(it.pubs[0], viewLifecycleOwner)
         }
 
@@ -420,13 +417,14 @@ class SendFragment : Fragment() {
         val feeHighSliderValue = (high * multiplier)
         val feeMedSliderValue = (feeMed * multiplier)
         val valueTo = (feeHighSliderValue - multiplier).toFloat()
-        feeSlider.stepSize = 1F
-        feeSlider.valueTo = if (valueTo <= 0) feeHighSliderValue.toFloat() else valueTo
-        feeSlider.valueFrom = 1F
-        feeSlider.setLabelFormatter { i: Float ->
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.stepSize = 1F
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.valueTo = if (valueTo <= 0) feeHighSliderValue.toFloat() else valueTo
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.valueTo = if (valueTo <= 0) feeHighSliderValue.toFloat() else valueTo
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.valueFrom = 1F
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.setLabelFormatter { i: Float ->
             val value = (i + multiplier) / multiplier
             val formatted = "${decimalFormat.format(value)} sats/b"
-            selectedFeeRate.text = formatted
+            fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = formatted
             formatted
         }
         if (feeLow == feeMed && feeMed == feeHigh) {
@@ -462,14 +460,14 @@ class SendFragment : Fragment() {
             hiSf.defaultPerKB = BigInteger.valueOf(feeHigh * 1000L)
             feeRepository.setHighFee(hiSf)
         }
-        selectedFeeRateLayman.text = getString(R.string.normal)
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRateLayman.text = getString(R.string.normal)
         feeRepository.sanitizeFee()
-        selectedFeeRate.text = ("$feeMed sats/b")
-        feeSlider.value = (feeMedSliderValue - multiplier + 1).toFloat()
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = ("$feeMed sats/b")
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value = (feeMedSliderValue - multiplier + 1).toFloat()
         setFeeLabels()
-        viewModel.setFee(feeSlider.value)
+        viewModel.setFee(fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value)
         var nbBlocks = 6
-        feeSlider.addOnChangeListener { slider, sliderVal, fromUser ->
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.addOnChangeListener { slider, sliderVal, fromUser ->
             val value = (sliderVal + multiplier) / multiplier
             var pct = 0F
             if (value <= feeLow) {
@@ -485,28 +483,28 @@ class SendFragment : Fragment() {
                 pct = feeMed / value
                 nbBlocks = ceil(pct * 6.0).toInt()
             }
-            estBlockTime.text = "$nbBlocks blocks"
+            fragmentSpendBinding.fragmentComposeTx.feeSelector.estBlockTime.text = "$nbBlocks blocks"
             if (nbBlocks > 50) {
-                estBlockTime.text = "50+ blocks"
+                fragmentSpendBinding.fragmentComposeTx.feeSelector.estBlockTime.text = "50+ blocks"
             }
             setFeeLabels()
             viewModel.setFee(value * 1000)
         }
-        estBlockTime.text = "$nbBlocks blocks"
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.estBlockTime.text = "$nbBlocks blocks"
     }
 
     private fun setFeeLabels() {
-        if (feeSlider.valueTo <= 0) {
+        if (fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.valueTo <= 0) {
             return
         }
-        val sliderValue: Float = feeSlider.value / feeSlider.valueTo
+        val sliderValue: Float = fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value / fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.valueTo
         val sliderInPercentage = sliderValue * 100
         if (sliderInPercentage < 33) {
-            selectedFeeRateLayman.setText(R.string.low)
+            fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRateLayman.setText(R.string.low)
         } else if (sliderInPercentage > 33 && sliderInPercentage < 66) {
-            selectedFeeRateLayman.setText(R.string.normal)
+            fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRateLayman.setText(R.string.normal)
         } else if (sliderInPercentage > 66) {
-            selectedFeeRateLayman.setText(R.string.urgent)
+            fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRateLayman.setText(R.string.urgent)
         }
     }
 
@@ -517,7 +515,7 @@ class SendFragment : Fragment() {
         val imgWidth = display?.bounds?.width()?.minus(200) ?: 300
 
         if (uri.length > 4296) {
-            qrError.visibility = VISIBLE
+            fragmentSpendBinding.fragmentBroadcastTx.qrError.visibility = VISIBLE
 
             return
         }
@@ -530,15 +528,15 @@ class SendFragment : Fragment() {
                     BarcodeFormat.QR_CODE.toString(),
                     imgWidth
             )
-            qrError.visibility = GONE
+            fragmentSpendBinding.fragmentBroadcastTx.qrError.visibility = GONE
             try {
                 bitmap = qrCodeEncoder.encodeAsBitmap()
             } catch (e: WriterException) {
                 e.printStackTrace()
             }
             withContext(Dispatchers.Main) {
-                psbtQRCode.clearColorFilter()
-                psbtQRCode.setImageBitmap(bitmap)
+                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.clearColorFilter()
+                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.setImageBitmap(bitmap)
             }
         }
     }

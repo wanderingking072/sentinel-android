@@ -37,7 +37,7 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <include
-            android:id="@+id/include"
+            android:id="@+id/feeSelector"
             layout="@layout/fee_selector"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

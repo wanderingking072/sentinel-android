@@ -127,6 +127,7 @@
 
 
         <include
+            android:id="@+id/fragment_compose_tx"
             layout="@layout/fragment_compose_tx" />
 
 
@@ -158,6 +159,7 @@
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <include
+        android:id="@+id/fragment_broadcast_tx"
         layout="@layout/fragment_broadcast_tx" />
 
 
