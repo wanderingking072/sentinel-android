@@ -35,7 +35,7 @@ class PrefsUtil(context: Context) : Preferences(context, "${context.packageName}
     var lastSynced by longPref(defaultValue = 0)
     var enableTor by booleanPref(defaultValue = false)
     var currentFeeType by intPref(defaultValue = 0)
-    var haptics by booleanPref(defaultValue = true)
+    var haptics by booleanPref(defaultValue = false)
     var pinHash by stringPref(defaultValue = "")
     var displaySecure by booleanPref(defaultValue = false)
     var scramblePin by booleanPref(defaultValue = false)

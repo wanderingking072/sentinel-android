@@ -20,10 +20,17 @@
             app:title="User PIN code" />
 
         <CheckBoxPreference
+            app:title="@string/options_scramble_pin"
             android:summary="@string/options_scramble_pin2"
             app:dependency="pinEnabled"
-            app:key="scramblePin"
-            app:title="@string/options_scramble_pin" />
+            app:key="scramblePin" />
+
+        <CheckBoxPreference
+            android:title="@string/options_haptic"
+            android:summary="@string/options_haptic_2"
+            app:dependency="pinEnabled"
+            android:key="haptic"
+            android:defaultValue="false" />
 
 
     </PreferenceCategory>

@@ -1,10 +1,15 @@
 package com.samourai.sentinel.ui.views
 
+import android.content.Context
 import android.graphics.Color
 import android.graphics.PorterDuff
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.transition.ChangeBounds
 import android.transition.TransitionManager
+import android.util.Log
 import android.view.*
 import android.view.animation.CycleInterpolator
 import android.view.animation.TranslateAnimation
@@ -17,6 +22,7 @@ import com.samourai.sentinel.core.access.AccessFactory
 import com.samourai.sentinel.databinding.FragmentLockScreenBinding
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import org.koin.java.KoinJavaComponent.inject
+
 
 /**
  * sentinel-android
@@ -53,6 +59,7 @@ class LockScreenDialog(private val cancelable: Boolean = false, private val lock
         prefsUtil.haptics?.let { binding.pinEntryView.isHapticFeedbackEnabled = it }
         binding.pinEntryView.setEntryListener { key, _ ->
             if (userInput.length <= AccessFactory.MAX_PIN_LENGTH - 1) {
+                hapticFeedBack()
                 userInput = userInput.append(key)
                 if (userInput.length >= AccessFactory.MIN_PIN_LENGTH) {
                     binding.pinEntryView.showCheckButton()
@@ -84,6 +91,16 @@ class LockScreenDialog(private val cancelable: Boolean = false, private val lock
         this.onConfirm = callback
     }
 
+    private fun hapticFeedBack() {
+        if(binding.pinEntryView.isHapticFeedbackEnabled) {
+            val vibrator = context?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            if (Build.VERSION.SDK_INT >= 26) {
+                vibrator.vibrate(VibrationEffect.createOneShot(44, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                vibrator.vibrate(44)
+            }
+        }
+    }
 
     private fun setPinMaskView() {
         if (userInput.length > binding.pinEntryMaskLayout.childCount && userInput.isNotEmpty()) {

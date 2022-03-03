@@ -5,6 +5,7 @@ import android.content.*
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -77,6 +78,14 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                 }
 
                 false
+            }
+        }
+
+        val hapticPin = findPreference<CheckBoxPreference>("haptic")
+        hapticPin?.let {
+            it.setOnPreferenceClickListener {
+                prefsUtil.haptics = !prefsUtil.haptics!!
+                true
             }
         }
         val clearWallet = findPreference<Preference>("clear")
