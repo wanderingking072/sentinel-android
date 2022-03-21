@@ -47,6 +47,8 @@ import com.samourai.sentinel.ui.utils.hideKeyboard
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
+import com.sparrowwallet.hummingbird.registry.CryptoPSBT
+import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -513,35 +515,10 @@ class SendFragment : Fragment() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
     private fun generateQRCode(uri: String) {
-
-        val display = activity?.windowManager?.currentWindowMetrics
-        val imgWidth = display?.bounds?.width()?.minus(200) ?: 300
-
-        if (uri.length > 4296) {
-            fragmentSpendBinding.fragmentBroadcastTx.qrError.visibility = VISIBLE
-
-            return
-        }
         viewModel.viewModelScope.launch(Dispatchers.Default) {
-            var bitmap: Bitmap? = null
-            val qrCodeEncoder = QRCodeEncoder(
-                    uri,
-                    null,
-                    Contents.Type.TEXT,
-                    BarcodeFormat.QR_CODE.toString(),
-                    imgWidth
-            )
-            fragmentSpendBinding.fragmentBroadcastTx.qrError.visibility = GONE
-            try {
-                bitmap = qrCodeEncoder.encodeAsBitmap()
-            } catch (e: WriterException) {
-                e.printStackTrace()
-            }
             withContext(Dispatchers.Main) {
-                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.clearColorFilter()
-                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.setImageBitmap(bitmap)
+                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.setContent(CryptoPSBT(uri.toByteArray()).toUR());
             }
         }
     }
