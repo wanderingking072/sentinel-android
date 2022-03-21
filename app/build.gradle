@@ -5,13 +5,13 @@ apply plugin: 'kotlin-kapt'
 
 android {
 
-    compileSdkVersion 30
+    compileSdkVersion 31
     buildToolsVersion '30.0.1'
     flavorDimensions "versionCode"
     defaultConfig {
         applicationId "com.samourai.sentinel"
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 49
         versionName '3.6'
         multiDexEnabled true
@@ -83,7 +83,7 @@ dependencies {
     def coroutines_version = '1.5.2'
     def koin_version = '2.1.6'
     def topl_android_version = "2.1.0"
-    def room_version = "2.2.6"
+    def room_version = "2.4.2"
     def paging_version = "2.1.2"
 
     implementation ('io.samourai.code.wallet:ExtLibJ:0.0.29') {
@@ -153,6 +153,8 @@ dependencies {
     implementation "io.matthewnelson.topl-android:topl-core-base:$topl_android_version"
     implementation "io.matthewnelson.topl-android:topl-service:$topl_android_version"
     implementation 'io.samourai.code.wallet:android-tor-binary:0.4.5.4'
+    implementation 'io.samourai.code.wallet:hummingbird-android:main-SNAPSHOT'
+    implementation 'com.sparrowwallet:hummingbird:1.6.4'
     implementation "com.mikepenz:itemanimators:1.1.0"
 }
 repositories {
@@ -162,7 +164,7 @@ repositories {
 
 def getApiKey(key) {
     def Properties props = new Properties()
-    props.load(new FileInputStream(new File('samourai.api')))
+//    props.load(new FileInputStream(new File('samourai.api')))
     return props[key]
 }
 
