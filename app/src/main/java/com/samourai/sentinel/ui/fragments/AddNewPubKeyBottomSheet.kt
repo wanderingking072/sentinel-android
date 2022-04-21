@@ -9,13 +9,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
@@ -29,9 +29,6 @@ import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
-import com.samourai.sentinel.ui.views.codeScanner.CodeScanner
-import com.samourai.sentinel.ui.views.codeScanner.CodeScannerView
-import com.samourai.sentinel.ui.views.codeScanner.DecodeCallback
 import com.samourai.sentinel.util.FormatsUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -53,9 +50,9 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "") : GenericBottomSh
     private val binding get() = _binding!!
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentBottomsheetViewPagerBinding.inflate(inflater, container, false)
         val view = binding.root
@@ -179,7 +176,7 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "") : GenericBottomSh
 
 class ScanPubKeyFragment : Fragment() {
 
-    private var mCodeScanner: CodeScanner? = null
+    private var mCodeScanner: QRScanner? = null
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
     private var onScan: (scanData: String) -> Unit = {}
 
@@ -193,22 +190,19 @@ class ScanPubKeyFragment : Fragment() {
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        mCodeScanner = CodeScanner(appContext, view.findViewById(R.id.scannerViewXpub))
-        view.findViewById<TextView>(R.id.scanInstructions).text = getString(R.string.pub_key_scan_instruction)
-        mCodeScanner?.decodeCallback = DecodeCallback {
+        mCodeScanner = view.findViewById(R.id.scannerViewXpub);
+
+        val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        mCodeScanner?.setQRDecodeListener {
             GlobalScope.launch(Dispatchers.Main) {
-                mCodeScanner?.stopPreview()
-                mCodeScanner?.releaseResources()
-                onScan(it.text)
+                mCodeScanner?.stopScanner();
+                onScan(it)
             }
         }
 
-        view.findViewById<CodeScannerView>(R.id.scannerViewXpub).setOnClickListener {
-            if (mCodeScanner?.isPreviewActive == false) {
-                mCodeScanner?.startPreview()
-            }
+        mCodeScanner?.setURDecodeListener { bytes, type ->
+            //  TODO: Handle UR Qr
         }
-        val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
         view.findViewById<Button>(R.id.pastePubKey).setOnClickListener {
             when {
@@ -232,12 +226,12 @@ class ScanPubKeyFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         if (AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, appContext)) {
-            mCodeScanner?.startPreview()
+            mCodeScanner?.startScanner()
         }
     }
 
     override fun onPause() {
-        mCodeScanner?.releaseResources()
+        mCodeScanner?.stopScanner()
         super.onPause()
     }
 
@@ -252,9 +246,9 @@ class SelectAddressTypeFragment : Fragment() {
 
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         _binding = ContentChooseAddressTypeBinding.inflate(inflater, container, false)
         val view = binding.root
@@ -320,9 +314,9 @@ class ChooseCollectionFragment : Fragment() {
 
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         _binding = ContentCollectionSelectBinding.inflate(inflater, container, false)
         val view = binding.root

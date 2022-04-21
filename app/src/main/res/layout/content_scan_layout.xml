@@ -32,7 +32,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/scanInstructions">
 
-            <com.samourai.sentinel.ui.views.codeScanner.CodeScannerView
+            <com.invertedx.hummingbird.QRScanner
                 android:id="@+id/scannerViewXpub"
                 android:layout_width="300dp"
                 android:layout_height="300dp"
