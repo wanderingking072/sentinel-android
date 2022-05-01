@@ -91,7 +91,7 @@ class SendViewModel : ViewModel() {
                         inputAddress = address,
                         inputAmount = amount,
                         inputFee = selectedFee,
-                        inputUtxos = utxos
+                        inputUtxos = ArrayList<Utxo>(utxos)
                 )
                 withContext(Dispatchers.Main) {
                     _validSpend.postValue(isValid)

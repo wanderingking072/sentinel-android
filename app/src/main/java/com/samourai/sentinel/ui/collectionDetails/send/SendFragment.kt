@@ -101,10 +101,10 @@ class SendFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        exchangeRateRepository.getRateLive().observe(this.viewLifecycleOwner, {
+        exchangeRateRepository.getRateLive().observe(this.viewLifecycleOwner) {
             rate = it
             DecimalFormat.getNumberInstance().currency = Currency.getInstance(rate.currency)
-        })
+        }
 
         watchAddressAndAmount()
 
