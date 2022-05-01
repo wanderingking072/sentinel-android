@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.method.ScrollingMovementMethod
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
@@ -47,11 +48,13 @@ import com.samourai.sentinel.ui.utils.hideKeyboard
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
+import com.sparrowwallet.hummingbird.UR
 import com.sparrowwallet.hummingbird.registry.CryptoPSBT
 import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.bouncycastle.util.encoders.Hex
 import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
 import java.io.File
@@ -132,17 +135,17 @@ class SendFragment : Fragment() {
             //startActivity(Intent(context, BroadcastFromComposeTx::class.java).putExtra("qrString", qrCodeString))
         }
 
-        viewModel.psbtLive.observe(viewLifecycleOwner, {
+        viewModel.psbtLive.observe(viewLifecycleOwner) {
             generateQRCode(it)
             qrCodeString = it
             fragmentSpendBinding.fragmentBroadcastTx.psbtText.text = it
             fragmentSpendBinding.fragmentBroadcastTx.psbtText.movementMethod = ScrollingMovementMethod()
-        })
+        }
 
-        viewModel.validSpend.observe(viewLifecycleOwner, {
+        viewModel.validSpend.observe(viewLifecycleOwner) {
             fragmentSpendBinding.composeBtn.isEnabled = it
             fragmentSpendBinding.composeBtn.alpha = if (it) 1f else 0.6f
-        })
+        }
 
         fragmentSpendBinding.fragmentBroadcastTx.psbtCopyBtn.setOnClickListener {
             val psbt = viewModel.psbtLive.value
@@ -159,9 +162,9 @@ class SendFragment : Fragment() {
             }
         }
 
-        viewModel.minerFee.observe(viewLifecycleOwner, {
+        viewModel.minerFee.observe(viewLifecycleOwner) {
             fragmentSpendBinding.fragmentComposeTx.feeSelector.totalMinerFee.text = it
-        })
+        }
 
         fragmentSpendBinding.fragmentBroadcastTx.psbtShareBtn.setOnClickListener { view1 ->
             val popup = PopupMenu(requireContext(), view1)
@@ -526,7 +529,7 @@ class SendFragment : Fragment() {
     private fun generateQRCode(uri: String) {
         viewModel.viewModelScope.launch(Dispatchers.Default) {
             withContext(Dispatchers.Main) {
-                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.setContent(CryptoPSBT(uri.toByteArray()).toUR());
+                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.setContent(UR.fromBytes(RegistryType.CRYPTO_PSBT.type,Hex.decode(uri)));
             }
         }
     }
