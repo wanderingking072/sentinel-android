@@ -49,7 +49,6 @@ class CollectionDetailsActivity : SentinelActivity() {
                     collection!!
             )
         })
-        binding.linearLayout.setPadding(0, 0, 0, getNavHeight().toInt())
         receiveViewModel.getCollections().observe(this, Observer {
             intent.extras?.getString("collection")?.let { it1 ->
                 receiveViewModel.getRepository().findById(it1)?.let {
@@ -69,10 +68,10 @@ class CollectionDetailsActivity : SentinelActivity() {
         receiveFragment.setBalance(receiveViewModel.getBalance())
         transactionsFragment.setBalance(receiveViewModel.getBalance())
 
-        receiveViewModel.getFiatBalance().observe(this, {
+        receiveViewModel.getFiatBalance().observe(this) {
             receiveFragment.setBalanceFiat(receiveViewModel.getFiatBalance())
             transactionsFragment.setBalanceFiat(receiveViewModel.getFiatBalance())
-        })
+        }
 
         binding.bottomNav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {

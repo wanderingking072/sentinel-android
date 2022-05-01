@@ -119,9 +119,7 @@ class ConfirmBottomSheet(private val label: String, onViewReady: (GenericBottomS
 }
 
 /**
- * Shows BottomSheet with radio and checkbox
- * @param buttonLabel Confirmation button label
- * @param optionsChosen Default chosen option for checkbox
+ * Shows BottomSheet with Input field
  */
 fun AppCompatActivity.alertWithInput(
     label: String,

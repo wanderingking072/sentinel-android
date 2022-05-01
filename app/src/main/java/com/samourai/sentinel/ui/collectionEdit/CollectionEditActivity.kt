@@ -60,12 +60,12 @@ class CollectionEditActivity : SentinelActivity() {
 
         setUpPubKeyList()
 
-        viewModel.getCollection().observe(this, {
+        viewModel.getCollection().observe(this) {
             binding.collectionEdiText.setText(it.collectionLabel)
             binding.collectionEdiText.doOnTextChanged { text, _, _, _ ->
                 it.collectionLabel = text.toString()
             }
-        })
+        }
 
         viewModel.getPubKeys().observe(this, Observer {
             pubKeyAdapter.update(it)
