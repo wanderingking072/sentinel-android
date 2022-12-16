@@ -1,5 +1,7 @@
 package com.samourai.sentinel.send;
 
+import com.samourai.wallet.bip340.BIP340Util;
+import com.samourai.wallet.cahoots.psbt.PSBTEntry;
 import com.samourai.wallet.segwit.SegwitAddress;
 import com.samourai.wallet.util.FormatsUtilGeneric;
 import com.samourai.wallet.util.Z85;
@@ -8,16 +10,19 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoinj.core.*;
 import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.TestNet3Params;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.*;
-import java.nio.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
 
 //
 // Partially Signed Bitcoin Transaction Format
@@ -42,6 +47,9 @@ public class PSBT {
     public static final byte PSBT_IN_BIP32_DERIVATION = (byte)0x06;
     public static final byte PSBT_IN_FINAL_SCRIPTSIG = (byte)0x07;
     public static final byte PSBT_IN_FINAL_SCRIPTWITNESS = (byte)0x08;
+
+    public static final byte PSBT_IN_TAP_BIP32_DERIVATION = (byte)0x16;
+    public static final byte PSBT_IN_TAP_INTERNAL_KEY = (byte)0x17;
     public static final byte PSBT_IN_POR_COMMITMENT = (byte)0x09;
     public static final byte PSBT_IN_PROPRIETARY = (byte)0xFC;
 
@@ -64,6 +72,7 @@ public class PSBT {
     private int currentState = 0;
     private int inputs = 0;
     private int outputs = 0;
+    private int globals = 0;
     private boolean parseOK = false;
 
     private String strPSBT = null;
@@ -73,12 +82,15 @@ public class PSBT {
     private List<PSBTEntry> psbtInputs = null;
     private List<PSBTEntry> psbtOutputs = null;
 
+    private List<PSBTEntry> psbtGlobals = null;
+
     private StringBuilder sbLog = null;
     private static boolean bDebug = false;
 
     public PSBT(Transaction transaction)   {
-        psbtInputs = new ArrayList<PSBTEntry>();
-        psbtOutputs = new ArrayList<PSBTEntry>();
+        psbtInputs = new ArrayList<>();
+        psbtOutputs = new ArrayList<>();
+        psbtGlobals = new ArrayList<>();
         this.transaction = transaction;
         sbLog = new StringBuilder();
     }
@@ -152,6 +164,7 @@ public class PSBT {
 
         psbtInputs = new ArrayList<PSBTEntry>();
         psbtOutputs = new ArrayList<PSBTEntry>();
+        psbtGlobals = new ArrayList<>();
 
         if(FormatsUtilGeneric.getInstance().isBase64(strPSBT) && !FormatsUtilGeneric.getInstance().isHex(strPSBT))    {
             this.strPSBT = Hex.toHexString(Base64.decode(strPSBT));
@@ -180,6 +193,7 @@ public class PSBT {
 
         int seenInputs = 0;
         int seenOutputs = 0;
+        int seenGlobals = 0;
 
         psbtBytes = Hex.decode(strPSBT);
         psbtByteBuffer = ByteBuffer.wrap(psbtBytes);
@@ -226,7 +240,12 @@ public class PSBT {
             if(entry.getKey() == null)    {         // length == 0
                 switch (currentState)   {
                     case STATE_GLOBALS:
-                        currentState = STATE_INPUTS;
+                        psbtGlobals.add(entry);
+                        seenGlobals++;
+                        if(seenGlobals == 2) { // TODO: THIS NEEDS TO BE CHANGED
+                            // (it only works if we are expecting 2 globals)
+                            currentState = STATE_INPUTS;
+                        }
                         break;
                     case STATE_INPUTS:
                         psbtInputs.add(entry);
@@ -262,7 +281,8 @@ public class PSBT {
                         Log(transaction.toString(), true);
                         break;
                     case PSBT.PSBT_GLOBAL_XPUB:
-                        Log("xpub:" + serializeXPUB(entry.getKeyData()), true);
+                        if (entry.getKeyData() != null)
+                            Log("xpub: " + serializeXPUB(entry.getKeyData()), true);
                         break;
                     case PSBT.PSBT_GLOBAL_VERSION:
                         Log("version:" + Integer.valueOf(Hex.toHexString(entry.getKeyData()), 10), true);
@@ -378,6 +398,19 @@ public class PSBT {
     //
     // writer
     //
+
+    public void addGlobalXpubRecord (byte[] xpub, byte[] fingerprint, int purpose, int type, int account) throws Exception {
+        addGlobal(PSBT_GLOBAL_XPUB, xpub, writeBIP32Derivation(fingerprint, purpose, type, account));
+    }
+
+    public void addGlobalUnsignedTx (String transaction) throws Exception {
+        addGlobal(PSBT_GLOBAL_UNSIGNED_TX, null, Hex.decode(transaction));
+    }
+
+    public void addGlobal(byte type, byte[] keydata, byte[] data) throws Exception {
+        psbtGlobals.add(populateEntry(type, keydata, data));
+    }
+
     public void addInput(NetworkParameters params, byte[] fingerprint, ECKey eckey, long amount, int purpose, int type, int account, int chain, int index) throws Exception    {
         SegwitAddress segwitAddress = new SegwitAddress(eckey, params);
         byte[] redeemScriptBuf = new byte[1 + segwitAddress.segWitRedeemScript().getProgram().length];
@@ -386,17 +419,73 @@ public class PSBT {
 
         byte[] utxoBuf = writeSegwitInputUTXO(amount, redeemScriptBuf);
 
-        addInput((byte)0x01, null, utxoBuf);
-        addInput((byte)0x06, eckey.getPubKey(), writeBIP32Derivation(fingerprint, purpose, type, account, chain, index));
+        addInput(PSBT_IN_WITNESS_UTXO, null, utxoBuf);
+        addInput(PSBT_IN_BIP32_DERIVATION, eckey.getPubKey(), writeBIP32Derivation(fingerprint, purpose, type, account, chain, index));
         addInputSeparator();
     }
 
+    public void addInputCompatibility (NetworkParameters params, byte[] fingerprint, ECKey eckey, long amount, int purpose, int type, int account, int chain, int index, String transactionData, int utxoIndex) throws Exception    {
+        SegwitAddress compatibleSegwit = new SegwitAddress(eckey, params, 0);
+
+        byte[] redeemScript = Hex.decode(compatibleSegwit.segWitRedeemScriptToString());
+
+
+        Transaction tx = new Transaction(TestNet3Params.get(), Hex.decode(transactionData));
+
+        addInput(PSBT_IN_NON_WITNESS_UTXO, null, Hex.decode(transactionData));
+        addInput(PSBT_IN_WITNESS_UTXO, null, tx.getOutput(utxoIndex).bitcoinSerialize());
+        addInput(PSBT_IN_SIGHASH_TYPE, null, Hex.decode("01000000"));
+        addInput(PSBT_IN_REDEEM_SCRIPT, null, redeemScript);
+        addInput(PSBT_IN_BIP32_DERIVATION, eckey.getPubKey(), writeBIP32Derivation(fingerprint, purpose, type, account, chain, index));
+        addInputSeparator();
+    }
+
+    public void addInputLegacy (byte[] fingerprint, ECKey eckey, long amount, int purpose, int type, int account, int chain, int index, String transactionData) throws Exception {
+
+        //System.arraycopy(transactionData, 0, transactionBytes, 0, transactionData.length());
+
+        addInput(PSBT_IN_NON_WITNESS_UTXO, null, Hex.decode(transactionData));
+        addInput(PSBT_IN_SIGHASH_TYPE, null, Hex.decode("01000000"));
+        addInput(PSBT_IN_BIP32_DERIVATION, eckey.getPubKey(), writeBIP32Derivation(fingerprint, purpose, type, account, chain, index));
+        addInputSeparator();
+    }
+
+/*
+    public void addInputTaproot (NetworkParameters params, byte[] fingerprint, ECKey eckey, long amount, int purpose, int type, int account, int chain, int index, String transactionData) throws Exception {
+        SegwitAddress taprootAddress = new SegwitAddress(eckey, params);
+        byte[] redeemScriptBuf = new byte[1 + taprootAddress.taprootRedeemScript().getProgram().length];
+        redeemScriptBuf[0] = (byte)0x16;
+        System.arraycopy(taprootAddress.taprootRedeemScript().getProgram(), 0, redeemScriptBuf, 1, taprootAddress.taprootRedeemScript().getProgram().length);
+        byte[] utxoBuf = writeSegwitInputUTXO(amount, redeemScriptBuf);
+
+        byte[] derivation = writeBIP32Derivation(fingerprint, purpose, type, account, chain, index);
+
+        byte[] combined = new byte[1 + derivation.length];
+        combined[0] = 0x00;
+        System.arraycopy(derivation,0, combined, 1, derivation.length);
+
+        addInput(PSBT_IN_NON_WITNESS_UTXO, null, Hex.decode(transactionData));
+        addInput(PSBT_IN_WITNESS_UTXO, null, utxoBuf);
+        addInput(PSBT_IN_SIGHASH_TYPE, null, Hex.decode("00000000"));
+        addInput(PSBT_IN_BIP32_DERIVATION, eckey.getPubKey(), writeBIP32Derivation(fingerprint, purpose, type, account, chain, index));
+        addInput(PSBT_IN_TAP_BIP32_DERIVATION, BIP340Util.getInternalPubkey(eckey).getX().toByteArray(), combined);
+        addInput(PSBT_IN_TAP_INTERNAL_KEY, null, BIP340Util.getInternalPubkey(eckey).getX().toByteArray());
+    }
+
+
+ */
     public void addInput(byte type, byte[] keydata, byte[] data) throws Exception {
         psbtInputs.add(populateEntry(type, keydata, data));
     }
 
     public void addOutput(NetworkParameters params, byte[] fingerprint, ECKey eckey, int purpose, int type, int account, int chain, int index) throws Exception    {
-        addOutput((byte)0x02, eckey.getPubKey(), writeBIP32Derivation(fingerprint, purpose, type, account, chain, index));
+        if (purpose != 44 && purpose != 86) { // DON'T ADD THIS FLAG IF IT'S LEGACY OR TAPROOT
+            SegwitAddress compatibleSegwit = new SegwitAddress(eckey, params);
+            byte[] redeemScript = Hex.decode(compatibleSegwit.segWitRedeemScriptToString());
+            addOutput(PSBT_OUT_REDEEM_SCRIPT, null, redeemScript);
+        }
+
+        addOutput(PSBT_OUT_BIP32_DERIVATION, eckey.getPubKey(), writeBIP32Derivation(fingerprint, purpose, type, account, chain, index));
         addOutputSeparator();
     }
 
@@ -412,21 +501,25 @@ public class PSBT {
         psbtOutputs.add(new PSBTEntry());
     }
 
+    public void addGlobalSeparator() {
+        psbtGlobals.add(new PSBTEntry());
+    }
+
     private PSBTEntry populateEntry(byte type, byte[] keydata, byte[] data) throws Exception {
 
-      PSBTEntry entry = new PSBTEntry();
-      entry.setKeyType(new byte[] { type });
-      if(keydata != null)    {
-          byte[] kd = new byte[1 + keydata.length];
-          kd[0] = type;
-          System.arraycopy(keydata, 0, kd, 1, keydata.length);
-          entry.setKey(kd);
-          entry.setKeyData(keydata);
-      }
-      else    {
-          entry.setKey(new byte[] { type });
-      }
-      entry.setData(data);
+        PSBTEntry entry = new PSBTEntry();
+        entry.setKeyType(new byte[] { type });
+        if(keydata != null)    {
+            byte[] kd = new byte[1 + keydata.length];
+            kd[0] = type;
+            System.arraycopy(keydata, 0, kd, 1, keydata.length);
+            entry.setKey(kd);
+            entry.setKeyData(keydata);
+        }
+        else    {
+            entry.setKey(new byte[] { type });
+        }
+        entry.setData(data);
 
         return entry;
     }
@@ -443,11 +536,32 @@ public class PSBT {
         baos.write(PSBT_HEADER_SEPARATOR);
 
         // globals
+        /*
+
         baos.write(writeCompactInt(1L));                                // key length
         baos.write((byte)0x00);                                             // key
         baos.write(txLen, 0, txLen.length);                             // value length
         baos.write(serialized, 0, serialized.length);                   // value
         baos.write((byte)0x00);
+
+         */
+
+        for(PSBTEntry entry : psbtGlobals)   {
+            if(entry.getKey() == null)   {
+                baos.write((byte)0x00);
+            }
+            else   {
+                int keyLen = 1;
+                if(entry.getKeyData() != null)    {
+                    keyLen += entry.getKeyData().length;
+                }
+                baos.write(writeCompactInt(keyLen));
+                baos.write(entry.getKey());
+                baos.write(writeCompactInt(entry.getData().length));
+                baos.write(entry.getData());
+            }
+        }
+
 
         // inputs
         for(PSBTEntry entry : psbtInputs)   {
@@ -553,7 +667,7 @@ public class PSBT {
     // utils
     //
     public String toString()    {
-      return Hex.toHexString(toBytes());
+        return Hex.toHexString(toBytes());
     }
 
     public String toBase64String()  {
@@ -794,6 +908,40 @@ public class PSBT {
         return bip32buf;
     }
 
+    public static byte[] writeBIP32Derivation(byte[] fingerprint, int purpose, int type, int account) {
+
+        // fingerprint and integer values to BIP32 derivation buffer
+        byte[] bip32buf = new byte[16];
+
+        System.arraycopy(fingerprint, 0, bip32buf, 0, fingerprint.length);
+
+        ByteBuffer xlat = ByteBuffer.allocate(Integer.BYTES);
+        xlat.order(ByteOrder.LITTLE_ENDIAN);
+        xlat.putInt(0, purpose + HARDENED);
+        byte[] out = new byte[Integer.BYTES];
+        xlat.get(out);
+//        System.out.println("purpose:" + Hex.toHexString(out));
+        System.arraycopy(out, 0, bip32buf, fingerprint.length, out.length);
+
+        xlat.clear();
+        xlat.order(ByteOrder.LITTLE_ENDIAN);
+        xlat.putInt(0, type + HARDENED);
+        xlat.get(out);
+//        System.out.println("type:" + Hex.toHexString(out));
+        System.arraycopy(out, 0, bip32buf, fingerprint.length + out.length, out.length);
+
+        xlat.clear();
+        xlat.order(ByteOrder.LITTLE_ENDIAN);
+        xlat.putInt(0, account + HARDENED);
+        xlat.get(out);
+//        System.out.println("account:" + Hex.toHexString(out));
+        System.arraycopy(out, 0, bip32buf, fingerprint.length + (out.length * 2), out.length);
+
+//        System.out.println("bip32 derivation:" + Hex.toHexString(bip32buf));
+
+        return bip32buf;
+    }
+
     public static String serializeXPUB(byte[] buf)   {
         // append checksum
         byte[] checksum = Arrays.copyOfRange(Sha256Hash.hashTwice(buf), 0, 4);
@@ -803,6 +951,19 @@ public class PSBT {
 
         String ret = Base58.encode(xlatXpub);
         return ret;
+    }
+
+    public static byte[] deserializeXPUB(String xpub)   {
+        byte[] decoded  = Base58.decode(xpub);
+        if (decoded.length < 4)
+            throw new AddressFormatException("Input too short");
+        byte[] data = Arrays.copyOfRange(decoded, 0, decoded.length - 4);
+        byte[] checksum = Arrays.copyOfRange(decoded, decoded.length - 4, decoded.length);
+        byte[] actualChecksum = Arrays.copyOfRange(Sha256Hash.hashTwice(data), 0, 4);
+        if (!Arrays.equals(checksum, actualChecksum))
+            throw new AddressFormatException("Checksum does not validate");
+
+        return data;
     }
 
     private static byte[] getFingerprintFromDerivationData(byte[] buf) throws AddressFormatException {

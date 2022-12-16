@@ -113,6 +113,19 @@ open class ApiService {
         return client.newCall(request).await()
     }
 
+    suspend fun getTxHex(utxoHash: String): Response {
+        buildClient(excludeAuthenticator = true)
+        client.newBuilder()
+            .connectTimeout(120, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
+            .callTimeout(120, TimeUnit.SECONDS)
+        val request = Request.Builder()
+            .get()
+            .url("${getAPIUrl()}/tx/$utxoHash/HEX")
+            .build()
+        return client.newCall(request).await()
+    }
+
 
     suspend fun authenticateDojo(apiKey: String): Response {
         buildClient()

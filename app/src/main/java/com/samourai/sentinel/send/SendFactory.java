@@ -62,16 +62,14 @@ public class SendFactory	{
     private Transaction makeTransaction(int accountIdx, HashMap<String, BigInteger> receivers, List<MyTransactionOutPoint> unspent) throws Exception {
 
         BigInteger amount = BigInteger.ZERO;
-        for(Iterator<Map.Entry<String, BigInteger>> iterator = receivers.entrySet().iterator(); iterator.hasNext();) {
-            Map.Entry<String, BigInteger> mapEntry = iterator.next();
+        for (Map.Entry<String, BigInteger> mapEntry : receivers.entrySet()) {
             amount = amount.add(mapEntry.getValue());
         }
 
         List<TransactionOutput> outputs = new ArrayList<TransactionOutput>();
         Transaction tx = new Transaction(SentinelState.Companion.getNetworkParam());
 
-        for(Iterator<Map.Entry<String, BigInteger>> iterator = receivers.entrySet().iterator(); iterator.hasNext();) {
-            Map.Entry<String, BigInteger> mapEntry = iterator.next();
+        for (Map.Entry<String, BigInteger> mapEntry : receivers.entrySet()) {
             String toAddress = mapEntry.getKey();
             BigInteger value = mapEntry.getValue();
 /*
@@ -79,20 +77,18 @@ public class SendFactory	{
                 throw new Exception(context.getString(R.string.dust_amount));
             }
 */
-            if(value == null || (value.compareTo(BigInteger.ZERO) <= 0 && !FormatsUtilGeneric.getInstance().isValidBIP47OpReturn(toAddress))) {
+            if (value == null || (value.compareTo(BigInteger.ZERO) <= 0 && !FormatsUtilGeneric.getInstance().isValidBIP47OpReturn(toAddress))) {
                 throw new Exception("Invalid amount");
             }
 
             TransactionOutput output = null;
             Script toOutputScript = null;
-            if(!FormatsUtil.Companion.isValidBitcoinAddress(toAddress) && FormatsUtilGeneric.getInstance().isValidBIP47OpReturn(toAddress))    {
+            if (!FormatsUtil.Companion.isValidBitcoinAddress(toAddress) && FormatsUtilGeneric.getInstance().isValidBIP47OpReturn(toAddress)) {
                 toOutputScript = new ScriptBuilder().op(ScriptOpCodes.OP_RETURN).data(Hex.decode(toAddress)).build();
                 output = new TransactionOutput(SentinelState.Companion.getNetworkParam(), null, Coin.valueOf(0L), toOutputScript.getProgram());
-            }
-            else if(FormatsUtil.Companion.isValidBech32(toAddress))   {
+            } else if (FormatsUtil.Companion.isValidBech32(toAddress)) {
                 output = Bech32Util.getInstance().getTransactionOutput(toAddress, value.longValue());
-            }
-            else    {
+            } else {
                 toOutputScript = ScriptBuilder.createOutputScript(org.bitcoinj.core.Address.fromBase58(SentinelState.Companion.getNetworkParam(), toAddress));
                 output = new TransactionOutput(SentinelState.Companion.getNetworkParam(), null, Coin.valueOf(value.longValue()), toOutputScript.getProgram());
             }
