@@ -1,5 +1,6 @@
 package com.samourai.sentinel.ui.collectionDetails.send
 
+import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.core.SentinelState.Companion.bDust
 import com.samourai.sentinel.core.hd.HD_Account
@@ -18,6 +19,9 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.lang3.tuple.Triple
 import org.bitcoinj.core.ECKey
 import org.bitcoinj.params.MainNetParams
+import org.bitcoinj.params.TestNet3Params
+import org.json.JSONObject
+import org.koin.java.KoinJavaComponent
 import timber.log.Timber
 import java.math.BigInteger
 import java.util.*
@@ -42,6 +46,9 @@ class TransactionComposer {
     private var receivers: HashMap<String, BigInteger> = hashMapOf()
     private var feeCallBack: ((Long, minerFee: Long) -> Unit)? = null;
     private val minerFeeChannel = Channel<Long>()
+    private val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
+    private var txData:String = ""
+
 
     fun setBalance(value: Long) {
         this.balance = value;
@@ -209,41 +216,100 @@ class TransactionComposer {
         val purpose = selectPubKeyModel?.getPurpose();
         val data : CharArray = "0d8c85ab".toCharArray()
 
-        try {
-            //The chain parameter will be always 1 since its a change back output
-            psbt?.addOutput(
-                SentinelState.getNetworkParam(),
-                Hex.decodeHex(data), changeECKey, purpose!!, type, 0, 1, changeIndex!!
-            )
-            psbt?.addOutputSeparator()
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
-        }
+        psbt!!.addOutput(
+            networkParameters,
+            Hex.decodeHex(data),
+            changeECKey,
+            purpose!!,
+            type,
+            getAccount()!!.id,
+            1,
+            changeIndex!!
+        )
 
-        if (purpose != 0) {
-            for (outPoint in outPoints) {
-                inputUtxos.forEach {
-                    if (it.txHash == outPoint.hash.toString() && outPoint.txOutputN == it.txOutputN) {
-                        val path: String = it.path;
-                        val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
-                        val chainIndex = path.split("/".toRegex()).toTypedArray()[1].toInt()
-                        val eckeyInput = if (chainIndex == 1) {
-                            getAccount()?.change?.getAddressAt(addressIndex)?.ecKey
-                        } else {
-                            getAccount()?.receive?.getAddressAt(addressIndex)?.ecKey
-                        }
+        psbt!!.addOutput(
+            networkParameters,
+            Hex.decodeHex(data),
+            changeECKey,
+            purpose,
+            type,
+            getAccount()!!.id,
+            0,
+            changeIndex!!
+        )
+
+        psbt?.addGlobalUnsignedTx(String(Hex.encodeHex(transaction.bitcoinSerialize())));
+        psbt?.addGlobalXpubRecord(
+            PSBT.deserializeXPUB(getAccount()?.xpubstr()),
+            Hex.decodeHex(data),
+            purpose,
+            1,
+            0
+        );
+        psbt?.addGlobalSeparator();
+
+        for (outPoint in outPoints) {
+            for (input in inputUtxos) {
+                if (input.txHash == outPoint.hash.toString() && outPoint.txOutputN == input.txOutputN) {
+                    val path: String = input.path;
+                    val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
+                    val chainIndex = path.split("/".toRegex()).toTypedArray()[1].toInt()
+                    val eckeyInput = if (chainIndex == 1) {
+                        getAccount()?.change?.getAddressAt(addressIndex)?.ecKey
+                    } else {
+                        getAccount()?.receive?.getAddressAt(addressIndex)?.ecKey
+                    }
+
+                    if (purpose == 84) {
                         psbt?.addInput(
                             networkParameters,
                             Hex.decodeHex(data),
                             eckeyInput,
                             outPoint.value.value,
-                            purpose!!,
+                            purpose,
                             addressIndex,
-                            0,
+                            getAccount()!!.id,
                             chainIndex,
                             addressIndex
                         )
                     }
+                    else if (purpose == 49) {
+                        val response = apiService.getTxHex(outPoint.hash.toString())
+                        if (response.isSuccessful) {
+                            val body = response.body?.string()
+                            if (body != null) {
+                                val jsonObject = JSONObject(body)
+                                if (jsonObject.has("data"))
+                                    txData = jsonObject.getString("data")
+                            }
+                        }
+                        if (txData != "")
+                            psbt!!.addInputCompatibility(networkParameters, Hex.decodeHex(data), eckeyInput, outPoint.value.value, purpose, type, getAccount()!!.id, chainIndex, addressIndex, txData, 0);
+                    }
+                    else if (purpose == 44) {
+                        val response = apiService.getTxHex(outPoint.hash.toString())
+                        if (response.isSuccessful) {
+                            val body = response.body?.string()
+                            if (body != null) {
+                                val jsonObject = JSONObject(body)
+                                if (jsonObject.has("data"))
+                                    txData = jsonObject.getString("data")
+                            }
+                        }
+
+                        psbt?.addInputLegacy(
+                            Hex.decodeHex(data),
+                            eckeyInput,
+                            outPoint.value.value,
+                            purpose,
+                            type,
+                            getAccount()!!.id,
+                            chainIndex,
+                            addressIndex,
+                            txData
+                        );
+                    }
+                    break
                 }
             }
         }
@@ -256,7 +322,6 @@ class TransactionComposer {
 
         return true
     }
-
 
     private fun getAccount(): HD_Account? {
         val pubKey = this.selectPubKeyModel;
@@ -310,6 +375,10 @@ class TransactionComposer {
 
     fun getPSBT(): PSBT? {
         return psbt;
+    }
+
+    companion object {
+        private const val TAG = "TransactionComposer"
     }
 
 }

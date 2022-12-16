@@ -389,26 +389,17 @@ class SendFragment : Fragment() {
             return
         }
         mCollection?.let {
-            val labels: MutableList<String> = mutableListOf()
-            val models: MutableList<PubKeyModel> = mutableListOf()
-
-
-            for (pubKey in it.pubs) {
-                if (pubKey.pubKey.toLowerCase().startsWith("bc") || pubKey.pubKey.toLowerCase().startsWith("tb") || pubKey.type == AddressTypes.BIP84) {
-                    labels.add(pubKey.label)
-                    models.add(pubKey)
-                }
-            }
+            val items = it.pubs.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                     requireContext(),
-                    R.layout.dropdown_menu_popup_item, labels
+                    R.layout.dropdown_menu_popup_item, items
             )
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.inputType = InputType.TYPE_NULL
-            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.threshold = labels.size
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.threshold = items.size
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
-                val selectPubKeyModel = models[index]
+                val selectPubKeyModel = it.pubs[index]
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
 
@@ -416,10 +407,10 @@ class SendFragment : Fragment() {
                 view?.alpha = 1f
                 fragmentSpendBinding.composeBtn.isEnabled = true
             }
-            if (labels.size == 0) {
+            if (items.size == 0) {
                 return
             }
-            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(labels.first(), false)
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.first(), false)
             viewModel.setPublicKey(it.pubs[0], viewLifecycleOwner)
         }
     }
