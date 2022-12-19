@@ -26,7 +26,7 @@ class CollectionEditViewModel : ViewModel() {
 
     fun save() {
         val collection = pubKeyCollectionLiveData.value
-        if (collection != null) {
+        if (collection != null && pubKeys.value != null) {
             if (collection.id == "") {
                 if (pubKeys.value != null) {
                     collection.pubs = pubKeys.value!!
