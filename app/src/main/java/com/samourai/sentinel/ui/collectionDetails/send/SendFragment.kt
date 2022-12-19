@@ -42,6 +42,7 @@ import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.databinding.FragmentSpendBinding
 import com.samourai.sentinel.send.SuggestedFee
+import com.samourai.sentinel.ui.broadcast.BroadcastFromComposeTx
 import com.samourai.sentinel.ui.broadcast.BroadcastTx
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.hideKeyboard
@@ -124,15 +125,7 @@ class SendFragment : Fragment() {
         setUpFee()
 
         fragmentSpendBinding.fragmentBroadcastTx.broadCastTransactionBtn.setOnClickListener {
-            val camera = CameraFragmentBottomSheet()
-            camera.show(parentFragmentManager, camera.tag)
-            camera.setQrCodeScanLisenter {
-                val signedTxHex = it
-                val intent = Intent(context, BroadcastTx::class.java).putExtra("signedTxHex", signedTxHex)
-                startActivity(intent)
-                camera.dismiss()
-            }
-            //startActivity(Intent(context, BroadcastFromComposeTx::class.java).putExtra("qrString", qrCodeString))
+            startActivity(Intent(context, BroadcastTx::class.java))
         }
 
         viewModel.psbtLive.observe(viewLifecycleOwner) {
