@@ -43,6 +43,10 @@
             android:label=""
             android:theme="@style/AppThemeV3" />
         <activity
+            android:name=".ui.utxos.UtxoDetailsActivity"
+            android:label=""
+            android:theme="@style/AppThemeV3" />
+        <activity
             android:name=".ui.MigrationActivity"
             android:theme="@style/AppThemeV3" />
         <activity

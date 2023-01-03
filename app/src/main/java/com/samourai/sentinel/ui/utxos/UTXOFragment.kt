@@ -1,5 +1,6 @@
 package com.samourai.sentinel.ui.utxos;
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.*
 import android.widget.CheckBox
@@ -62,6 +63,11 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
                 utxos[index].selected = !utxos[index].selected
                 updateList()
             }
+        }
+        utxoAdapter.setClickListener { utxo ->
+            startActivity(Intent(context, UtxoDetailsActivity::class.java).apply {
+                putExtra("idx", utxo.idx)
+            })
         }
 
     }

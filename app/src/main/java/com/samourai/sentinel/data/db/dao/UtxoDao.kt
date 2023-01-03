@@ -15,6 +15,9 @@ import com.samourai.sentinel.data.Utxo
 @Dao
 interface UtxoDao {
 
+    @Query("SELECT * from utxos WHERE idx=:idx")
+    fun getUTXObyIdx(idx: String): LiveData<List<Utxo>>
+
     @Query("SELECT * from utxos WHERE collectionId=:collectionId")
     fun getUTXObyCollection(collectionId: String): LiveData<List<Utxo>>
 

@@ -195,6 +195,7 @@
     <string name="active">Active</string>
     <string name="do_not_spend">Do Not Spend</string>
     <string name="spendable">Spendable</string>
+    <string name="blocked">Spendable</string>
 
     <string name="ricochet_hops_msg">Additional hops between your wallet and the final destination for increased fungibility</string>
     <string name="create_an_on_demand_coinjoin_transaction_for_enhanced_privacy_and_surveillance_protection">Create an on demand CoinJoin transaction for enhanced privacy and surveillance protection</string>
