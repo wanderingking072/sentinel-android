@@ -33,20 +33,20 @@ class UtxosActivity : SentinelActivity() {
         val utxoViewModel: UtxoActivityViewModel by viewModels(factoryProducer = { UtxoActivityViewModel.getFactory(collection!!) })
         setUpPager(utxoViewModel)
 
-        utxoViewModel.getPubKeys().observe(this, {
+        utxoViewModel.getPubKeys().observe(this) {
             pubKeys.clear()
             pubKeys.addAll(it)
             binding.pager.adapter?.notifyDataSetChanged()
             listenChanges(utxoViewModel)
-        })
+        }
 
     }
 
     private fun listenChanges(utxoViewModel: UtxoActivityViewModel) {
         pubKeys.forEach { pubKeyModel ->
-            utxoViewModel.getUtxo(pubKeyModel.pubKey).observe(this@UtxosActivity, {
+            utxoViewModel.getUtxo(pubKeyModel.pubKey).observe(this@UtxosActivity) {
                 utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it))
-            })
+            }
         }
 
     }
@@ -88,7 +88,7 @@ class UtxosActivity : SentinelActivity() {
                 return utxoFragments[pubKeys[position].pubKey]!!
             }
 
-            override fun getPageTitle(position: Int): CharSequence? {
+            override fun getPageTitle(position: Int): CharSequence {
                 return pubKeys[position].label
             }
         }
@@ -96,9 +96,9 @@ class UtxosActivity : SentinelActivity() {
             override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
 
             override fun onPageSelected(position: Int) {
-                utxoViewModel.getUtxo(pubKeys[position].pubKey).observe(this@UtxosActivity, {
+                utxoViewModel.getUtxo(pubKeys[position].pubKey).observe(this@UtxosActivity) {
                     utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
-                })
+                }
             }
 
             override fun onPageScrollStateChanged(state: Int) {
