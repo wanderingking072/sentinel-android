@@ -12,7 +12,7 @@ import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ActivityUtxoDetailsBinding
 import com.samourai.sentinel.ui.SentinelActivity
-import com.samourai.sentinel.util.BlockedUTXO
+import com.samourai.sentinel.util.UtxoMetaUtil
 import org.koin.java.KoinJavaComponent.inject
 import java.text.DecimalFormat
 
@@ -103,7 +103,7 @@ class UtxoDetailsActivity : SentinelActivity() {
     private fun isBlocked(): Boolean {
         val hash = idx!!.split(":")[0]
         val outN = idx!!.split(":")[1]
-        return BlockedUTXO.getInstance().contains(hash, outN.toInt())
+        return UtxoMetaUtil.has(hash, outN.toInt())
     }
 
 }
