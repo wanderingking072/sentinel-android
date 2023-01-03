@@ -1,6 +1,11 @@
 package com.samourai.sentinel.ui.utxos
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.os.Bundle
+import android.view.View
+import android.widget.Toast
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.db.dao.UtxoDao
@@ -42,17 +47,57 @@ class UtxoDetailsActivity : SentinelActivity() {
         }
 
         utxoDao.getUTXObyIdx(idx!!).observe(this@UtxoDetailsActivity) {
+            address = it[0].addr
             amountTextView.text = (it[0].value)?.div(1e8).toString() + " BTC"
             addressTextView.text = it[0].addr
         }
-
+        hashTextView.setText(idx)
 
         if (isBlocked()) {
             statusTextView.text = getText(R.string.blocked)
         } else {
             statusTextView.text = getText(R.string.spendable)
         }
-        hashTextView.setText(idx)
+
+        addressTextView.setOnClickListener { event: View? ->
+            MaterialAlertDialogBuilder(this@UtxoDetailsActivity)
+                .setTitle(R.string.app_name)
+                .setMessage(R.string.receive_address_to_clipboard)
+                .setCancelable(false)
+                .setPositiveButton(R.string.yes) { dialog, whichButton ->
+                    val clipboard =
+                        this@UtxoDetailsActivity.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                    var clip: ClipData? = null
+                    clip = ClipData.newPlainText("address", address)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(
+                        this@UtxoDetailsActivity,
+                        R.string.copied_to_clipboard,
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                }.setNegativeButton(R.string.no) { dialog, whichButton -> }.show()
+        }
+
+        hashTextView.setOnClickListener { view: View? ->
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.app_name)
+                .setMessage(R.string.txid_to_clipboard)
+                .setCancelable(false)
+                .setPositiveButton(R.string.yes) { dialog, whichButton ->
+                    val clipboard =
+                        this@UtxoDetailsActivity.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip: ClipData
+                    clip = ClipData.newPlainText("tx id", idx)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(
+                        this@UtxoDetailsActivity,
+                        R.string.copied_to_clipboard,
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                }.setNegativeButton(R.string.no) { dialog, whichButton -> }.show()
+        }
     }
 
     private fun isBlocked(): Boolean {
