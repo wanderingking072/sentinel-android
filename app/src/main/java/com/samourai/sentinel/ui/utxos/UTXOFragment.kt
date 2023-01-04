@@ -188,6 +188,9 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
                 if(utxo.section == "Blocked"){
                     holder.section.setTextColor(ContextCompat.getColor(holder.section.context,R.color.md_red_A700))
                 }
+                if(utxo.section == "Active"){
+                    holder.section.setTextColor(ContextCompat.getColor(holder.section.context,R.color.v3_white))
+                }
             }
             if (holder is UtxoViewHolder) {
                 utxo.value?.let {

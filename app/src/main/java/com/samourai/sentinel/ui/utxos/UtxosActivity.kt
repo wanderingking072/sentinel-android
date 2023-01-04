@@ -33,12 +33,15 @@ class UtxosActivity : SentinelActivity() {
         val utxoViewModel: UtxoActivityViewModel by viewModels(factoryProducer = { UtxoActivityViewModel.getFactory(collection!!) })
         setUpPager(utxoViewModel)
 
-        utxoViewModel.getPubKeys().observe(this) {
+        binding.pager.post {
+            utxoViewModel.getPubKeys().observe(this) {
             pubKeys.clear()
             pubKeys.addAll(it)
             binding.pager.adapter?.notifyDataSetChanged()
             listenChanges(utxoViewModel)
+            }
         }
+
 
     }
 
