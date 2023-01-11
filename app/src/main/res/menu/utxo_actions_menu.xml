@@ -2,12 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+
+    <!--
     <item android:id="@+id/utxo_details_action_send"
         android:orderInCategory="100"
         android:icon="@drawable/ic_baseline_send_24"
         app:showAsAction="always"
         android:title="" />
-
+    -->
     <item android:id="@+id/utxo_details_action_spendable"
         android:orderInCategory="100"
         app:showAsAction="never"
