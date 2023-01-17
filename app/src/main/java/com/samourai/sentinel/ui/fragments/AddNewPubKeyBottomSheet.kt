@@ -139,9 +139,15 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "") : GenericBottomSh
             }
             FormatsUtil.isValidXpub(code) -> {
                 //show option to choose xpub type
-                binding.pager.setCurrentItem(1, true)
-                binding.pager.post {
-                    selectAddressTypeFragment.setType(type)
+                if (type == AddressTypes.BIP84 || type == AddressTypes.BIP49) {
+                    pubKeyString = code
+                    validateXPUB(type)
+                }
+                else {
+                    binding.pager.setCurrentItem(1, true)
+                    binding.pager.post {
+                        selectAddressTypeFragment.setType(type)
+                    }
                 }
             }
             else -> {
