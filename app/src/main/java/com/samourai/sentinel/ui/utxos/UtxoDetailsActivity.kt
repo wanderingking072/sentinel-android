@@ -39,6 +39,11 @@ class UtxoDetailsActivity : SentinelActivity() {
         val amountTextView = binding.utxoDetailsAmount
         val statusTextView = binding.utxoDetailsSpendableStatus
         val hashTextView = binding.utxoDetailsHash
+        val df = DecimalFormat("#")
+
+        df.minimumIntegerDigits = 1
+        df.minimumFractionDigits = 8
+        df.maximumFractionDigits = 8
 
         if (intent.extras != null && intent.extras!!.containsKey("idx")) {
             idx = intent.extras!!.getString("idx")
@@ -48,7 +53,7 @@ class UtxoDetailsActivity : SentinelActivity() {
 
         utxoDao.getUTXObyIdx(idx!!).observe(this@UtxoDetailsActivity) {
             address = it[0].addr
-            amountTextView.text = (it[0].value)?.div(1e8).toString() + " BTC"
+            amountTextView.text = (df.format(it[0].value?.div(1e8))).toString() + " BTC"
             addressTextView.text = it[0].addr
         }
         hashTextView.setText(idx)
