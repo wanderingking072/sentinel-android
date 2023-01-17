@@ -19,6 +19,7 @@ import org.koin.java.KoinJavaComponent
 import timber.log.Timber
 import java.math.BigInteger
 import java.nio.ByteBuffer
+import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -84,9 +85,14 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
 //    }
 
     override fun onBindViewHolder(holder: CollectionHolder, position: Int) {
+        val df = DecimalFormat("#")
+        df.minimumIntegerDigits = 1
+        df.minimumFractionDigits = 8
+        df.maximumFractionDigits = 8
+
         val collection = mDiffer.currentList[position];
         holder.title.text = collection.collectionLabel;
-        holder.balance.text = getBTCDisplayAmount(collection.balance)
+        holder.balance.text = "${df.format(collection.balance.div(1e8))} BTC"
         holder.view.setOnClickListener {
             onClickListener(collection)
         }

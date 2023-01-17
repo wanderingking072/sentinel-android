@@ -43,6 +43,7 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
+import java.text.DecimalFormat
 import java.text.ParseException
 
 class ReceiveFragment : Fragment() {
@@ -69,6 +70,11 @@ class ReceiveFragment : Fragment() {
     ): View? {
 
         val root = inflater.inflate(R.layout.fragment_receive, container, false)
+        val df = DecimalFormat("#")
+        df.minimumIntegerDigits = 1
+        df.minimumFractionDigits = 8
+        df.maximumFractionDigits = 8
+
         toolbar = root.findViewById(R.id.toolbarReceive)
         receiveQR = root.findViewById(R.id.receiveQR)
         receiveAddressText = root.findViewById(R.id.receiveAddressText)
@@ -86,7 +92,7 @@ class ReceiveFragment : Fragment() {
         setUpToolBar()
 
         balanceLiveData.observe(viewLifecycleOwner,{
-            collectionBalanceBtc.text = "${getBTCDisplayAmount(it)} BTC"
+            collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
         })
 
 

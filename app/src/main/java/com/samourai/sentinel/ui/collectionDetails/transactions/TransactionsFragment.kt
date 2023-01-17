@@ -21,6 +21,7 @@ import com.samourai.sentinel.ui.utxos.UtxosActivity
 import com.samourai.sentinel.util.MonetaryUtil
 import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent.inject
+import java.text.DecimalFormat
 
 
 class TransactionsFragment : Fragment() {
@@ -54,6 +55,11 @@ class TransactionsFragment : Fragment() {
     }
 
     private fun initViewModel() {
+        val df = DecimalFormat("#")
+        df.minimumIntegerDigits = 1
+        df.minimumFractionDigits = 8
+        df.maximumFractionDigits = 8
+
         transactionsViewModel.setCollection(collection)
 
         binding.txViewPager.adapter = CollectionPubKeysViewpager(this.activity, collection)
@@ -63,7 +69,7 @@ class TransactionsFragment : Fragment() {
         }.attach()
 
         balanceLiveData.observe(viewLifecycleOwner, {
-            binding.collectionBalanceBtc.text = "${getBTCDisplayAmount(it)} BTC"
+            binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
         })
         fiatBalanceLiveData.observe(viewLifecycleOwner, Observer {
             if (isAdded) {
@@ -122,10 +128,6 @@ class TransactionsFragment : Fragment() {
         }
 
         return super.onOptionsItemSelected(item)
-    }
-
-    private fun getBTCDisplayAmount(value: Long): String? {
-        return Coin.valueOf(value).toPlainString()
     }
 
     fun setBalance(balance: LiveData<Long>) {

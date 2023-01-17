@@ -16,6 +16,7 @@ import com.samourai.sentinel.data.Tx
 import org.apache.commons.lang3.time.DateUtils.isSameDay
 import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent.inject
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -64,6 +65,11 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val df = DecimalFormat("#")
+        df.minimumIntegerDigits = 1
+        df.minimumFractionDigits = 8
+        df.maximumFractionDigits = 8
+
         if (getItem(position) == null) {
             return
         }
@@ -72,7 +78,7 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
             onClickListener.invoke(tx)
         }
         holder.hideDivider()
-        holder.txAmount.text = tx.result?.let { getBTCDisplayAmount(it) }
+        holder.txAmount.text = tx.result?.let {"${df.format(it.div(1e8))} BTC"}
         if (tx.result != null)
             if (tx.result > 0) {
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_baseline_incoming_arrow));

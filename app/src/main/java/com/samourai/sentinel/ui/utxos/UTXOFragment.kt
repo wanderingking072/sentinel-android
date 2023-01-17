@@ -20,6 +20,7 @@ import com.samourai.sentinel.util.ItemDividerDecorator
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
 import timber.log.Timber
+import java.text.DecimalFormat
 
 class UTXOFragment : Fragment(), ActionMode.Callback {
 
@@ -133,6 +134,8 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
         private var onClickListener: (Utxo) -> Unit = {}
         private var multiSelectLister: (Utxo) -> Unit = {}
 
+        private val df = DecimalFormat("#")
+
         fun setLongClickListener(listener: () -> Unit) {
             onLongClick = listener
         }
@@ -182,6 +185,10 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            df.minimumIntegerDigits = 1
+            df.minimumFractionDigits = 8
+            df.maximumFractionDigits = 8
+
             val utxo = mDiffer.currentList[position]
             if (holder is UtxoViewHolderSection) {
                 holder.section.text = utxo.section
@@ -194,7 +201,7 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
             }
             if (holder is UtxoViewHolder) {
                 utxo.value?.let {
-                    holder.amount.text = "${MonetaryUtil.getInstance().formatToBtc(it)} BTC"
+                    holder.amount.text = "${df.format(it.div(1e8))} BTC"
                 }
                 holder.address.text = utxo.addr.toString()
                 holder.checkBox.visibility = View.GONE
