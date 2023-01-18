@@ -9,7 +9,7 @@
         <Preference
             app:icon="@drawable/ic_reset"
             app:key="clear"
-            app:summary="Clear all collections and resets the settings"
+            app:summary="Clear all collections and reset settings"
             app:title="Clear wallet" />
 
         <CheckBoxPreference
