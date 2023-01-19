@@ -1,6 +1,5 @@
 package com.samourai.sentinel.ui.collectionDetails.receive
 
-import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -11,17 +10,20 @@ import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.Observer
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.transition.AutoTransition
+import androidx.transition.TransitionManager
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.client.android.Contents
@@ -34,17 +36,22 @@ import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.views.confirm
-import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.wallet.segwit.SegwitAddress
+import kotlinx.android.synthetic.main.advanced_receive_fragment.view.*
+import kotlinx.android.synthetic.main.fragment_spend.*
+import kotlinx.android.synthetic.main.fragment_spend.view.*
+import org.bitcoinj.core.Address
 import org.bitcoinj.core.Coin
-import org.koin.java.KoinJavaComponent
-import timber.log.Timber
+import org.bitcoinj.uri.BitcoinURI
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.text.DecimalFormat
+import java.text.NumberFormat
 import java.text.ParseException
+import java.util.*
 
 class ReceiveFragment : Fragment() {
 
@@ -54,12 +61,14 @@ class ReceiveFragment : Fragment() {
     private lateinit var toolbar: Toolbar
     private lateinit var receiveQR: ImageView
     private lateinit var receiveAddressText: TextView
-    private lateinit var collectionBalanceFiat: TextView
-    private lateinit var collectionBalanceBtc: TextView
+    private lateinit var btcEditText: EditText
+    private lateinit var satEditText: EditText
+    private lateinit var advancedButton: LinearLayout
+    private lateinit var tvPath: TextView
     private var pubKeyIndex = 0
     private lateinit var pubKeyDropDown: AutoCompleteTextView
-    private val monetaryUtil: MonetaryUtil by KoinJavaComponent.inject(MonetaryUtil::class.java)
     private val receiveViewModel: ReceiveViewModel by viewModels()
+    private lateinit var advancedContainer: ConstraintLayout
 
     private lateinit var qrFile: String
 
@@ -70,6 +79,8 @@ class ReceiveFragment : Fragment() {
     ): View? {
 
         val root = inflater.inflate(R.layout.fragment_receive, container, false)
+        val advancedRoot = inflater.inflate(R.layout.advanced_receive_fragment, container, true)
+
         val df = DecimalFormat("#")
         df.minimumIntegerDigits = 1
         df.minimumFractionDigits = 8
@@ -79,8 +90,11 @@ class ReceiveFragment : Fragment() {
         receiveQR = root.findViewById(R.id.receiveQR)
         receiveAddressText = root.findViewById(R.id.receiveAddressText)
         pubKeyDropDown = root.findViewById(R.id.pubKeySelector)
-        collectionBalanceBtc = root.findViewById(R.id.collectionBalanceBtc)
-        collectionBalanceFiat = root.findViewById(R.id.collectionBalanceFiat)
+        advancedButton = root.findViewById(R.id.advance_button)
+        advancedContainer = root.container_advance_options
+        btcEditText = root.findViewById(R.id.amountBTC)
+        satEditText = root.findViewById(R.id.amountSAT)
+        tvPath = root.path
 
         qrFile = "${requireContext().cacheDir.path}${File.separator}qr.png";
 
@@ -91,17 +105,6 @@ class ReceiveFragment : Fragment() {
 
         setUpToolBar()
 
-        balanceLiveData.observe(viewLifecycleOwner,{
-            collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
-        })
-
-
-        fiatBalanceLiveData.observe(viewLifecycleOwner, {
-            if (isAdded) {
-                collectionBalanceFiat.text = it
-            }
-        })
-
         receiveAddressText.setOnClickListener {
 
             val cm = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager?
@@ -111,8 +114,20 @@ class ReceiveFragment : Fragment() {
                 cm.setPrimaryClip(clipData)
                 Toast.makeText(context, getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
             }
-
         }
+
+        advancedButton.setOnClickListener {
+            TransitionManager.beginDelayedTransition(advancedContainer, AutoTransition())
+            val visibility =
+                if (advancedContainer.visibility == View.VISIBLE)
+                    View.INVISIBLE
+                else
+                    View.VISIBLE
+            advancedContainer.visibility = visibility
+        }
+
+        btcEditText.addTextChangedListener(BTCWatcher)
+        satEditText.addTextChangedListener(satWatcher)
 
         return root
     }
@@ -190,16 +205,42 @@ class ReceiveFragment : Fragment() {
 
     }
 
-    private fun generateQR() {
+    private fun     generateQR() {
         val display = activity?.windowManager?.defaultDisplay
         val size = Point()
         display?.getSize(size)
         val imgWidth = size.x - 200
         val addr = getAddress()
         receiveAddressText.text = addr
+
         try {
-//            val amount = NumberFormat.getInstance(Locale.US).parse(edAmountBTC.getText().toString())
-            receiveQR.setImageBitmap(generateQRCode(addr, imgWidth))
+            val amount = NumberFormat.getInstance(Locale.US).parse(btcEditText.getText().toString().trim { it <= ' ' })
+
+            val lamount: Long = (amount.toDouble() * 1e8).toLong()
+
+            if (lamount != 0L) {
+                if (!FormatsUtil.isValidBech32(addr)) {
+                    receiveQR.setImageBitmap(
+                        generateQRCode(
+                            BitcoinURI.convertToBitcoinURI(
+                                Address.fromBase58(
+                                    SentinelState.getNetworkParam(),
+                                    addr
+                                ), Coin.valueOf(lamount), null, null
+                            )
+                        , imgWidth)
+                    )
+                }
+                else {
+                    var strURI = "bitcoin:$addr"
+                    val df = DecimalFormat("#")
+                    df.minimumIntegerDigits = 1
+                    df.maximumFractionDigits = 8
+                    strURI += "?amount=" + df.format(amount)
+                    receiveQR.setImageBitmap(generateQRCode(strURI, imgWidth))
+                }
+            }
+            //  receiveQR.setImageBitmap(generateQRCode(addr, imgWidth))
         } catch (nfe: NumberFormatException) {
             receiveQR.setImageBitmap(generateQRCode(addr, imgWidth))
         } catch (pe: ParseException) {
@@ -258,13 +299,13 @@ class ReceiveFragment : Fragment() {
             }
             else -> ""
         }
+
     }
 
     private fun setUpToolBar() {
         (activity as SentinelActivity).setSupportActionBar(toolbar)
         (activity as SentinelActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.title = collection.collectionLabel
-        collectionBalanceBtc.text = "${monetaryUtil.formatToBtc(collection.balance)} BTC"
     }
 
 
@@ -300,6 +341,121 @@ class ReceiveFragment : Fragment() {
 
     }
 
+    private val BTCWatcher: TextWatcher = object : TextWatcher {
+        override fun beforeTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {}
+        override fun onTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {}
+        override fun afterTextChanged(editable: Editable) {
+            var editable = editable
+            satEditText.removeTextChangedListener(satWatcher)
+            btcEditText.removeTextChangedListener(this)
+            try {
+                if (editable.toString().length == 0) {
+                    satEditText.setText("0")
+                    btcEditText.setText("")
+                    satEditText.setSelection(satEditText.getText().length)
+                    satEditText.addTextChangedListener(satWatcher)
+                    btcEditText.addTextChangedListener(this)
+                    return
+                }
+                var btc = editable.toString().toDouble()
+                if (btc > 21000000.0) {
+                    btcEditText.setText("0.00")
+                    btcEditText.setSelection(btcEditText.getText().length)
+                    satEditText.setText("0")
+                    satEditText.setSelection(satEditText.getText().length)
+                    Toast.makeText(
+                        context,
+                        R.string.invalid_amount,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    val format = DecimalFormat.getInstance(Locale.US) as DecimalFormat
+                    val symbols = format.decimalFormatSymbols
+                    val defaultSeparator = Character.toString(symbols.decimalSeparator)
+                    val max_len = 8
+                    val btcFormat = NumberFormat.getInstance(Locale.US)
+                    btcFormat.maximumFractionDigits = max_len + 1
+                    try {
+                        val d = NumberFormat.getInstance(Locale.US).parse(editable.toString())
+                            .toDouble()
+                        val s1 = btcFormat.format(d)
+                        if (s1.indexOf(defaultSeparator) != -1) {
+                            var dec = s1.substring(s1.indexOf(defaultSeparator))
+                            if (dec.length > 0) {
+                                dec = dec.substring(1)
+                                if (dec.length > max_len) {
+                                    btcEditText.setText(s1.substring(0, s1.length - 1))
+                                    btcEditText.setSelection(btcEditText.getText().length)
+                                    editable = btcEditText.getEditableText()
+                                    btc = btcEditText.getText().toString().toDouble()
+                                }
+                            }
+                        }
+                    } catch (nfe: java.lang.NumberFormatException) {
+                    } catch (pe: ParseException) {
+                    }
+                    val sats: Double = java.lang.Double.valueOf(btc) * 100000000
+                    satEditText.setText(formattedSatValue(sats))
+                }
+
+                //
+            } catch (e: java.lang.NumberFormatException) {
+                e.printStackTrace()
+            }
+            satEditText.addTextChangedListener(satWatcher)
+            btcEditText.addTextChangedListener(this)
+            generateQR()
+        }
+    }
+
+    private val satWatcher: TextWatcher = object : TextWatcher {
+        override fun beforeTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {}
+        override fun onTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {}
+        override fun afterTextChanged(editable: Editable) {
+            satEditText.removeTextChangedListener(this)
+            btcEditText.removeTextChangedListener(BTCWatcher)
+            try {
+                if (editable.toString().length == 0) {
+                    btcEditText.setText("0.00")
+                    satEditText.setText("")
+                    btcEditText.addTextChangedListener(this)
+                    btcEditText.addTextChangedListener(BTCWatcher)
+                    return
+                }
+                val cleared_space = editable.toString().replace(" ", "")
+                val sats = cleared_space.toDouble()
+                val btc: Double = (sats / 1e8)
+                val formatted: String = formattedSatValue(sats)
+                satEditText.setText(formatted)
+                satEditText.setSelection(formatted.length)
+                btcEditText.setText(String.format(Locale.ENGLISH, "%.8f", btc))
+                if (btc > 21000000.0) {
+                    btcEditText.setText("0.00")
+                    btcEditText.setSelection(btcEditText.getText().length)
+                    satEditText.setText("0")
+                    satEditText.setSelection(satEditText.getText().length)
+                    Toast.makeText(
+                        context,
+                        R.string.invalid_amount,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: java.lang.NumberFormatException) {
+                e.printStackTrace()
+            }
+            satEditText.addTextChangedListener(this)
+            btcEditText.addTextChangedListener(BTCWatcher)
+            generateQR()
+        }
+    }
+
+    private fun formattedSatValue(number: Any): String {
+        val nformat = NumberFormat.getNumberInstance(Locale.US)
+        val decimalFormat = nformat as DecimalFormat
+        decimalFormat.applyPattern("#,###")
+        return decimalFormat.format(number).replace(",", " ")
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         menu.clear()
@@ -311,10 +467,6 @@ class ReceiveFragment : Fragment() {
             share()
         }
         return super.onOptionsItemSelected(item)
-    }
-
-    private fun getBTCDisplayAmount(value: Long): String? {
-        return Coin.valueOf(value).toPlainString()
     }
 
     fun setBalance(balance: LiveData<Long>) {

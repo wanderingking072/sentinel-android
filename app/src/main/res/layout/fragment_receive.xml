@@ -8,7 +8,7 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         style="@style/ToolbarV3"
-        android:layout_height="200dp">
+        android:layout_height="60dp">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbarReceive"
@@ -19,33 +19,6 @@
 
         </androidx.appcompat.widget.Toolbar>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center|center_vertical"
-            android:gravity="center"
-            android:orientation="vertical">
-            <TextView
-                android:id="@+id/collectionBalanceBtc"
-                style="@style/TextAppearance.AppCompat.Title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center|center_horizontal"
-                tools:text="30.0332 BTC"
-                android:textSize="24sp" />
-
-            <TextView
-                android:id="@+id/collectionBalanceFiat"
-                style="@style/TextAppearance.AppCompat.Caption"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="12dp"
-                android:gravity="center|center_horizontal"
-                tools:text="1234 USD"
-                android:textSize="14sp" />
-
-        </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
 
@@ -102,6 +75,51 @@
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
                 android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:id="@+id/advance_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:padding="4dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/receiveQR"
+                app:layout_constraintVertical_bias="0.0">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginRight="6dp"
+                    android:background="@null"
+                    android:contentDescription="TODO"
+                    android:scaleType="fitXY"
+                    app:srcCompat="@drawable/ic_settings_applications_white_24dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_mono"
+                    android:text="@string/advanced" />
+            </LinearLayout>
+            <include
+                layout="@layout/advanced_receive_fragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="8dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/advance_button"
+                app:layout_goneMarginBottom="10dp"
+                android:visibility="invisible"/>
         </LinearLayout>
 
 

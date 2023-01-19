@@ -31,4 +31,8 @@
         <item name="step2" type="id"/>
     <item name="step2_text" type="id"/>
     <item name="step_view" type="id"/>
+    <item name="amountBTC" type="id" />
+    <item name="amountSAT" type="id" />
+    <item name="address_type_spinner" type="id" />
+    <item name="container_advance_options" type="id" />
 </resources>
