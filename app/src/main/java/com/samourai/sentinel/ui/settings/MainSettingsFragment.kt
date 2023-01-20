@@ -69,9 +69,19 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                 transaction.add(android.R.id.content, lockScreenDialog).addToBackStack("Lock").commit()
                 lockScreenDialog.setOnPinEntered { pin ->
                     if (newValue == true) {
-                        setPinCode(pin, it)
-                        lockScreenDialog.dismiss()
-                        parentFragmentManager.popBackStack()
+                        val lockScreenDialogConf = LockScreenDialog(lockScreenMessage = "Please Re-Enter Pin Code")
+                        val transactionConf = parentFragmentManager.beginTransaction()
+                        transactionConf.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                        transactionConf.add(android.R.id.content, lockScreenDialogConf).addToBackStack("Lock").commit()
+                        lockScreenDialogConf.setOnPinEntered { pinConf ->
+                            if (pinConf == pin) {
+                                setPinCode(pin, it)
+                                lockScreenDialog.dismiss()
+                                parentFragmentManager.popBackStack()
+                            }
+                            else
+                                Toast.makeText(requireContext(), "Pins are not the same", Toast.LENGTH_SHORT).show()
+                        }
                     } else {
                         removePinCode(pin, lockScreenDialog, pineEntryCheckBox)
                     }
