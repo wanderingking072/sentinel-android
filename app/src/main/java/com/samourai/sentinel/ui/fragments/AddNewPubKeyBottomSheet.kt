@@ -45,6 +45,9 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "") : GenericBottomSh
     private var pubKeyString = ""
     private var pubKeyModel: PubKeyModel? = null
     private var selectedPubKeyCollection: PubKeyCollection? = null
+    private val collectionRepository: CollectionRepository by KoinJavaComponent.inject(
+        CollectionRepository::class.java
+    )
 
     private var _binding: FragmentBottomsheetViewPagerBinding? = null
     private val binding get() = _binding!!
@@ -80,6 +83,7 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "") : GenericBottomSh
             startActivity(Intent(context, CollectionEditActivity::class.java).apply {
                 this.putExtra("pubKey", pubKeyModel)
                 if (it != null) {
+                    this.putExtra("editIndex", collectionRepository.findById(it.id)?.pubs?.size!!)
                     this.putExtra("collection", it.id)
                 }
             })

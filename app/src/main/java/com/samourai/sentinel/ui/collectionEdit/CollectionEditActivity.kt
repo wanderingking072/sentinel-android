@@ -47,6 +47,9 @@ class CollectionEditActivity : SentinelActivity() {
     private val viewModel: CollectionEditViewModel by viewModels()
     private val pubKeyAdapter: PubKeyAdapter = PubKeyAdapter()
     private lateinit var binding: ActivityCollectionEditBinding
+    private var isEditNewPub = false
+    private var editIndex: Int = -1
+    private lateinit var newPubEdit: PubKeyModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,6 +114,8 @@ class CollectionEditActivity : SentinelActivity() {
             return
         }
         if (intent.extras != null && intent.extras!!.containsKey("collection")) {
+            val collectionModel = PubKeyCollection()
+            collectionModel.collectionLabel = binding.collectionEdiText.text.toString()
             val model = intent.extras?.getString("collection")?.let { repository.findById(it) }
             if (model != null) {
                 viewModel.setCollection(model)
@@ -126,6 +131,11 @@ class CollectionEditActivity : SentinelActivity() {
                             duration = Snackbar.LENGTH_LONG
                         )
                         return
+                    }
+                    if (intent.extras!!.containsKey("editIndex")) {
+                        editIndex = intent.extras!!.getInt("editIndex")
+                        isEditNewPub = true
+                        newPubEdit = newPubKey!!
                     }
                     viewModel.setPubKeys(model.pubs.apply { add(newPubKey!!) })
                     importWalletIfSegwit(newPubKey)
@@ -177,7 +187,7 @@ class CollectionEditActivity : SentinelActivity() {
 
 
         fun edit(pubKeyModel: PubKeyModel, i: Int){
-            if (viewModel.getCollection().value?.collectionLabel.isNullOrEmpty()) {
+            if (viewModel.getCollection().value?.collectionLabel.isNullOrEmpty() && !isEditNewPub) {
                 this@CollectionEditActivity.showFloatingSnackBar(
                         binding.collectionDetailsRootLayout,
                     text = "Please enter a collection label first",
@@ -257,6 +267,11 @@ class CollectionEditActivity : SentinelActivity() {
                 }
                 .setTitle(getString(R.string.options))
                 .show()
+        }
+
+        if(isEditNewPub) {
+            edit(newPubEdit, editIndex)
+            isEditNewPub = false
         }
     }
 
