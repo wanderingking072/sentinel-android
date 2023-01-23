@@ -43,6 +43,7 @@ import kotlinx.android.synthetic.main.fragment_spend.*
 import kotlinx.android.synthetic.main.fragment_spend.view.*
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.Coin
+import org.bitcoinj.core.NetworkParameters
 import org.bitcoinj.uri.BitcoinURI
 import java.io.File
 import java.io.FileNotFoundException
@@ -102,6 +103,8 @@ class ReceiveFragment : Fragment() {
         setUpSpinner()
 
         generateQR()
+
+        tvPath.text = getPath()
 
         setUpToolBar()
 
@@ -259,6 +262,29 @@ class ReceiveFragment : Fragment() {
         return bitmap
     }
 
+    fun getPath(): String {
+
+        var path = "m/"
+
+        if (collection.pubs.size == 0) {
+            return ""
+        }
+
+        if (collection.pubs[pubKeyIndex].type == AddressTypes.ADDRESS) {
+            return collection.pubs[pubKeyIndex].pubKey
+        }
+        val pubKey = collection.pubs[pubKeyIndex]
+        val accountIndex = collection.pubs[pubKeyIndex].account_index
+
+        path += pubKey.getPurpose().toString() + "'/" // add purpose
+        path += if (SentinelState.getNetworkParam() == NetworkParameters.testNet3()) "1'/" else "0'/" //add coin type
+        path += "0'/" // add account TODO: tell apart account 0 from postmix
+        path += pubKey.account_index.toString() +"" // add index
+
+        println(path)
+        return path
+    }
+
 
     fun getAddress(): String {
         if (collection.pubs.size == 0) {
@@ -335,6 +361,7 @@ class ReceiveFragment : Fragment() {
             pubKeyDropDown.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
                 pubKeyIndex = index
                 generateQR()
+                tvPath.text = getPath()
             }
 
         }
