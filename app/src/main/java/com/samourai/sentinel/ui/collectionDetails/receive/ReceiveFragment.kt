@@ -38,9 +38,8 @@ import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.wallet.segwit.SegwitAddress
+import com.samourai.wallet.util.XPUB
 import kotlinx.android.synthetic.main.advanced_receive_fragment.view.*
-import kotlinx.android.synthetic.main.fragment_spend.*
-import kotlinx.android.synthetic.main.fragment_spend.view.*
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.Coin
 import org.bitcoinj.core.NetworkParameters
@@ -53,9 +52,6 @@ import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.text.ParseException
 import java.util.*
-import com.samourai.wallet.util.XPUB
-
-
 
 
 class ReceiveFragment : Fragment() {
@@ -74,6 +70,8 @@ class ReceiveFragment : Fragment() {
     private lateinit var pubKeyDropDown: AutoCompleteTextView
     private val receiveViewModel: ReceiveViewModel by viewModels()
     private lateinit var advancedContainer: ConstraintLayout
+    private val HARDENED = 2147483648
+
 
     private lateinit var qrFile: String
 
@@ -281,22 +279,9 @@ class ReceiveFragment : Fragment() {
         val xpub = XPUB(pubKey.pubKey.toString())
         xpub.decode()
 
-        val accountIndex = collection.pubs[pubKeyIndex].account_index
-        var account = ""
-
-        if (xpub.child == -2)
-            account = "2147483646" // Postmix account
-        else if (xpub.child == -3)
-            account = "2147483645" // premix account
-        else if (xpub.child == -4)
-            account = "2147483644" // bad bank
-        else
-            account = "0" // Default case: account 0
-
-
         path += pubKey.getPurpose().toString() + "'/" // add purpose
         path += if (SentinelState.getNetworkParam() == NetworkParameters.testNet3()) "1'/" else "0'/" //add coin type
-        path += account + "'/" // add account
+        path += (xpub.child + HARDENED).toString() + "'/" // add account
         path += pubKey.account_index.toString() +"" // add index
 
         println(path)
