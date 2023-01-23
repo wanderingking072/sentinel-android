@@ -413,9 +413,9 @@ public class PSBT {
 
     public void addInput(NetworkParameters params, byte[] fingerprint, ECKey eckey, long amount, int purpose, int type, int account, int chain, int index) throws Exception    {
         SegwitAddress segwitAddress = new SegwitAddress(eckey, params);
-        byte[] redeemScriptBuf = new byte[1 + segwitAddress.segWitRedeemScript().getProgram().length];
+        byte[] redeemScriptBuf = new byte[1 + segwitAddress.segwitRedeemScript().getProgram().length];
         redeemScriptBuf[0] = (byte)0x16;
-        System.arraycopy(segwitAddress.segWitRedeemScript().getProgram(), 0, redeemScriptBuf, 1, segwitAddress.segWitRedeemScript().getProgram().length);
+        System.arraycopy(segwitAddress.segwitRedeemScript().getProgram(), 0, redeemScriptBuf, 1, segwitAddress.segwitRedeemScript().getProgram().length);
 
         byte[] utxoBuf = writeSegwitInputUTXO(amount, redeemScriptBuf);
 
@@ -427,7 +427,7 @@ public class PSBT {
     public void addInputCompatibility (NetworkParameters params, byte[] fingerprint, ECKey eckey, long amount, int purpose, int type, int account, int chain, int index, String transactionData, int utxoIndex) throws Exception    {
         SegwitAddress compatibleSegwit = new SegwitAddress(eckey, params, 0);
 
-        byte[] redeemScript = Hex.decode(compatibleSegwit.segWitRedeemScriptToString());
+        byte[] redeemScript = Hex.decode(compatibleSegwit.segwitRedeemScriptToString());
 
 
         Transaction tx = new Transaction(TestNet3Params.get(), Hex.decode(transactionData));
@@ -481,7 +481,7 @@ public class PSBT {
     public void addOutput(NetworkParameters params, byte[] fingerprint, ECKey eckey, int purpose, int type, int account, int chain, int index) throws Exception    {
         if (purpose != 44 && purpose != 86) { // DON'T ADD THIS FLAG IF IT'S LEGACY OR TAPROOT
             SegwitAddress compatibleSegwit = new SegwitAddress(eckey, params);
-            byte[] redeemScript = Hex.decode(compatibleSegwit.segWitRedeemScriptToString());
+            byte[] redeemScript = Hex.decode(compatibleSegwit.segwitRedeemScriptToString());
             addOutput(PSBT_OUT_REDEEM_SCRIPT, null, redeemScript);
         }
 

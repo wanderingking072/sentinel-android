@@ -53,6 +53,10 @@ import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.text.ParseException
 import java.util.*
+import com.samourai.wallet.util.XPUB
+
+
+
 
 class ReceiveFragment : Fragment() {
 
@@ -274,11 +278,25 @@ class ReceiveFragment : Fragment() {
             return collection.pubs[pubKeyIndex].pubKey
         }
         val pubKey = collection.pubs[pubKeyIndex]
+        val xpub = XPUB(pubKey.pubKey.toString())
+        xpub.decode()
+
         val accountIndex = collection.pubs[pubKeyIndex].account_index
+        var account = ""
+
+        if (xpub.child == -2)
+            account = "2147483646" // Postmix account
+        else if (xpub.child == -3)
+            account = "2147483645" // premix account
+        else if (xpub.child == -4)
+            account = "2147483644" // bad bank
+        else
+            account = "0" // Default case: account 0
+
 
         path += pubKey.getPurpose().toString() + "'/" // add purpose
         path += if (SentinelState.getNetworkParam() == NetworkParameters.testNet3()) "1'/" else "0'/" //add coin type
-        path += "0'/" // add account TODO: tell apart account 0 from postmix
+        path += account + "'/" // add account
         path += pubKey.account_index.toString() +"" // add index
 
         println(path)
