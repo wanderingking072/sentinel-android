@@ -3,6 +3,7 @@ package com.samourai.sentinel.ui.views
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.text.InputFilter
 import android.text.method.PasswordTransformationMethod
@@ -19,6 +20,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.samourai.sentinel.R
+import com.samourai.sentinel.ui.home.HomeActivity
 
 
 /**
@@ -118,6 +120,28 @@ class ConfirmBottomSheet(private val label: String, onViewReady: (GenericBottomS
 
 }
 
+class SuccessfulBottomSheet(private val label: String, private val txId: String,onViewReady: (GenericBottomSheet) -> Unit) : GenericAlertBottomSheet(
+    onViewReady
+) {
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.layout_success_bottom, container)
+        view.findViewById<TextView>(R.id.dialogTitle).text = label
+        view.findViewById<TextView>(R.id.transactionID).text = txId
+        return view
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        val intent = Intent(context, HomeActivity::class.java)
+        startActivity(intent)
+        super.onDismiss(dialog)
+    }
+
+}
 /**
  * Shows BottomSheet with Input field
  */

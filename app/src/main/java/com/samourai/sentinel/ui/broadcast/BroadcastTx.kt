@@ -9,12 +9,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.material.textfield.TextInputEditText
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.LayoutBroadcastBottomSheetBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
+import com.samourai.sentinel.ui.views.SuccessfulBottomSheet
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import kotlinx.coroutines.*
 import org.bitcoinj.core.Transaction
@@ -109,11 +111,10 @@ class BroadcastTx : SentinelActivity() {
                     showLoading(false)
                     if (it == null) {
                         onBroadcastSuccess?.invoke(hash)
-                        Toast.makeText(
-                                applicationContext,
-                                hash,
-                                Toast.LENGTH_SHORT
-                        ).show()
+                        val bottomSheet = SuccessfulBottomSheet("Broadcast Successful", hash ,onViewReady = {
+                            val view1 = it.view
+                        })
+                        bottomSheet.show(supportFragmentManager, bottomSheet.tag)
                         model.setHex("")
                     } else {
                         Toast.makeText(
@@ -166,5 +167,4 @@ class BroadcastTx : SentinelActivity() {
         button.isEnabled = enable
         button.alpha = if (enable) 1F else 0.5f
     }
-
 }
