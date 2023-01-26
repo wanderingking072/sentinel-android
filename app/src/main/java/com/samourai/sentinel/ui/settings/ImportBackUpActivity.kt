@@ -188,6 +188,9 @@ class ImportBackUpActivity : SentinelActivity() {
                         }
             }
             else -> {
+                showFloatingSnackBar(binding.importPastePayloadBtn, "Please choose a valid Sentinel backup file")
+                /*
+                IMPORT FROM SAMOURAI BACKUP FILES
                 val payload = ExportImportUtil().decryptAndParseSamouraiPayload(
                         payloadObject.toString(),
                         binding.importPasswordInput.text.toString()
@@ -207,6 +210,7 @@ class ImportBackUpActivity : SentinelActivity() {
                         showFloatingSnackBar(binding.importPastePayloadBtn, "Error: ${it.message}")
                     }
                 }
+                */
             }
         }
     }
