@@ -98,6 +98,15 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                 true
             }
         }
+
+        val fiatDisabledCheckbox = findPreference<CheckBoxPreference>("fiatEnabled")
+        fiatDisabledCheckbox?.let {
+            it.setOnPreferenceClickListener {
+                prefsUtil.fiatDisabled = !prefsUtil.fiatDisabled!!
+                true
+            }
+        }
+
         val clearWallet = findPreference<Preference>("clear")
 
         val shareErrorLog = findPreference<Preference>("shareErrorLog")

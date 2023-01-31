@@ -39,6 +39,7 @@ class PrefsUtil(context: Context) : Preferences(context, "${context.packageName}
     var pinHash by stringPref(defaultValue = "")
     var displaySecure by booleanPref(defaultValue = false)
     var scramblePin by booleanPref(defaultValue = false)
+    var fiatDisabled by booleanPref(defaultValue = false)
     var pinEnabled by booleanPref(defaultValue = false)
     var authorization by stringPref(defaultValue = "")
     var exchangeSelection by stringPref(defaultValue = "localbitcoins.com")

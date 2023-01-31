@@ -17,7 +17,7 @@ public class PrefsUtil {
     public static final String ENABLE_TOR = "ENABLE_TOR";
     public static final String PIN_HASH = "pinHash";
     public static final String XPUB = "xpub";
-    public static final String SCRAMBLE_PIN = "scramblePin";
+	public static final String SCRAMBLE_PIN = "scramblePin";
 	public static final String HAPTIC_PIN = "hapticPin";
 	public static final String CURRENT_FEE_TYPE = "currentFeeType";
 	public static final String TESTNET = "testnet";

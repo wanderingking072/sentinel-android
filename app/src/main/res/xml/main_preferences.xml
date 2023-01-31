@@ -32,6 +32,13 @@
             android:key="haptic"
             android:defaultValue="false" />
 
+        <CheckBoxPreference
+            app:key="fiatDisabled"
+            app:summaryOff="Fiat values showing"
+            app:summaryOn="Fiat values not showing"
+            app:title="Disable fiat values" />
+
+
 
     </PreferenceCategory>
 

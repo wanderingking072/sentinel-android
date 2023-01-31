@@ -75,6 +75,8 @@ class HomeActivity : SentinelActivity() {
             updateBalance(it)
         })
 
+        binding.exchangeRateTxt.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
+
         model.getFiatBalance().observe(this, { updateFiat(it) })
 
         binding.fab.setOnClickListener {
@@ -160,6 +162,7 @@ class HomeActivity : SentinelActivity() {
         if (SentinelState.isTestNet() && !title.contains("TestNet")) {
             title = "$title | TestNet"
         }
+        binding.exchangeRateTxt.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
     }
 
     private fun setUp() {

@@ -19,6 +19,7 @@ import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.utxos.UtxosActivity
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.PrefsUtil
 import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent.inject
 import java.text.DecimalFormat
@@ -33,6 +34,7 @@ class TransactionsFragment : Fragment() {
     private val monetaryUtil: MonetaryUtil by inject(MonetaryUtil::class.java)
     private var _binding: FragmentTransactionsBinding? = null
     private val binding get() = _binding!!
+    private val prefsUtil: com.samourai.sentinel.ui.utils.PrefsUtil by inject(com.samourai.sentinel.ui.utils.PrefsUtil::class.java)
 
 
     override fun onCreateView(
@@ -71,6 +73,8 @@ class TransactionsFragment : Fragment() {
         balanceLiveData.observe(viewLifecycleOwner, {
             binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
         })
+
+        binding.collectionBalanceFiat.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
         fiatBalanceLiveData.observe(viewLifecycleOwner, Observer {
             if (isAdded) {
                 binding.collectionBalanceFiat.text = it
