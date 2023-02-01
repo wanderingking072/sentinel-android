@@ -52,6 +52,7 @@ import com.samourai.sentinel.util.MonetaryUtil
 import com.sparrowwallet.hummingbird.UR
 import com.sparrowwallet.hummingbird.registry.CryptoPSBT
 import com.sparrowwallet.hummingbird.registry.RegistryType
+import kotlinx.android.synthetic.main.fragment_compose_tx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -81,6 +82,9 @@ class SendFragment : Fragment() {
     var mCollection: PubKeyCollection? = null
     private val decimalFormat = DecimalFormat("##.00")
     private var qrCodeString: String? = null
+    private val decimalFormatBTC = DecimalFormat("#")
+
+
 
     private var _fragmentSpendBinding: FragmentSpendBinding? = null
     private val fragmentSpendBinding get() = _fragmentSpendBinding!!
@@ -102,6 +106,10 @@ class SendFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        decimalFormatBTC.minimumIntegerDigits = 1
+        decimalFormatBTC.minimumFractionDigits = 8
+        decimalFormatBTC.maximumFractionDigits = 8
+
         exchangeRateRepository.getRateLive().observe(this.viewLifecycleOwner) {
             rate = it
             DecimalFormat.getNumberInstance().currency = Currency.getInstance(rate.currency)
@@ -118,9 +126,13 @@ class SendFragment : Fragment() {
             containerTransform(fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView, fragmentSpendBinding.composeBtn)
         }
 
+
+
         if (isAdded) {
             setPubKeySelector()
         }
+
+        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
 
         setUpFee()
 
@@ -378,6 +390,10 @@ class SendFragment : Fragment() {
     }
 
     private fun setPubKeySelector() {
+        decimalFormatBTC.minimumIntegerDigits = 1
+        decimalFormatBTC.minimumFractionDigits = 8
+        decimalFormatBTC.maximumFractionDigits = 8
+
         if (mCollection == null) {
             return
         }
@@ -395,8 +411,9 @@ class SendFragment : Fragment() {
                 val selectPubKeyModel = it.pubs[index]
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
+                fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
 
-                view?.isEnabled = true
+                    view?.isEnabled = true
                 view?.alpha = 1f
                 fragmentSpendBinding.composeBtn.isEnabled = true
             }
