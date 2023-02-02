@@ -80,7 +80,7 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
             }
         }
         val radius = resources.getDimension(R.dimen.spacing_large)
-        qrTextView.text = qrData
+        qrTextView.text = qrData.lowercase()
         qRImage.shapeAppearanceModel = qRImage.shapeAppearanceModel
                 .toBuilder()
                 .setAllCornerSizes(radius)

@@ -216,7 +216,7 @@ class ReceiveFragment : Fragment() {
         display?.getSize(size)
         val imgWidth = size.x - 200
         val addr = getAddress()
-        receiveAddressText.text = addr
+        receiveAddressText.text = addr.lowercase()
 
         try {
             val amount = NumberFormat.getInstance(Locale.US).parse(btcEditText.getText().toString().trim { it <= ' ' })
