@@ -282,6 +282,7 @@ class ReceiveFragment : Fragment() {
         path += pubKey.getPurpose().toString() + "'/" // add purpose
         path += if (SentinelState.getNetworkParam() == NetworkParameters.testNet3()) "1'/" else "0'/" //add coin type
         path += (xpub.child + HARDENED).toString() + "'/" // add account
+        path += "0/" //add change
         path += pubKey.account_index.toString() +"" // add index
 
         println(path)
