@@ -360,7 +360,7 @@ class TransactionComposer {
                 p2shP2wpkH.addressAsString
             }
             AddressTypes.BIP84 -> {
-                val address = account?.getChain(0)?.getAddressAt(changeIndex!!)
+                val address = account?.getChain(1)?.getAddressAt(changeIndex!!)
                 val ecKey = address?.ecKey
                 changeECKey = address?.ecKey
                 val segwitAddress = SegwitAddress(ecKey?.pubKey, SentinelState.getNetworkParam())
