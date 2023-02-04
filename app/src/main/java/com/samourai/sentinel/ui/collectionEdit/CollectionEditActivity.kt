@@ -227,6 +227,11 @@ class CollectionEditActivity : SentinelActivity() {
                                 setResult(Activity.RESULT_OK)
                             }
                             viewModel.removePubKey(index)
+
+                            //TODO: find a better way to refresh the pubkey list
+                            binding.pubKeyRecyclerView.post {
+                                pubKeyAdapter.notifyDataSetChanged()
+                            }
                         }
                         try {
                         } catch (e: Exception) {
