@@ -27,20 +27,21 @@ import org.koin.java.KoinJavaComponent
  */
 
 class TransactionsListFragment(
-        private val position: Int,
-        private val collection: PubKeyCollection,
+    private val position: Int,
+    private val collection: PubKeyCollection,
 ) : Fragment() {
 
     private val transactionAdapter: TransactionAdapter = TransactionAdapter()
 
     class TransactionsViewModel(val pubKeyCollection: PubKeyCollection, val position: Int) : ViewModel() {
         private val txDao: TxDao by KoinJavaComponent.inject(TxDao::class.java)
-        val txLiveData: LiveData<PagedList<Tx>>
-
-        init {
-            txLiveData = LivePagedListBuilder(
-                    txDao.getPaginatedTx(pubKeyCollection.id, pubKeyCollection.pubs[position].pubKey), 12).build()
-        }
+        val txLiveData: LiveData<PagedList<Tx>> = if (position == 0)
+            LivePagedListBuilder(
+                txDao.getTxAssociatedToCollection(pubKeyCollection.id), 12
+            ).build()
+        else LivePagedListBuilder(
+            txDao.getPaginatedTx(pubKeyCollection.id, pubKeyCollection.pubs[position - 1].pubKey), 12
+        ).build()
 
         class TransactionsViewModelFactory(private val pubKeyCollection: PubKeyCollection, private val position: Int) : ViewModelProvider.Factory {
             override fun <T : ViewModel?> create(modelClass: Class<T>): T {
@@ -81,9 +82,9 @@ class TransactionsListFragment(
             dojoConfigureBottomSheet.show(childFragmentManager, dojoConfigureBottomSheet.tag)
         }
 
-        transactionViewModel.txLiveData.observe(this.viewLifecycleOwner, {
+        transactionViewModel.txLiveData.observe(this.viewLifecycleOwner) {
             transactionAdapter.submitList(it)
-        })
+        }
     }
 
 }
