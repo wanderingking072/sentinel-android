@@ -67,12 +67,16 @@ class TransactionsFragment : Fragment() {
         binding.txViewPager.adapter = CollectionPubKeysViewpager(this.activity, collection)
         binding.txViewPager.offscreenPageLimit = 5
         TabLayoutMediator(binding.tabLayout, binding.txViewPager) { tab, position ->
-            tab.text = collection.pubs[position].label
+            if(position == 0){
+                tab.text = "All"
+            }else{
+                tab.text = collection.pubs[position-1].label
+            }
         }.attach()
 
-        balanceLiveData.observe(viewLifecycleOwner, {
+        balanceLiveData.observe(viewLifecycleOwner) {
             binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
-        })
+        }
 
         binding.collectionBalanceFiat.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
         fiatBalanceLiveData.observe(viewLifecycleOwner, Observer {
@@ -81,13 +85,12 @@ class TransactionsFragment : Fragment() {
             }
         })
         transactionsViewModel.getMessage().observe(
-                this.viewLifecycleOwner,
-                {
-                    if (it != "null")
-                        (requireActivity() as AppCompatActivity)
-                                .showFloatingSnackBar(binding.collectionBalanceBtc, "Error : $it")
-                }
-        )
+                this.viewLifecycleOwner
+        ) {
+            if (it != "null")
+                (requireActivity() as AppCompatActivity)
+                    .showFloatingSnackBar(binding.collectionBalanceBtc, "Error : $it")
+        }
     }
 
 
@@ -157,7 +160,7 @@ class TransactionsFragment : Fragment() {
         }
 
         override fun getItemCount(): Int {
-            return collection.pubs.size
+            return collection.pubs.size + 1
         }
     }
 
