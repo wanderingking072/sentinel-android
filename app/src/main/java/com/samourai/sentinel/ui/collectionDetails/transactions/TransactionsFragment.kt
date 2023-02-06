@@ -8,8 +8,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
@@ -35,7 +37,7 @@ class TransactionsFragment : Fragment() {
     private var _binding: FragmentTransactionsBinding? = null
     private val binding get() = _binding!!
     private val prefsUtil: com.samourai.sentinel.ui.utils.PrefsUtil by inject(com.samourai.sentinel.ui.utils.PrefsUtil::class.java)
-
+    val indexPubSelected: MutableLiveData<Int> by lazy { MutableLiveData<Int>() }
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -73,6 +75,27 @@ class TransactionsFragment : Fragment() {
                 tab.text = collection.pubs[position-1].label
             }
         }.attach()
+
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab:
+                                       TabLayout.Tab
+                                       ?) {
+                indexPubSelected.value = tab?.position!!
+            }
+
+            override fun onTabUnselected(tab:
+                                         TabLayout.Tab
+                                         ?) {
+                println("Tab unselected: " + tab?.text)
+            }
+
+            override fun onTabReselected(tab:
+                                         TabLayout.Tab
+                                         ?) {
+                println("Tab reselected: " + tab?.text)
+            }
+
+        })
 
         balanceLiveData.observe(viewLifecycleOwner) {
             binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"

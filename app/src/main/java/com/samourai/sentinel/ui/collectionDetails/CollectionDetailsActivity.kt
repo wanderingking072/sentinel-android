@@ -114,6 +114,12 @@ class CollectionDetailsActivity : SentinelActivity() {
             binding.fragmentHostContainerPager.setCurrentItem(1, false)
             binding.fragmentHostContainerPager.visibility = View.VISIBLE
         }
+
+        val pubIndexObserver = Observer<Int> { newIndex ->
+            receiveFragment.setDropDownPub(newIndex)
+        }
+
+        transactionsFragment.indexPubSelected.observe(this, pubIndexObserver)
     }
 
 

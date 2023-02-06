@@ -82,7 +82,6 @@ class ReceiveFragment : Fragment() {
     ): View? {
 
         val root = inflater.inflate(R.layout.fragment_receive, container, false)
-        val advancedRoot = inflater.inflate(R.layout.advanced_receive_fragment, container, true)
 
         val df = DecimalFormat("#")
         df.minimumIntegerDigits = 1
@@ -506,6 +505,21 @@ class ReceiveFragment : Fragment() {
 
     fun setBalanceFiat(balance: LiveData<String>) {
         this.fiatBalanceLiveData = balance
+    }
+
+    fun setDropDownPub(index: Int) {
+        val items = collection.pubs.map { it.label }.toMutableList()
+
+        if (items.size != 0 && index > 0) {
+            val adapter: ArrayAdapter<String> = ArrayAdapter(requireContext(),
+                R.layout.dropdown_menu_popup_item, items)
+            pubKeyDropDown.inputType = InputType.TYPE_NULL
+            pubKeyDropDown.setAdapter(adapter)
+            pubKeyDropDown.setText(items.get(index-1), false)
+            pubKeyIndex = index-1
+            generateQR()
+            tvPath.text = getPath()
+        }
     }
 
 
