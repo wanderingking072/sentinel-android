@@ -83,11 +83,9 @@ class SendFragment : Fragment() {
     private val decimalFormat = DecimalFormat("##.00")
     private var qrCodeString: String? = null
     private val decimalFormatBTC = DecimalFormat("#")
-
-
-
     private var _fragmentSpendBinding: FragmentSpendBinding? = null
     private val fragmentSpendBinding get() = _fragmentSpendBinding!!
+    private var indexPubSelector = -1
 
     private val viewModel: SendViewModel by viewModels()
 
@@ -128,11 +126,16 @@ class SendFragment : Fragment() {
 
 
 
+        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
+
         if (isAdded) {
             setPubKeySelector()
+            if (indexPubSelector != -1) {
+                setDropDownPub(indexPubSelector)
+                indexPubSelector = -1
+            }
         }
 
-        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
 
         setUpFee()
 
@@ -387,6 +390,37 @@ class SendFragment : Fragment() {
 
     fun setCollection(mCollection: PubKeyCollection) {
         this.mCollection = mCollection
+    }
+
+    fun setDropDownPub(index: Int) {
+        decimalFormatBTC.minimumIntegerDigits = 1
+        decimalFormatBTC.minimumFractionDigits = 8
+        decimalFormatBTC.maximumFractionDigits = 8
+
+        if (mCollection == null || index <= 0 || !isAdded) {
+            indexPubSelector = index
+            return
+        }
+        mCollection?.let {
+            val items = it.pubs.map { it.label }.toMutableList()
+
+            val adapter: ArrayAdapter<String> = ArrayAdapter(
+                requireContext(),
+                R.layout.dropdown_menu_popup_item, items
+            )
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.inputType = InputType.TYPE_NULL
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.threshold = items.size
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
+            val selectPubKeyModel = it.pubs[index-1]
+            viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
+            transactionComposer.setPubKey(selectPubKeyModel)
+            fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.get(index-1), false)
+
+            view?.isEnabled = true
+            view?.alpha = 1f
+            fragmentSpendBinding.composeBtn.isEnabled = true
+            }
     }
 
     private fun setPubKeySelector() {
