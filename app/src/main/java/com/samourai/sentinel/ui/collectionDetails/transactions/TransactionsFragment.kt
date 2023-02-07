@@ -81,6 +81,8 @@ class TransactionsFragment : Fragment() {
                                        TabLayout.Tab
                                        ?) {
                 indexPubSelected.value = tab?.position!!
+                if (tab.position > 0)
+                    binding.collectionBalanceBtc.text = df.format((collection.pubs[tab.position -1].balance.toLong()).div(1e8)) + " BTC"
             }
 
             override fun onTabUnselected(tab:
