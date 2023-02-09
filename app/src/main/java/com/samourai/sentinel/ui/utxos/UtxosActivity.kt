@@ -5,6 +5,7 @@ import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.viewpager.widget.ViewPager
+import com.google.android.material.tabs.TabLayout
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
@@ -20,6 +21,7 @@ class UtxosActivity : SentinelActivity() {
     private var pubKeys: ArrayList<PubKeyModel> = arrayListOf()
     private val utxoFragments: MutableMap<String, UTXOFragment> = mutableMapOf()
     private lateinit var binding: ActivityUtxosBinding
+    private var indexPubSelected = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,7 +44,9 @@ class UtxosActivity : SentinelActivity() {
             }
         }
 
-
+        if (indexPubSelected > 0) {
+            binding.tabLayout.getTabAt(indexPubSelected)?.select()
+        }
     }
 
     private fun listenChanges(utxoViewModel: UtxoActivityViewModel) {
@@ -75,6 +79,10 @@ class UtxosActivity : SentinelActivity() {
             }
         }
 
+        if (intent.extras != null && intent.extras!!.containsKey("indexPub")) {
+            indexPubSelected = intent.extras?.getInt("indexPub")!! - 1
+            println("We should be seeing: " + indexPubSelected)
+        }
     }
 
     private fun setUpPager(utxoViewModel: UtxoActivityViewModel) {

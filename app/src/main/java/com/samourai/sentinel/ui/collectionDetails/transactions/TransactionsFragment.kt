@@ -156,6 +156,7 @@ class TransactionsFragment : Fragment() {
         if (item.itemId == R.id.collection_details_transaction_utxos) {
             startActivityForResult(Intent(context, UtxosActivity::class.java).apply {
                 putExtra("collection", collection.id)
+                putExtra("indexPub", indexPubSelected.value)
             }, EDIT_REQUEST_ID)
         }
 
