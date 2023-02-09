@@ -43,9 +43,9 @@ class UtxosActivity : SentinelActivity() {
             listenChanges(utxoViewModel)
             }
         }
-
-        if (indexPubSelected > 0) {
-            binding.tabLayout.getTabAt(indexPubSelected)?.select()
+        //wait for pager to get ready before setting the index
+        binding.pager.post {
+            binding.pager.setCurrentItem(indexPubSelected,true)
         }
     }
 
@@ -81,8 +81,7 @@ class UtxosActivity : SentinelActivity() {
 
         if (intent.extras != null && intent.extras!!.containsKey("indexPub")) {
             indexPubSelected = intent.extras?.getInt("indexPub")!! - 1
-            println("We should be seeing: " + indexPubSelected)
-        }
+         }
     }
 
     private fun setUpPager(utxoViewModel: UtxoActivityViewModel) {
