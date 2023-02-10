@@ -353,8 +353,12 @@ class SendFragment : Fragment() {
                 return
             }
 
+            if (fiatString.get(fiatString.lastIndex).equals('.'))
+                setFiatEdit(DecimalFormat.getNumberInstance().format(fiat) + ".")
+            else
+                setFiatEdit(DecimalFormat.getNumberInstance().format(fiat))
+
             setBtcEdit(MonetaryUtil.getInstance().formatToBtc((btcRate * 1e8).toLong()))
-            setFiatEdit(DecimalFormat.getNumberInstance().format(fiat))
             val btc: Double = MonetaryUtil.getInstance().formatToBtc((btcRate * 1e8).toLong()).toDouble()
             amount = btc
             viewModel.setAmount(amount)

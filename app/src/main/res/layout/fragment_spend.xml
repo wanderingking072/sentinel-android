@@ -108,7 +108,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:imeOptions="flagNoPersonalizedLearning"
-                            android:inputType="numberDecimal|textMultiLine"
+                            android:inputType="number|textMultiLine"
                             android:textSize="14sp" />
 
                     </com.google.android.material.textfield.TextInputLayout>
