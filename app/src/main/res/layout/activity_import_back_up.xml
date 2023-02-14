@@ -74,7 +74,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        android:text="Start Import"
+        android:text="Import Sentinel Backup"
         android:textAllCaps="false"
         android:textColor="@color/md_grey_100"
         android:theme="@style/Widget.MaterialComponents.Button.UnelevatedButton"

@@ -66,14 +66,12 @@
         <Preference
             app:icon="@drawable/ic_file_export"
             app:key="export"
-            app:summary="Export current wallet"
-            app:title="Export" />
+            app:title="Export Sentinel Backup" />
 
         <Preference
             app:icon="@drawable/ic_file_import"
             app:key="import"
-            app:summary="import existing backup files"
-            app:title="Import" />
+            app:title="Import Sentinel Backup" />
 
 
     </PreferenceCategory>
