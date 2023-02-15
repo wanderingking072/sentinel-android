@@ -185,30 +185,6 @@ class CollectionEditActivity : SentinelActivity() {
             adapter = pubKeyAdapter
         }
 
-
-        fun edit(pubKeyModel: PubKeyModel, i: Int){
-            if (viewModel.getCollection().value?.collectionLabel.isNullOrEmpty() && !isEditNewPub) {
-                this@CollectionEditActivity.showFloatingSnackBar(
-                        binding.collectionDetailsRootLayout,
-                    text = "Please enter a collection label first",
-                    duration = Snackbar.LENGTH_LONG
-                )
-            } else {
-                this.alertWithInput(
-                    label = "Edit label",
-                    onConfirm = {
-                        pubKeyModel.label = it
-                        viewModel.updateKey(i, pubKeyModel)
-                        pubKeyAdapter.notifyItemChanged(i)
-                    },
-                    maxLen = 30,
-                    labelEditText = "Label",
-                    value = pubKeyModel.label,
-                    buttonLabel = "Save"
-                )
-            }
-        }
-
         fun delete(index: Int){
             this.confirm(label = "Confirm",
                 message = "Are you sure want to remove this public key ?",
@@ -280,6 +256,29 @@ class CollectionEditActivity : SentinelActivity() {
         }
     }
 
+    fun edit(pubKeyModel: PubKeyModel, i: Int){
+        if (viewModel.getCollection().value?.collectionLabel.isNullOrEmpty() && !isEditNewPub) {
+            this@CollectionEditActivity.showFloatingSnackBar(
+                binding.collectionDetailsRootLayout,
+                text = "Please enter a collection label first",
+                duration = Snackbar.LENGTH_LONG
+            )
+        } else {
+            this.alertWithInput(
+                label = "Edit label",
+                onConfirm = {
+                    pubKeyModel.label = it
+                    viewModel.updateKey(i, pubKeyModel)
+                    pubKeyAdapter.notifyItemChanged(i)
+                },
+                maxLen = 30,
+                labelEditText = "Label",
+                value = pubKeyModel.label,
+                buttonLabel = "Save"
+            )
+        }
+    }
+
     override fun onDestroy() {
         if (needCollectionRefresh) {
             viewModel.getCollection().value?.id?.let {
@@ -310,6 +309,7 @@ class CollectionEditActivity : SentinelActivity() {
                     needCollectionRefresh = true
                     pubKeyAdapter.setEditingPubKey(it.pubKey)
                     viewModel.setPubKeys(items)
+                    edit(it, items.size-1)
                 }
 
             }
