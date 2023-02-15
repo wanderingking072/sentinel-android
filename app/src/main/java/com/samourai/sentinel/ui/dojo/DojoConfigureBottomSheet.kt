@@ -1,7 +1,6 @@
 package com.samourai.sentinel.ui.dojo
 
 import android.Manifest
-import android.app.Dialog
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.DialogInterface
@@ -15,16 +14,14 @@ import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
+import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.tor.TorEventsReceiver
-import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
-import com.samourai.sentinel.ui.views.codeScanner.CodeScanner
-import com.samourai.sentinel.ui.views.codeScanner.CodeScannerView
-import com.samourai.sentinel.ui.views.codeScanner.DecodeCallback
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
+import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.apiScope
 import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.*
@@ -259,7 +256,7 @@ class DojoConnectFragment : Fragment() {
 
 class ScanFragment : Fragment() {
 
-    private var mCodeScanner: CodeScanner? = null
+    private var mCodeScanner: QRScanner? = null
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java);
     private var onScan: (scanData: String) -> Unit = {}
 
@@ -272,28 +269,22 @@ class ScanFragment : Fragment() {
     }
 
     fun resetCamera() {
-        this.mCodeScanner?.stopPreview()
-        this.mCodeScanner?.startPreview()
+        this.mCodeScanner?.stopScanner()
+        this.mCodeScanner?.startScanner()
     }
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        mCodeScanner = CodeScanner(appContext, view.findViewById(R.id.scannerViewXpub))
+        mCodeScanner = view.findViewById(R.id.scannerViewXpub);
         view.findViewById<TextView>(R.id.scanInstructions).text = getString(R.string.dojo_scan_instruction)
         view.findViewById<TextView>(R.id.scanInstructions).textAlignment = TextView.TEXT_ALIGNMENT_CENTER
-        mCodeScanner?.decodeCallback = DecodeCallback {
+        mCodeScanner?.setQRDecodeListener {
             GlobalScope.launch(Dispatchers.Main) {
-                mCodeScanner?.stopPreview()
-                mCodeScanner?.releaseResources()
-                onScan(it.text)
+                mCodeScanner?.stopScanner()
+                onScan(it)
             }
         }
 
-        view.findViewById<CodeScannerView>(R.id.scannerViewXpub).setOnClickListener {
-            if (mCodeScanner?.isPreviewActive == false) {
-                mCodeScanner?.startPreview()
-            }
-        }
         val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
         view.findViewById<Button>(R.id.pastePubKey).setOnClickListener {
@@ -319,12 +310,11 @@ class ScanFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         if (AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, appContext)) {
-            mCodeScanner?.startPreview()
+            mCodeScanner?.startScanner()
         }
     }
 
     override fun onPause() {
-        mCodeScanner?.releaseResources()
         super.onPause()
     }
 
