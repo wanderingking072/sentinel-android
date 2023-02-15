@@ -340,6 +340,10 @@ class SendFragment : Fragment() {
         if (isFiatEditing) {
             return
         }
+        if (fiatString.contains(".") && fiatString.split(".")[1].length > 2) {
+            setFiatEdit(fiatString.dropLast(1))
+            return
+        }
         try {
             if (fiatString.isEmpty()) {
                 setBtcEdit("")
