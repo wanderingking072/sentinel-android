@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.samourai.sentinel.R
+import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
@@ -165,12 +166,20 @@ class CollectionEditActivity : SentinelActivity() {
     }
 
     private fun importWalletIfSegwit(newPubKey: PubKeyModel?) {
+        val apiService: ApiService by inject(ApiService::class.java)
+
         if (newPubKey != null) {
             if (newPubKey.type == AddressTypes.BIP84 || newPubKey.type == AddressTypes.BIP49) {
-                val serviceIntent = Intent(this, ImportSegWitService::class.java)
-                serviceIntent.putExtra("segWit", newPubKey.type!!.name)
-                serviceIntent.putExtra("pubKey", newPubKey.pubKey)
-                ContextCompat.startForegroundService(this, serviceIntent)
+                //val serviceIntent = Intent(this, ImportSegWitService::class.java)
+                //serviceIntent.putExtra("segWit", newPubKey.type!!.name)
+                //serviceIntent.putExtra("pubKey", newPubKey.pubKey)
+
+                //ContextCompat.startForegroundService(this, serviceIntent)
+
+                apiScope.launch {
+                    apiService.importXpub(newPubKey.pubKey, newPubKey.type!!.name)
+                }
+
             }
         }
     }

@@ -106,10 +106,17 @@ open class ApiService {
             .connectTimeout(120, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
             .callTimeout(120, TimeUnit.SECONDS)
-        val request = Request.Builder()
-            .post(byteArrayOf().toRequestBody())
-            .url("${getAPIUrl()}/xpub?xpub=$pubKey&&segwit=$segwit&type=restore")
+
+        val formBody = FormBody.Builder()
+            .add("xpub", pubKey)
+            .add("segwit", segwit)
+            .add("type", "restore")
             .build()
+        val request = Request.Builder()
+            .url("${getAPIUrl()}/xpub")
+            .post(formBody)
+            .build()
+
         return client.newCall(request).await()
     }
 
