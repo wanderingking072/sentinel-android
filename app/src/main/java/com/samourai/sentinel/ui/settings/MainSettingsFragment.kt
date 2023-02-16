@@ -188,8 +188,8 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun clearWallet() {
-        (activity as AppCompatActivity).confirm(label = "Confirm",
-                message = "Are you sure want to clear all the collections ?",
+        (activity as AppCompatActivity).confirm(label = "Are you sure?",
+                message = "All collections will be erased, Dojo/server disconnected, and settings reset",
                 positiveText = "Yes",
                 negativeText = "No",
                 onConfirm = { confirmed ->

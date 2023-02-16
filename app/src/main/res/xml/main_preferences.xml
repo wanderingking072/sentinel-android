@@ -6,12 +6,6 @@
         app:allowDividerBelow="true"
         app:title="Wallet">
 
-        <Preference
-            app:icon="@drawable/ic_reset"
-            app:key="clear"
-            app:summary="Clear all collections and reset settings"
-            app:title="Clear wallet" />
-
         <CheckBoxPreference
             app:icon="@drawable/ic_baseline_lock_24"
             app:key="pinEnabled"
@@ -115,6 +109,16 @@
             app:key="shareErrorLog"
             app:summary="Error file containing previously caught exceptions"
             app:title="Share error log" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory>
+
+        <Preference
+                app:icon="@drawable/ic_reset"
+                app:key="clear"
+                app:summary="Clear all collections and reset settings"
+                app:title="Erase all Sentinel data" />
 
     </PreferenceCategory>
 

@@ -168,11 +168,11 @@ class HomeActivity : SentinelActivity() {
     private fun setUp() {
         if (prefsUtil.firstRun!! && BuildConfig.DEBUG) {
             this.confirm(label = "Choose network",
-                    positiveText = "TestNet",
-                    negativeText = "MainNet",
+                    positiveText = "Mainnet",
+                    negativeText = "Testnet",
                     onConfirm = { confirm ->
                         prefsUtil.firstRun = false
-                        if (confirm) {
+                        if (!confirm) {
                             prefsUtil.testnet = true
                         }
                         if (!SentinelState.isTestNet()) {
@@ -187,10 +187,9 @@ class HomeActivity : SentinelActivity() {
 
     private fun showServerConfig() {
         if (prefsUtil.apiEndPoint.isNullOrEmpty()) {
-            this.confirm(label = "Notice",
-                    message = getString(R.string.server_config_instruction),
+            this.confirm(label = "Choose server",
                     positiveText = "Connect to Dojo",
-                    negativeText = "Use default server",
+                    negativeText = "Connect to Samourai’s server",
                     isCancelable = false,
                     onConfirm = { confirm ->
                         if (confirm) {

@@ -286,7 +286,7 @@
     <string name="public_keys">Public Keys</string>
     <string name="choose_export_opt">Choose export option</string>
     <string name="options">Options</string>
-    <string name="import_supports">Import Supports Samourai backup or Sentinel backup</string>
+    <string name="import_supports">Import a Sentinel backup</string>
     <string name="show_qr_code">SHOW QR CODE</string>
     <string name="launch_qr_scanner">LAUNCH QR SCANNER</string>
     <string name="compose_unsigned_transaction">Compose Unsigned Transaction</string>

@@ -91,10 +91,9 @@ class NetworkActivity : SentinelActivity() {
         dojoUtility.clearDojo()
         setDojoStatus()
         if (prefsUtil.apiEndPoint.isNullOrEmpty()) {
-            this.confirm(label = "Notice",
-                    message = getString(R.string.server_config_instruction),
+            this.confirm(label = "Choose server",
                     positiveText = "Connect to Dojo",
-                    negativeText = "Use default server",
+                    negativeText = "Connect to Samourai’s server",
                     isCancelable = false,
                     onConfirm = { confirm ->
                         if (confirm) {
