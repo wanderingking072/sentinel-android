@@ -158,23 +158,23 @@
     <string name="TestNet">TestNet</string>
 
     <string name="permission_alert_dialog_title_camera">Requesting camera permission</string>
-    <string name="permission_dialog_message_camera">Your wallet needs access to the camera so it can scan QR codes.</string>
+    <string name="permission_dialog_message_camera">Sentinel needs access to the camera so it can scan QR codes.</string>
 
     <string name="is_offline">Samourai is offline</string>
-    <string name="history_will_be_updated">Balance and transaction history will not be updated until a working data connection is establishede</string>
+    <string name="history_will_be_updated">Balance and transaction history will not be updated until a working data connection is established</string>
     <string name="you_received_s">You received</string>
     <string name="paynym_follow_message">This fee covers the cost of creating a special  type of transaction on the blockchain.  This keeps PayNym decentralized</string>
     <string name="paynym_follow_fee_message">A one time connection fee of   will be charged to follow contact</string>
     <string name="initializing_tor">initializing Tor…</string>
     <string name="renew">RENEW</string>
     <string name="in_offline_mode">Sentinel is in offline mode.</string>
-    <string name="dojo_headline">Power Sentinel with your  own personal DOJO full node</string>
-    <string name="powering_sentinel_wallet_">Powering Sentinel Wallet with your own personal node offers the best level of privacy and independence when interacting with the bitcoin network. Dojo makes running a full node easy and simple.</string>
+    <string name="dojo_headline">Power Sentinel with your own personal DOJO full node</string>
+    <string name="powering_sentine_">Powering Sentinel with your own personal node offers the best level of privacy and independence when interacting with the bitcoin network. Dojo makes running a full node easy and simple.</string>
     <string name="preorder">Preorder</string>
     <string name="plug_and_play_full_bitcoin_node_automatically">- Plug and Play full bitcoin node\n\n -Automatically configured Tor hidden service\n\n -Independence from default Samourai servers</string>
     <string name="connect_to_existing_dojo">Connect to existing Dojo</string>
     <string name="dojo_connect_instruction">If you already have a Dojo Full Node or are \nrunning the free and open source Dojo Software\non your own hardware, scan the pairing QR code\nlocated on the Dojo Maintenance control panel</string>
-    <string name="powering_samourai_wallet_">Powering Samourai Wallet with your own personal node offers the best level of privacy and independence when interacting with the bitcoin network. Dojo makes running a full node easy and simple.</string>
+    <string name="powering_sentinel">Powering Sentinel with your own personal node offers the best level of privacy and independence when interacting with the bitcoin network. Dojo makes running a full node easy and simple.</string>
     <string name="disable">Disable</string>
     <string name="Enabled">Enabled</string>
     <string name="loading">loading…</string>
@@ -190,7 +190,7 @@
     <string name="this_utxo_is_marked_as_blocked">This UTXO is marked as Blocked</string>
 
     <string name="refresh">Refresh</string>
-    <string name="selection_contains_blocked_utxo">Your selection contains blocked utxos. please remove and try again.</string>
+    <string name="selection_contains_blocked_utxo">Your selection contains blocked UTXOs. please remove and try again.</string>
     <string name="dust">DUST</string>
     <string name="active">Active</string>
     <string name="do_not_spend">Do Not Spend</string>
@@ -265,17 +265,16 @@
     <!-- Sync Preferences -->
     <string name="sync_title">Sync email periodically</string>
     <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails</string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="pub_key_scan_instruction">Scan the QR/Paste code of any public key such as a bitcoin or an extended public key</string>
     <string name="dojo_scan_instruction">Scan the QR/Paste Dojo payload</string>
-    <string name="permission_denied">Camera access denied, please grant camera access to use scan QR codes.</string>
+    <string name="permission_denied">Camera access denied, please grant camera access to scan QR codes.</string>
     <string name="import_channel_name">Import notification</string>
     <string name="import_channel_description">Shows progress notification when importing public keys</string>
     <string name="confirm_exit">Confirm exit</string>
     <string name="setting_summary_displaySecure">Treat the content of the window as secure, preventing it from appearing in screenshots or from being viewed on non-secure displays</string>
-    <string name="server_config_instruction">Sentinel will set samourai servers as default endpoint ,\n If you want to connect to your own Node. please choose the option</string>
+    <string name="server_config_instruction">Sentinel will set Samourai servers as default endpoint ,\n If you want to connect to your own Node. please choose the option</string>
     <string name="copy_to_clipboard">Copy to clipboard</string>
     <string name="share_qr">Share QR</string>
     <string name="view_unspend_outputs">View Unspent Outputs</string>

@@ -103,7 +103,7 @@
     <PreferenceCategory
         app:allowDividerAbove="true"
         app:allowDividerBelow="true"
-        app:title="TroubleShoot &amp; Debug">
+        app:title="Troubleshooting &amp; Debug">
 
         <Preference
             app:key="shareErrorLog"

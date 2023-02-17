@@ -92,7 +92,7 @@ class NetworkActivity : SentinelActivity() {
         setDojoStatus()
         if (prefsUtil.apiEndPoint.isNullOrEmpty()) {
             this.confirm(label = "Choose server",
-                    positiveText = "Connect to Dojo",
+                    positiveText = "Connect to your Dojo",
                     negativeText = "Connect to Samourai’s server",
                     isCancelable = false,
                     onConfirm = { confirm ->
