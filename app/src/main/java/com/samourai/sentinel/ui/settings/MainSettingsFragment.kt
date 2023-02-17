@@ -203,22 +203,12 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                                     dojoUtility.clearDojo()
                                     prefsUtil.clearAll()
                                 }
-                                withContext(Dispatchers.Main) {
-                                    (activity as SettingsActivity).setRequireRestart(true)
-                                    (activity as AppCompatActivity).showFloatingSnackBar(
-                                            parent_view = requireView(),
-                                            text = "Successfully cleared",
-                                            actionClick = {
-                                                startActivity(Intent(activity, HomeActivity::class.java).apply {
-                                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                                                })
-                                                (activity as SettingsActivity).overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out);
-                                                (activity as SettingsActivity).finish()
-                                            },
-                                            actionText = "Restart"
-                                    )
-                                }
+                                startActivity(Intent(activity, HomeActivity::class.java).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                                })
+                                (activity as SettingsActivity).overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out);
+                                (activity as SettingsActivity).finish()
                             } catch (ex: Exception) {
                                 withContext(Dispatchers.Main) {
                                     (activity as AppCompatActivity).showFloatingSnackBar(
