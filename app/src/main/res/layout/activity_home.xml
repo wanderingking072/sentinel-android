@@ -86,7 +86,7 @@
             android:layout_gravity="center"
             android:textColor="#9A9A9A"
             android:text="Sentinel can organize and track many different \npublic keys such as bitcoin addresses or extended \npublic keys
-\n\nYour watch list is empty. Add your first public key to begin tracking with sentinel
+\n\nYour watch list is empty. Add your first public key to begin tracking with Sentinel
 " />
     </androidx.core.widget.NestedScrollView>
 
