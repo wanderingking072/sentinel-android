@@ -9,7 +9,6 @@ import android.view.MenuItem
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import androidx.core.widget.doOnTextChanged
 import androidx.lifecycle.Observer
@@ -24,7 +23,6 @@ import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
 import com.samourai.sentinel.databinding.ActivityCollectionEditBinding
-import com.samourai.sentinel.service.ImportSegWitService
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
 import com.samourai.sentinel.ui.fragments.QRBottomSheetDialog
@@ -179,7 +177,11 @@ class CollectionEditActivity : SentinelActivity() {
                 apiScope.launch {
                     apiService.importXpub(newPubKey.pubKey, newPubKey.type!!.name)
                 }
-
+            }
+            else {
+                apiScope.launch {
+                    apiService.importXpub(newPubKey.pubKey, "44")
+                }
             }
         }
     }

@@ -8,6 +8,7 @@ import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.apiScope
+import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -37,6 +38,8 @@ open class ApiService {
     private val ACCESS_TOKEN_REFRESH = 300L
     lateinit var client: OkHttpClient
     private val  JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+    private val HARDENED = 2147483648
+
 
     init {
         try {
@@ -101,6 +104,16 @@ open class ApiService {
     }
 
     suspend fun importXpub(pubKey: String, segwit: String): Response {
+        val xpub = XPUB(pubKey)
+        xpub.decode()
+        var segwitValue = segwit
+
+        if (segwit == "44")
+            segwitValue = ""
+
+        if ((xpub.child + HARDENED).toString().equals("2147483646"))
+            segwitValue = "bip84"
+
         buildClient(excludeAuthenticator = true)
         client.newBuilder()
             .connectTimeout(120, TimeUnit.SECONDS)
@@ -109,7 +122,7 @@ open class ApiService {
 
         val formBody = FormBody.Builder()
             .add("xpub", pubKey)
-            .add("segwit", segwit)
+            .add("segwit", segwitValue)
             .add("type", "restore")
             .build()
         val request = Request.Builder()
