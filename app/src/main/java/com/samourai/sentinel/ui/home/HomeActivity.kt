@@ -95,10 +95,13 @@ class HomeActivity : SentinelActivity() {
         model.loading().observe(this, {
             binding.swipeRefreshCollection.isRefreshing = it
         })
-        model.getErrorMessage().observe(this, {
+        model.getErrorMessage().observe(this) {
             if (it != "null")
-                this@HomeActivity.showFloatingSnackBar(binding.fab, text = "Error: $it")
-        })
+                this@HomeActivity.showFloatingSnackBar(
+                    binding.fab,
+                    text = "No data connection available. Please enable data"
+                )
+        }
 
         binding.swipeRefreshCollection.setOnRefreshListener {
             binding.swipeRefreshCollection.isRefreshing = false
