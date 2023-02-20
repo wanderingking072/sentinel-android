@@ -140,7 +140,7 @@ class ImportBackUpActivity : SentinelActivity() {
                         Timber.e(it)
                         showFloatingSnackBar(
                                 binding.importPastePayloadBtn,
-                                "Error: ${it.message}",
+                                "Unable to decrypt. Wrong password",
                                 anchorView = binding.importStartBtn.id
                         )
                     }
