@@ -30,6 +30,7 @@ import org.koin.java.KoinJavaComponent
 class DojoConfigureBottomSheet : GenericBottomSheet() {
     private var payloadPassed: String? = null;
     private val scanFragment = ScanFragment()
+    private val dojoConfigureBottomSheet = DojoNodeInstructions()
     private val dojoConnectFragment = DojoConnectFragment()
     private var dojoConfigurationListener: DojoConfigurationListener? = null
     private var cameraFragmentBottomSheet: CameraFragmentBottomSheet? = null
@@ -54,6 +55,9 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setUpViewPager()
+        dojoConfigureBottomSheet.setConnectListener(View.OnClickListener {
+            binding.pager.setCurrentItem(1, true)
+        })
         scanFragment.setOnScanListener {
             if (dojoUtil.validate(it)) {
                 payload = it
@@ -135,7 +139,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
 
     private fun setUpViewPager() {
         val item = arrayListOf<Fragment>()
-        //item.add(dojoConfigureBottomSheet)
+        item.add(dojoConfigureBottomSheet)
         item.add(scanFragment)
         item.add(dojoConnectFragment)
         binding.pager.adapter = object : FragmentStateAdapter(this) {
@@ -181,6 +185,29 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         fun onDismiss()
     }
 }
+
+class DojoNodeInstructions : Fragment() {
+
+    private var connectOnClickListener: View.OnClickListener? = null
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.bottomsheet_dojo_configure_instruction, container, false);
+    }
+
+    fun setConnectListener(listener: View.OnClickListener) {
+        connectOnClickListener = listener
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.findViewById<MaterialButton>(R.id.connect_dojo).setOnClickListener { view ->
+            connectOnClickListener?.onClick(view)
+        }
+    }
+
+
+}
+
 
 class DojoConnectFragment : Fragment() {
 
