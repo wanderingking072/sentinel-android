@@ -19,6 +19,7 @@ import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.data.db.dao.TxDao
 import com.samourai.sentinel.ui.fragments.TransactionsDetailsBottomSheet
+import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import org.koin.java.KoinJavaComponent
 
@@ -32,6 +33,7 @@ class TransactionsListFragment(
 ) : Fragment() {
 
     private val transactionAdapter: TransactionAdapter = TransactionAdapter()
+    private val prefs: PrefsUtil by KoinJavaComponent.inject(PrefsUtil::class.java)
 
     class TransactionsViewModel(val pubKeyCollection: PubKeyCollection, val position: Int) : ViewModel() {
         private val txDao: TxDao by KoinJavaComponent.inject(TxDao::class.java)
@@ -78,7 +80,7 @@ class TransactionsListFragment(
         val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(requireContext(), R.drawable.divider_tx)!!)
         transactionsRecycler.addItemDecoration(decorator)
         transactionAdapter.setOnclickListener {
-            val dojoConfigureBottomSheet = TransactionsDetailsBottomSheet(it)
+            val dojoConfigureBottomSheet = TransactionsDetailsBottomSheet(it, secure = prefs.displaySecure!!)
             dojoConfigureBottomSheet.show(childFragmentManager, dojoConfigureBottomSheet.tag)
         }
 

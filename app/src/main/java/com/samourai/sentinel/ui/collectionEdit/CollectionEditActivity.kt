@@ -234,7 +234,7 @@ class CollectionEditActivity : SentinelActivity() {
                pubKeyModel.pubKey,
                pubKeyModel.label,
                pubKeyModel.label,
-               secure = true
+               secure = prefs.displaySecure!!
            )
             dialog.show(supportFragmentManager, dialog.tag)
         }

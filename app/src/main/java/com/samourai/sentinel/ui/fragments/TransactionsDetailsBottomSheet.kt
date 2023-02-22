@@ -35,7 +35,7 @@ import java.util.*
  */
 
 
-class TransactionsDetailsBottomSheet(private var tx: Tx) : GenericBottomSheet() {
+class TransactionsDetailsBottomSheet(private var tx: Tx, val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
 
     data class TxFeeData(val fee: Long?, val feeRate: Long?, val size: Long?)
 
