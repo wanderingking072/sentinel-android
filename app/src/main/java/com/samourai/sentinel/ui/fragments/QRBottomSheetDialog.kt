@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -32,7 +33,7 @@ import com.samourai.sentinel.util.AppUtil
 import java.io.File
 import java.io.FileOutputStream
 
-class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipboardLabel: String? = "") : GenericBottomSheet() {
+class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipboardLabel: String? = "",  val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
 
     override fun getTheme(): Int = R.style.AppTheme_BottomSheet_Theme
 
@@ -40,6 +41,7 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
         requireContext(),
         theme
     )
+
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -51,7 +53,6 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         val qrDialogCopyToClipBoard = view.findViewById<TextView>(R.id.qrDialogCopyToClipBoard);
         val shareQrButton = view.findViewById<TextView>(R.id.shareQrButton);
         val qrToolbar = view.findViewById<MaterialToolbar>(R.id.qrToolbar);

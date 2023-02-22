@@ -10,6 +10,7 @@ import android.text.method.PasswordTransformationMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
@@ -33,7 +34,7 @@ import com.samourai.sentinel.ui.home.HomeActivity
  * Base BottomSheet class for the whole application
  * Custom themes with rounded corners are applied
  */
-open class GenericBottomSheet : BottomSheetDialogFragment() {
+open class GenericBottomSheet(private val secure:Boolean = false) : BottomSheetDialogFragment() {
 
     override fun getTheme(): Int = R.style.AppTheme_BottomSheet_Theme
 
@@ -42,6 +43,11 @@ open class GenericBottomSheet : BottomSheetDialogFragment() {
         theme
     )
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        if (secure)
+            dialog?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
 }
 
 /**

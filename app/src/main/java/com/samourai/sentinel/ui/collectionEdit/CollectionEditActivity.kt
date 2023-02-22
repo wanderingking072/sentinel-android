@@ -246,7 +246,8 @@ class CollectionEditActivity : SentinelActivity() {
            val dialog =  QRBottomSheetDialog(
                pubKeyModel.pubKey,
                pubKeyModel.label,
-               pubKeyModel.label
+               pubKeyModel.label,
+               secure = true
            )
             dialog.show(supportFragmentManager, dialog.tag)
         }
