@@ -33,6 +33,7 @@ import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.*
 import com.samourai.wallet.crypto.AESUtil
 import com.samourai.wallet.util.CharSequenceX
+import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.*
 import org.koin.java.KoinJavaComponent.inject
 import java.io.*
@@ -196,6 +197,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                     if (confirmed) {
                         settingsScope.launch {
                             try {
+                                TorServiceController.stopTor()
                                 withContext(Dispatchers.IO) {
                                     utxoDao.delete()
                                     txDao.delete()
