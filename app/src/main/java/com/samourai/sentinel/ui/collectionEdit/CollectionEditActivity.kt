@@ -155,6 +155,7 @@ class CollectionEditActivity : SentinelActivity() {
             viewModel.setCollection(collectionModel)
             if (intent.extras!!.containsKey("pubKey")) {
                 val newPubKey = intent.extras!!.getParcelable<PubKeyModel>("pubKey")
+                edit(newPubKey!!, 0)
                 needCollectionRefresh = true
                 viewModel.setPubKeys(arrayListOf(newPubKey!!))
                 importWalletIfSegwit(newPubKey)
@@ -269,13 +270,6 @@ class CollectionEditActivity : SentinelActivity() {
     }
 
     fun edit(pubKeyModel: PubKeyModel, i: Int){
-        if (viewModel.getCollection().value?.collectionLabel.isNullOrEmpty() && !isEditNewPub) {
-            this@CollectionEditActivity.showFloatingSnackBar(
-                binding.collectionDetailsRootLayout,
-                text = "Please enter a collection label first",
-                duration = Snackbar.LENGTH_LONG
-            )
-        } else {
             this.alertWithInput(
                 label = "Edit label",
                 onConfirm = {
@@ -288,7 +282,6 @@ class CollectionEditActivity : SentinelActivity() {
                 value = pubKeyModel.label,
                 buttonLabel = "Save"
             )
-        }
     }
 
     override fun onDestroy() {
