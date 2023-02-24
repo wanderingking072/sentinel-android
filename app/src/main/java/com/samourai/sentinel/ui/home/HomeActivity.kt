@@ -1,6 +1,7 @@
 package com.samourai.sentinel.ui.home
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -203,6 +204,21 @@ class HomeActivity : SentinelActivity() {
                                 showDojoSetUpBottomSheet()
                             }
                         } else {
+                            val dlg: AlertDialog.Builder =
+                                AlertDialog.Builder(this@HomeActivity)
+                                    .setTitle(R.string.app_name)
+                                    .setMessage("Would you like to connect to TOR?")
+                                    .setCancelable(false)
+                                    .setPositiveButton("Yes, connect") { dialog, whichButton ->
+                                        dialog.dismiss()
+                                        TorServiceController.startTor()
+                                        prefsUtil.enableTor = true
+                                    }
+                                    .setNegativeButton("No") { dialog, whichButton ->
+                                        dialog.dismiss()
+                                    }
+
+                            dlg.show()
                             if (prefsUtil.testnet!!) {
                                 prefsUtil.apiEndPoint = APIConfig.SAMOURAI_API_TESTNET
                                 prefsUtil.apiEndPointTor = APIConfig.SAMOURAI_API_TOR_TESTNET
