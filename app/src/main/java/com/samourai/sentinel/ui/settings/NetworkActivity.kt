@@ -1,16 +1,12 @@
 package com.samourai.sentinel.ui.settings
 
-import android.Manifest
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Observer
-import com.google.android.material.snackbar.Snackbar
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.core.SentinelState
@@ -18,7 +14,6 @@ import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
-import com.samourai.sentinel.ui.utils.pxToDp
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
 import io.matthewnelson.topl_service.TorServiceController
@@ -99,6 +94,17 @@ class NetworkActivity : SentinelActivity() {
                         if (confirm) {
                             showDojoSetUpBottomSheet()
                         } else {
+                            this.confirm(label = "Connect through Tor?",
+                                message = "",
+                                positiveText = "Yes",
+                                negativeText = "No",
+                                onConfirm = { confirmed ->
+                                    if (confirmed) {
+                                        TorServiceController.startTor()
+                                        prefsUtil.enableTor = true
+                                    }
+                                }
+                            )
                             if (prefsUtil.testnet!!) {
                                 prefsUtil.apiEndPoint = APIConfig.SAMOURAI_API_TESTNET
                                 prefsUtil.apiEndPointTor = APIConfig.SAMOURAI_API_TOR_TESTNET
