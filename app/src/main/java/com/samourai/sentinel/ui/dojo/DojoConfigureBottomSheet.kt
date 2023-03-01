@@ -4,8 +4,10 @@ import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.text.Editable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,17 +16,21 @@ import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.tor.TorEventsReceiver
+import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
+import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.apiScope
 import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.*
+import org.koin.android.ext.android.bind
 import org.koin.java.KoinJavaComponent
 
 class DojoConfigureBottomSheet : GenericBottomSheet() {
@@ -32,6 +38,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     private val scanFragment = ScanFragment()
     private val dojoConfigureBottomSheet = DojoNodeInstructions()
     private val dojoConnectFragment = DojoConnectFragment()
+    private val connectManuallyFragment = ConnectManuallyFragment()
     private var dojoConfigurationListener: DojoConfigurationListener? = null
     private var cameraFragmentBottomSheet: CameraFragmentBottomSheet? = null
 
@@ -58,6 +65,16 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         dojoConfigureBottomSheet.setConnectListener(View.OnClickListener {
             binding.pager.setCurrentItem(1, true)
         })
+        connectManuallyFragment.setConnectListener(View.OnClickListener {
+            binding.pager.setCurrentItem(3, true)
+        })
+        connectManuallyFragment.setConnectListener(View.OnClickListener {
+            payload = connectManuallyFragment.dojoPayload.toString()
+            startTorAndConnect()
+        })
+        scanFragment.setManualDetailsListener(View.OnClickListener {
+            binding.pager.setCurrentItem(2, true)
+        })
         scanFragment.setOnScanListener {
             if (dojoUtil.validate(it)) {
                 payload = it
@@ -83,7 +100,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     private val pagerCallBack = object : ViewPager2.OnPageChangeCallback() {
         override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
             super.onPageScrolled(position, positionOffset, positionOffsetPixels)
-            if (position == 2) {
+            if (position == 3) {
                 startTorAndConnect()
             }
         }
@@ -113,6 +130,8 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             try {
                 val call = async { dojoUtil.setDojo(payload) }
                 val response = call.await()
+                println("Payload" + payload)
+                println("Response: " + response)
                 if (response.isSuccessful) {
                     val body = response.body?.string()
                     if (body != null) {
@@ -141,6 +160,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         val item = arrayListOf<Fragment>()
         item.add(dojoConfigureBottomSheet)
         item.add(scanFragment)
+        item.add(connectManuallyFragment)
         item.add(dojoConnectFragment)
         binding.pager.adapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int {
@@ -254,14 +274,100 @@ class DojoConnectFragment : Fragment() {
     }
 }
 
+class ConnectManuallyFragment : Fragment() {
+
+
+    private lateinit var checkImageTor: ImageView
+    private lateinit var checkImageDojo: ImageView
+    private lateinit var progressTor: ProgressBar
+    private lateinit var progressDojo: ProgressBar
+    private var connectOnClickListener: View.OnClickListener? = null
+    private var onionText : TextInputEditText? = null
+    private var apiText : TextInputEditText? = null
+    private var connectButton: MaterialButton? = null
+
+    var dojoPayload : String? = null
+
+
+    fun setConnectListener(listener: View.OnClickListener) {
+        connectOnClickListener = listener
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        val view = inflater.inflate(R.layout.activity_set_dojo_manually, container, false)
+
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        onionText = view.findViewById<TextInputEditText>(R.id.setUpWalletAddressInput)
+        apiText = view.findViewById<TextInputEditText>(R.id.setUpWalletApiKeyInput)
+        connectButton = view.findViewById<MaterialButton>(R.id.setUpWalletConnectDojo)
+
+        val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+        if (clipboard.primaryClip?.getItemAt(0)?.text?.contains(".onion") == true) {
+            onionText?.setText(clipboard.primaryClip?.getItemAt(0)?.text)
+        }
+
+        connectButton?.setOnClickListener(View.OnClickListener {
+            if (onionText?.text?.isNotBlank() == true && apiText?.text?.isNotBlank() == true) {
+                dojoPayload = "{\n" +
+                        "\"pairing\": {\n" +
+                        "\"type\": \"dojo.api\",\n" +
+                        "\"version\": \"1.17.0\",\n" +
+                        "\"apikey\": \"tcPwnDMvaKrg1k5PKewO49wpxU91NH\",\n" +
+                        "\"url\": \"http://7576477szrq6bmiqaulet66u7qmeoohallr4l4yutwl7wfuwsmi7rcad.onion/test/v2\"\n" +
+                        "}\n" +
+                        "}"
+                connectOnClickListener?.onClick(view)
+            }
+        })
+    }
+
+
+    fun showTorProgress() {
+        progressTor.visibility = View.VISIBLE
+        checkImageTor.visibility = View.INVISIBLE
+        progressTor.animate()
+            .alpha(1f)
+            .setDuration(600)
+            .start()
+    }
+
+    fun showTorProgressSuccess() {
+        progressTor.visibility = View.INVISIBLE
+        checkImageTor.visibility = View.VISIBLE
+    }
+
+    fun showDojoProgress() {
+        progressDojo.visibility = View.VISIBLE
+        checkImageDojo.visibility = View.INVISIBLE
+    }
+
+    fun showDojoProgressSuccess() {
+        progressDojo.visibility = View.INVISIBLE
+        checkImageDojo.visibility = View.VISIBLE
+    }
+}
+
+
 class ScanFragment : Fragment() {
 
     private var mCodeScanner: QRScanner? = null
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java);
     private var onScan: (scanData: String) -> Unit = {}
+    private var manualDetailsListener: View.OnClickListener? = null
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.content_scan_layout, container, false);
+    }
+
+    fun setManualDetailsListener(listener: View.OnClickListener) {
+        manualDetailsListener = listener
     }
 
     fun setOnScanListener(callback: (scanData: String) -> Unit) {
@@ -285,23 +391,8 @@ class ScanFragment : Fragment() {
             }
         }
 
-        val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
         view.findViewById<Button>(R.id.pastePubKey).setOnClickListener {
-            when {
-                !clipboard.hasPrimaryClip() -> {
-                    Toast.makeText(context, "Payload not found in clipboard", Toast.LENGTH_SHORT).show()
-                }
-                else -> {
-                    try {
-                        val item = clipboard.primaryClip?.getItemAt(0)
-                        onScan(item?.text.toString())
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Payload not found in clipboard", Toast.LENGTH_SHORT).show()
-                    }
-
-                }
-            }
+            manualDetailsListener?.onClick(view)
         }
 
     }

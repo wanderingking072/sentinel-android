@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/setUpWalletContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:context=".onboard.SetUpWalletActivity">
+
+        <TextView
+            android:id="@+id/textView85"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="Enter Dojo Details Manually"
+            android:textAlignment="textStart"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toTopOf="@+id/guideline27"
+            app:layout_constraintEnd_toStartOf="@+id/guideline25"
+            app:layout_constraintStart_toStartOf="@+id/guideline24"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.23000002" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline24"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.06" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline25"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.94" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline27"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.18" />
+
+        <TextView
+            android:id="@+id/onBoardingTorStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="13sp"
+            app:layout_constraintBottom_toBottomOf="@+id/textView85"
+            app:layout_constraintEnd_toEndOf="@+id/textView85"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/textView85"
+            app:layout_constraintTop_toTopOf="@+id/textView85"
+            tools:text="Active" />
+
+
+        <ProgressBar
+            android:id="@+id/setUpWalletTorProgress"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/textView85"
+            app:layout_constraintEnd_toEndOf="@+id/textView85"
+            app:layout_constraintStart_toStartOf="@+id/textView85"
+            app:layout_constraintTop_toTopOf="@+id/textView85"
+            tools:visibility="visible" />
+
+
+        <LinearLayout
+            android:id="@+id/setUpWalletDojoInputGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            android:alpha="1"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="@+id/textView85"
+            app:layout_constraintStart_toStartOf="@+id/textView85"
+            app:layout_constraintTop_toBottomOf="@+id/textView86"
+            app:layout_constraintVertical_bias="0.0"
+            tools:alpha="1">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/setUpWalletAddressInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:hint="Dojo Onion Address"
+                android:inputType="textUri"
+                android:textSize="14sp" />
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/setUpWalletApiKeyInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="API Key"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="8dp"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/setUpWalletConnectDojo"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Connect"
+                    android:textAllCaps="false"
+                    app:iconTint="@color/white" />
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+
+        <TextView
+            android:id="@+id/textView86"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:text="Dojo Status"
+            app:layout_constraintEnd_toEndOf="@+id/textView85"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="@+id/textView85"
+            app:layout_constraintTop_toBottomOf="@+id/textView85" />
+
+        <TextView
+            android:id="@+id/onBoardingDojoStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="13sp"
+            tools:text="No connected"
+            app:layout_constraintBottom_toBottomOf="@+id/textView86"
+            app:layout_constraintEnd_toEndOf="@+id/textView85"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/textView86"
+            app:layout_constraintTop_toTopOf="@+id/textView86" />
+
+        <ProgressBar
+            android:id="@+id/setUpWalletDojoProgress"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/textView85"
+            app:layout_constraintEnd_toEndOf="@+id/textView85"
+            app:layout_constraintStart_toStartOf="@+id/textView85"
+            app:layout_constraintTop_toTopOf="@+id/textView85"
+            tools:visibility="visible" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</ScrollView>
