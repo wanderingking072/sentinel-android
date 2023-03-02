@@ -66,11 +66,10 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             binding.pager.setCurrentItem(1, true)
         })
         connectManuallyFragment.setConnectListener(View.OnClickListener {
-            binding.pager.setCurrentItem(3, true)
-        })
-        connectManuallyFragment.setConnectListener(View.OnClickListener {
-            payload = connectManuallyFragment.dojoPayload.toString()
-            startTorAndConnect()
+            if (connectManuallyFragment.dojoPayload == null )
+                Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
+            else
+                binding.pager.setCurrentItem(3, true)
         })
         scanFragment.setManualDetailsListener(View.OnClickListener {
             binding.pager.setCurrentItem(2, true)
@@ -125,13 +124,13 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     }
 
     private fun setDojo() {
+        if (connectManuallyFragment.dojoPayload?.isNotEmpty() == true && connectManuallyFragment.dojoPayload != null)
+            payload = connectManuallyFragment.dojoPayload!!
         dojoConnectFragment.showDojoProgress()
         apiScope.launch {
             try {
                 val call = async { dojoUtil.setDojo(payload) }
                 val response = call.await()
-                println("Payload" + payload)
-                println("Response: " + response)
                 if (response.isSuccessful) {
                     val body = response.body?.string()
                     if (body != null) {
@@ -306,24 +305,19 @@ class ConnectManuallyFragment : Fragment() {
         apiText = view.findViewById<TextInputEditText>(R.id.setUpWalletApiKeyInput)
         connectButton = view.findViewById<MaterialButton>(R.id.setUpWalletConnectDojo)
 
-        val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-        if (clipboard.primaryClip?.getItemAt(0)?.text?.contains(".onion") == true) {
-            onionText?.setText(clipboard.primaryClip?.getItemAt(0)?.text)
-        }
-
         connectButton?.setOnClickListener(View.OnClickListener {
-            if (onionText?.text?.isNotBlank() == true && apiText?.text?.isNotBlank() == true) {
+            if (onionText?.text?.isBlank() == true || apiText?.text?.isBlank() == true)
+                dojoPayload = null
+            else
                 dojoPayload = "{\n" +
                         "\"pairing\": {\n" +
                         "\"type\": \"dojo.api\",\n" +
                         "\"version\": \"1.17.0\",\n" +
-                        "\"apikey\": \"tcPwnDMvaKrg1k5PKewO49wpxU91NH\",\n" +
-                        "\"url\": \"http://7576477szrq6bmiqaulet66u7qmeoohallr4l4yutwl7wfuwsmi7rcad.onion/test/v2\"\n" +
+                        "\"apikey\": \"${apiText?.text}}\",\n" +
+                        "\"url\": \"${onionText?.text}\"\n" +
                         "}\n" +
                         "}"
-                connectOnClickListener?.onClick(view)
-            }
+            connectOnClickListener?.onClick(view)
         })
     }
 

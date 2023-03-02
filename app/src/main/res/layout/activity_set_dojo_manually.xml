@@ -118,17 +118,17 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginTop="8dp"
-                android:gravity="end"
+                android:gravity="center"
                 android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/setUpWalletConnectDojo"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Connect"
                     android:textAllCaps="false"
-                    app:iconTint="@color/white" />
+                    android:textColor="@color/text_primary" />
 
             </LinearLayout>
 
@@ -146,31 +146,6 @@
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="@+id/textView85"
             app:layout_constraintTop_toBottomOf="@+id/textView85" />
-
-        <TextView
-            android:id="@+id/onBoardingDojoStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textSize="13sp"
-            tools:text="No connected"
-            app:layout_constraintBottom_toBottomOf="@+id/textView86"
-            app:layout_constraintEnd_toEndOf="@+id/textView85"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toEndOf="@+id/textView86"
-            app:layout_constraintTop_toTopOf="@+id/textView86" />
-
-        <ProgressBar
-            android:id="@+id/setUpWalletDojoProgress"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/textView85"
-            app:layout_constraintEnd_toEndOf="@+id/textView85"
-            app:layout_constraintStart_toStartOf="@+id/textView85"
-            app:layout_constraintTop_toTopOf="@+id/textView85"
-            tools:visibility="visible" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
