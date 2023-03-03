@@ -77,7 +77,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         scanFragment.setOnScanListener {
             if (dojoUtil.validate(it)) {
                 payload = it
-                binding.pager.setCurrentItem(2, true)
+                binding.pager.setCurrentItem(3, true)
             } else {
                 scanFragment.resetCamera()
                 Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
@@ -128,6 +128,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             payload = connectManuallyFragment.dojoPayload!!
         dojoConnectFragment.showDojoProgress()
         apiScope.launch {
+            delay(1000)
             try {
                 val call = async { dojoUtil.setDojo(payload) }
                 val response = call.await()
@@ -136,13 +137,13 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                     if (body != null) {
                         dojoUtil.setAuthToken(body)
                     }
-                }
-                withContext(Dispatchers.Main) {
-                    dojoConnectFragment.showDojoProgressSuccess()
-                    Handler().postDelayed(Runnable {
-                        this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
-                        this@DojoConfigureBottomSheet.dismiss()
-                    }, 500)
+                    withContext(Dispatchers.Main) {
+                        dojoConnectFragment.showDojoProgressSuccess()
+                        Handler().postDelayed(Runnable {
+                            this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
+                            this@DojoConfigureBottomSheet.dismiss()
+                        }, 500)
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
