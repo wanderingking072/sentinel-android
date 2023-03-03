@@ -112,11 +112,8 @@ class HomeActivity : SentinelActivity() {
                 }
                 if (SentinelState.torState == SentinelState.TorState.OFF) {
                     this.showFloatingSnackBar(binding.fab,
-                            "Tor is required! Please turn on Tor",
-                            actionText = "Turn on",
-                            actionClick = {
-                                TorServiceController.startTor()
-                            })
+                            text="Please wait while Tor is turning on")
+                    TorServiceController.startTor()
                 }
                 if (SentinelState.torState == SentinelState.TorState.ON) {
                     model.fetchBalance()
