@@ -57,6 +57,9 @@ class HomeActivity : SentinelActivity() {
         torServicePrefs = TorServicePrefs(this)
 
         val model: HomeViewModel by viewModels()
+        if (SentinelState.isTorRequired() && SentinelState.torState == SentinelState.TorState.OFF) {
+            TorServiceController.startTor()
+        }
 
         setUp()
 
