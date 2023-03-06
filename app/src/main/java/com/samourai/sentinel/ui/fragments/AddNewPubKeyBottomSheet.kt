@@ -286,6 +286,17 @@ class SelectAddressTypeFragment : Fragment() {
         binding.nextBtn.setOnClickListener {
             onSelect(addressType)
         }
+
+        binding.buttonBIP84.setOnClickListener(View.OnClickListener {
+            addressType = AddressTypes.BIP84
+        })
+        binding.buttonBIP49.setOnClickListener(View.OnClickListener {
+            addressType = AddressTypes.BIP49
+        })
+        binding.buttonBIP44.setOnClickListener(View.OnClickListener {
+            addressType = AddressTypes.BIP44
+        })
+
         when (addressType) {
             AddressTypes.BIP44 -> {
                 binding.buttonBIP44.isChecked = true
