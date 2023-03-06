@@ -271,7 +271,7 @@ class CollectionEditActivity : SentinelActivity() {
 
     fun edit(pubKeyModel: PubKeyModel, i: Int){
             this.alertWithInput(
-                label = "Edit label",
+                label = "Add/edit public key label",
                 onConfirm = {
                     pubKeyModel.label = it
                     viewModel.updateKey(i, pubKeyModel)
