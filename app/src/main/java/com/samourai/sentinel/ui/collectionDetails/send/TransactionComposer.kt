@@ -9,8 +9,8 @@ import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.Utxo
 import com.samourai.sentinel.send.FeeUtil
-import com.samourai.sentinel.send.PSBT
 import com.samourai.sentinel.send.SendFactory
+import com.samourai.wallet.psbt.PSBT
 import com.samourai.wallet.segwit.SegwitAddress
 import com.samourai.wallet.send.MyTransactionOutPoint
 import com.samourai.wallet.send.UTXO
@@ -19,7 +19,6 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.lang3.tuple.Triple
 import org.bitcoinj.core.ECKey
 import org.bitcoinj.params.MainNetParams
-import org.bitcoinj.params.TestNet3Params
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent
 import timber.log.Timber
