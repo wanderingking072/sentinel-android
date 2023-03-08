@@ -149,9 +149,12 @@ open class ApiService {
 
     suspend fun authenticateDojo(apiKey: String): Response {
         buildClient()
+        val formBody = FormBody.Builder()
+            .add("apikey", apiKey)
+            .build()
         val request = Request.Builder()
-            .post(byteArrayOf().toRequestBody())
-            .url("${getAPIUrl()}/auth/login?apikey=$apiKey")
+            .post(formBody)
+            .url("${getAPIUrl()}/auth/login")
             .build()
         return client.newCall(request).await()
     }
