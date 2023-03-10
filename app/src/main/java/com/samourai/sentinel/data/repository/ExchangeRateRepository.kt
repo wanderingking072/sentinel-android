@@ -3,8 +3,7 @@ package com.samourai.sentinel.data.repository
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.samourai.sentinel.data.exchange.ExchangeProviderImpl
-import com.samourai.sentinel.data.exchange.BitFinexExchangeProvider
-import com.samourai.sentinel.data.exchange.BitStampExchangeProvider
+import com.samourai.sentinel.data.exchange.LBTCExchangeProvider
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.*
@@ -27,8 +26,7 @@ class ExchangeRateRepository {
     private val message: MutableLiveData<String> = MutableLiveData()
 
     private val exchanges: ArrayList<ExchangeProviderImpl> = arrayListOf(
-            BitFinexExchangeProvider(),
-            BitStampExchangeProvider()
+            LBTCExchangeProvider()
     )
 
     private var selectedExchange: ExchangeProviderImpl = exchanges.first()

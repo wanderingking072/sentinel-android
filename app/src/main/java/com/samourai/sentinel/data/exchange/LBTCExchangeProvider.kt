@@ -15,16 +15,90 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * @author Sarath
  */
-class BitFinexExchangeProvider : ExchangeProviderImpl {
+class LBTCExchangeProvider : ExchangeProviderImpl {
 
-    private val bitFinexEndPoint = "https://api.bitfinex.com/v1/pubticker/btc"
+    private val localBitcoinEndPoint = "https://localbitcoins.com/bitcoinaverage/ticker-all-currencies/"
     private val apiService: ApiService by inject(ApiService::class.java)
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
     private val availableCurrencies = arrayListOf(
             "USD",
             "EUR",
+            "INR",
+            "COP",
+            "BOB",
+            "TWD",
+            "GHS",
+            "NGN",
+            "EGP",
+            "IDR",
+            "BGN",
+            "SZL",
+            "CRC",
+            "PEN",
+            "AMD",
+            "ILS",
             "GBP",
-            "JPY"
+            "MWK",
+            "DOP",
+            "BAM",
+            "XRP",
+            "DKK",
+            "RSD",
+            "AUD",
+            "PKR",
+            "JPY",
+            "TZS",
+            "VND",
+            "KWD",
+            "RON",
+            "HUF",
+            "CLP",
+            "MYR",
+            "GTQ",
+            "JMD",
+            "ZMW",
+            "UAH",
+            "JOD",
+            "LTC",
+            "SAR",
+            "ETH",
+            "CAD",
+            "SEK",
+            "SGD",
+            "HKD",
+            "GEL",
+            "BWP",
+            "VES",
+            "CHF",
+            "IRR",
+            "BBD",
+            "KRW",
+            "CNY",
+            "XOF",
+            "BDT",
+            "HRK",
+            "NZD",
+            "TRY",
+            "THB",
+            "XAF",
+            "BYN",
+            "ARS",
+            "UYU",
+            "RWF",
+            "KZT",
+            "NOK",
+            "RUB",
+            "ZAR",
+            "PYG",
+            "PAB",
+            "MXN",
+            "CZK",
+            "BRL",
+            "MAD",
+            "PLN",
+            "PHP",
+            "KES",
+            "AED"
     )
     private var rate: Long = 1L
 
@@ -53,13 +127,13 @@ class BitFinexExchangeProvider : ExchangeProviderImpl {
     }
 
     override fun getKey(): String {
-        return "bitfinex.com "
+        return "localbitcoins.com"
     }
 
     override suspend fun fetch() {
         try {
             val request = Request.Builder()
-                    .url(bitFinexEndPoint + prefsUtil.selectedCurrency?.lowercase())
+                    .url(localBitcoinEndPoint)
                     .build()
             try {
                 val response = apiService.request(request)
@@ -67,21 +141,24 @@ class BitFinexExchangeProvider : ExchangeProviderImpl {
                     val body = response.body?.string()
                     body?.let { responseBody ->
                         val jsonObject = JSONObject(responseBody)
+                        if (jsonObject.has(prefsUtil.selectedCurrency)) {
                             var avgPrice: Long? = null
+                            val amountObj = jsonObject.getJSONObject(prefsUtil.selectedCurrency)
                             when {
-                                jsonObject.has("mid") -> {
-                                    avgPrice = jsonObject.getLong("mid");
+                                amountObj.has("avg_12h") -> {
+                                    avgPrice = amountObj.getLong("avg_12h");
                                 }
-                                jsonObject.has("ask") -> {
-                                    avgPrice = jsonObject.getLong("ask");
+                                amountObj.has("avg_24h") -> {
+                                    avgPrice = amountObj.getLong("avg_24h");
                                 }
-                                jsonObject.has("last_price") -> {
-                                    avgPrice = jsonObject.getLong("last_price");
+                                amountObj.has("avg_1h") -> {
+                                    avgPrice = amountObj.getLong("avg_1h");
                                 }
                             }
                             avgPrice?.let {
                                 setRate(it)
                             }
+                        }
                     }
                 }
             } catch (e: ApiService.ApiNotConfigured) {
