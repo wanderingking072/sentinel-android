@@ -42,7 +42,7 @@ class PrefsUtil(context: Context) : Preferences(context, "${context.packageName}
     var fiatDisabled by booleanPref(defaultValue = false)
     var pinEnabled by booleanPref(defaultValue = false)
     var authorization by stringPref(defaultValue = "")
-    var exchangeSelection by stringPref(defaultValue = "localbitcoins.com")
+    var exchangeSelection by stringPref(defaultValue = "bitfinex.com")
     var exchangeRate by longPref(defaultValue = 1L)
     var selectedCurrency by stringPref(defaultValue = "USD")
     var refreshToken by stringPref(defaultValue = "")
