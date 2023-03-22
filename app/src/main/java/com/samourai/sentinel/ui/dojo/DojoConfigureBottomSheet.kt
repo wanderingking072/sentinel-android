@@ -128,7 +128,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             payload = connectManuallyFragment.dojoPayload!!
         dojoConnectFragment.showDojoProgress()
         apiScope.launch {
-            delay(1000)
+            delay(100)
             try {
                 val call = async { dojoUtil.setDojo(payload) }
                 val response = call.await()
@@ -313,8 +313,8 @@ class ConnectManuallyFragment : Fragment() {
                 dojoPayload = "{\n" +
                         "\"pairing\": {\n" +
                         "\"type\": \"dojo.api\",\n" +
-                        "\"version\": \"1.17.0\",\n" +
-                        "\"apikey\": \"${apiText?.text}}\",\n" +
+                        "\"version\": \"1.19.0\",\n" +
+                        "\"apikey\": \"${apiText?.text}\",\n" +
                         "\"url\": \"${onionText?.text}\"\n" +
                         "}\n" +
                         "}"

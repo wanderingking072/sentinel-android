@@ -70,11 +70,11 @@ class SentinelApplication : Application() {
         val appModule = module {
             single { PrefsUtil(applicationContext) }
             single { DojoUtility() }
+            single { ApiService() }
             single { AccessFactory.getInstance(null) }
             single { SentinelCollectionStore() }
             single { MonetaryUtil.getInstance() }
             single { CollectionRepository() }
-            single { ApiService() }
             single { ExchangeRateRepository() }
             single { FeeRepository() }
             single { TransactionsRepository() }
