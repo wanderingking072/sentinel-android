@@ -340,6 +340,7 @@ class HomeActivity : SentinelActivity() {
                 .setNegativeButton(resources.getString(R.string.no)) { _, _ ->
                 }
                 .setPositiveButton(resources.getString(R.string.yes)) { _, _ ->
+                    TorServiceController.stopTor()
                     super.onBackPressed()
                 }
                 .show()
