@@ -29,6 +29,7 @@ import com.samourai.sentinel.ui.settings.NetworkActivity
 import com.samourai.sentinel.ui.settings.SettingsActivity
 import com.samourai.sentinel.ui.utils.*
 import com.samourai.sentinel.ui.views.confirm
+import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import io.matthewnelson.topl_service.TorServiceController
@@ -169,7 +170,7 @@ class HomeActivity : SentinelActivity() {
     }
 
     private fun setUp() {
-        if (prefsUtil.firstRun!! && BuildConfig.DEBUG) {
+        if (prefsUtil.firstRun!! && AppUtil.getInstance(applicationContext).isSideLoaded) {
             this.confirm(label = "Choose network",
                     positiveText = "Mainnet",
                     negativeText = "Testnet",
