@@ -8,9 +8,4 @@
         android:title=""
         app:showAsAction="always" />
 
-    <item
-        app:showAsAction="never"
-        android:id="@+id/action_unspend_outputs"
-        android:title="@string/view_unspend_outputs"
-        android:visible="true" />
 </menu>
