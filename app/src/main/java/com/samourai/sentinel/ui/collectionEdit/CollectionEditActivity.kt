@@ -323,7 +323,7 @@ class CollectionEditActivity : SentinelActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.saveCollectionMenuItem) {
+        if (item.itemId == R.id.saveCollectionMenuItem || item.itemId == android.R.id.home) {
             if (binding.collectionEdiText.text.isNullOrEmpty() || binding.collectionEdiText.text.isBlank()) {
                 this@CollectionEditActivity.showFloatingSnackBar(
                         binding.collectionEdiText.parent as ViewGroup,
@@ -335,10 +335,12 @@ class CollectionEditActivity : SentinelActivity() {
                 this.finish()
             }
         }
-        if (item.itemId == R.id.deleteCollection) {
+        else if (item.itemId == R.id.deleteCollection) {
             deleteCollection()
         }
-        return super.onOptionsItemSelected(item)
+        else
+            return super.onOptionsItemSelected(item)
+        return true
     }
 
     private fun deleteCollection() {
