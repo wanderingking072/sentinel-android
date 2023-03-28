@@ -281,7 +281,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                     (activity as SentinelActivity).alertWithInput(labelEditText = "Password",
                             buttonLabel = "Encrypt",
                             maskInput = true,
-                            maxLen = 12,
+                            maxLen = 128,
                             label = "Add payload password", onConfirm = {
                         val payloadEncrypted = ExportImportUtil().addVersionInfo(AESUtil.encryptSHA256(payload.toString(), CharSequenceX(it), AESUtil.DefaultPBKDF2HMACSHA256Iterations))
                         exportedBackUp = payloadEncrypted.toString()
@@ -315,10 +315,6 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
             }
             .setTitle(getString(R.string.choose_export_opt))
             .show()
-
-    }
-
-    private fun import() {
 
     }
 
