@@ -8,12 +8,14 @@ import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.send.FeeUtil
 import com.samourai.sentinel.send.SuggestedFee
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.UtxoMetaUtil
 import kotlinx.coroutines.*
 import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
 import java.math.BigInteger
 import java.text.NumberFormat
 import java.util.*
+import kotlin.collections.ArrayList
 
 class SendViewModel : ViewModel() {
 
@@ -91,7 +93,7 @@ class SendViewModel : ViewModel() {
                         inputAddress = address,
                         inputAmount = amount,
                         inputFee = selectedFee,
-                        inputUtxos = ArrayList<Utxo>(utxos)
+                        inputUtxos = ArrayList<Utxo>(utxos.filter { utxo ->  !UtxoMetaUtil.has(utxo)})
                 )
                 withContext(Dispatchers.Main) {
                     _validSpend.postValue(isValid)
