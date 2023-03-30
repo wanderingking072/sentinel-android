@@ -4,14 +4,12 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.method.ScrollingMovementMethod
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
@@ -30,29 +28,22 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.viewModelScope
 import androidx.transition.TransitionManager
 import com.google.android.material.transition.MaterialContainerTransform
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.WriterException
-import com.google.zxing.client.android.Contents
-import com.google.zxing.client.android.encode.QRCodeEncoder
 import com.samourai.sentinel.R
-import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
-import com.samourai.sentinel.data.PubKeyModel
+import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.databinding.FragmentSpendBinding
 import com.samourai.sentinel.send.SuggestedFee
-import com.samourai.sentinel.ui.broadcast.BroadcastFromComposeTx
 import com.samourai.sentinel.ui.broadcast.BroadcastTx
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.hideKeyboard
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.UtxoMetaUtil
 import com.sparrowwallet.hummingbird.UR
-import com.sparrowwallet.hummingbird.registry.CryptoPSBT
 import com.sparrowwallet.hummingbird.registry.RegistryType
-import kotlinx.android.synthetic.main.fragment_compose_tx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -86,7 +77,6 @@ class SendFragment : Fragment() {
     private var _fragmentSpendBinding: FragmentSpendBinding? = null
     private val fragmentSpendBinding get() = _fragmentSpendBinding!!
     private var indexPubSelector = -1
-
     private val viewModel: SendViewModel by viewModels()
 
     override fun onCreateView(
@@ -99,6 +89,13 @@ class SendFragment : Fragment() {
         return view
     }
 
+    override fun onResume() {
+        if (indexPubSelector != -1)
+            setBalance(indexPubSelector)
+        else
+            setBalance(0)
+        super.onResume()
+    }
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -127,6 +124,7 @@ class SendFragment : Fragment() {
 
 
         fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
+        setBalance(0)
 
         if (isAdded) {
             setPubKeySelector()
@@ -423,6 +421,7 @@ class SendFragment : Fragment() {
             viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
             transactionComposer.setPubKey(selectPubKeyModel)
             fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
+            setBalance(index-1)
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.get(index-1), false)
 
             view?.isEnabled = true
@@ -454,7 +453,7 @@ class SendFragment : Fragment() {
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
                 fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
-
+                setBalance(index)
                     view?.isEnabled = true
                 view?.alpha = 1f
                 fragmentSpendBinding.composeBtn.isEnabled = true
@@ -465,6 +464,16 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.first(), false)
             viewModel.setPublicKey(it.pubs[0], viewLifecycleOwner)
         }
+    }
+
+    private fun setBalance(pubkeyIndex: Int) {
+        var blockedUtxoBalanceSum = 0L
+        val blockedUtxos =  UtxoMetaUtil.getBlockedAssociatedWithPubKey(mCollection!!.pubs[pubkeyIndex].pubKey)
+        blockedUtxos.forEach{ utxo ->
+            blockedUtxoBalanceSum += utxo.amount
+        }
+        val balance = mCollection!!.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
+        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
     }
 
     private fun setUpFee() {
