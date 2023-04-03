@@ -56,8 +56,6 @@ import java.util.*
 
 class ReceiveFragment : Fragment() {
 
-    private lateinit var fiatBalanceLiveData: LiveData<String>
-    private lateinit var balanceLiveData: LiveData<Long>
     private lateinit var collection: PubKeyCollection;
     private lateinit var toolbar: Toolbar
     private lateinit var receiveQR: ImageView
@@ -497,14 +495,6 @@ class ReceiveFragment : Fragment() {
             share()
         }
         return super.onOptionsItemSelected(item)
-    }
-
-    fun setBalance(balance: LiveData<Long>) {
-        this.balanceLiveData = balance
-    }
-
-    fun setBalanceFiat(balance: LiveData<String>) {
-        this.fiatBalanceLiveData = balance
     }
 
     fun setDropDownPub(index: Int) {

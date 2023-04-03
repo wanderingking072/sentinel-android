@@ -103,12 +103,14 @@ class TransactionsFragment : Fragment() {
 
         balanceLiveData.observe(viewLifecycleOwner) {
             binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
+            setBalance(-1)
         }
 
         binding.collectionBalanceFiat.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
         fiatBalanceLiveData.observe(viewLifecycleOwner, Observer {
             if (isAdded) {
                 binding.collectionBalanceFiat.text = it
+                setBalance(-1)
             }
         })
         transactionsViewModel.getMessage().observe(
@@ -126,6 +128,11 @@ class TransactionsFragment : Fragment() {
         setHasOptionsMenu(true)
     }
 
+    override fun onResume() {
+        setBalance(-1)
+        super.onResume()
+    }
+
     fun setBalance(pubkeyIndex: Int) {
         if (pubkeyIndex != -1) {
             var blockedUtxoBalanceSum = 0L
@@ -135,9 +142,6 @@ class TransactionsFragment : Fragment() {
                 blockedUtxoBalanceSum += utxo.amount
             }
             val balance = collection.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
-            println("Whatever: " + exchangeRateRepository.getRateLive().value!!.rate)
-            println("Whatever: " + balance.div(1e8))
-            binding.collectionBalanceFiat.text = exchangeRateRepository.getRateLive().value!!.rate.times(balance.div(1e8)).toString()
             binding.collectionBalanceFiat.text = getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
             binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
         }
