@@ -15,6 +15,7 @@ import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.databinding.FragmentTransactionsBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
@@ -22,6 +23,8 @@ import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.utxos.UtxosActivity
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.PrefsUtil
+import com.samourai.sentinel.util.UtxoMetaUtil
+import kotlinx.coroutines.flow.merge
 import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent.inject
 import java.text.DecimalFormat
@@ -37,7 +40,10 @@ class TransactionsFragment : Fragment() {
     private var _binding: FragmentTransactionsBinding? = null
     private val binding get() = _binding!!
     private val prefsUtil: com.samourai.sentinel.ui.utils.PrefsUtil by inject(com.samourai.sentinel.ui.utils.PrefsUtil::class.java)
+    private val exchangeRateRepository: ExchangeRateRepository by inject(ExchangeRateRepository::class.java)
     val indexPubSelected: MutableLiveData<Int> by lazy { MutableLiveData<Int>() }
+    val df = DecimalFormat("#")
+
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -46,6 +52,9 @@ class TransactionsFragment : Fragment() {
     ): View {
         _binding = FragmentTransactionsBinding.inflate(inflater, container, false)
         val view = binding.root
+        df.minimumIntegerDigits = 1
+        df.minimumFractionDigits = 8
+        df.maximumFractionDigits = 8
         return view
     }
 
@@ -55,15 +64,9 @@ class TransactionsFragment : Fragment() {
         initViewModel()
 
         setUpToolBar()
-
     }
 
     private fun initViewModel() {
-        val df = DecimalFormat("#")
-        df.minimumIntegerDigits = 1
-        df.minimumFractionDigits = 8
-        df.maximumFractionDigits = 8
-
         transactionsViewModel.setCollection(collection)
 
         binding.txViewPager.adapter = CollectionPubKeysViewpager(this.activity, collection)
@@ -81,8 +84,7 @@ class TransactionsFragment : Fragment() {
                                        TabLayout.Tab
                                        ?) {
                 indexPubSelected.value = tab?.position!!
-                if (tab.position > 0)
-                    binding.collectionBalanceBtc.text = df.format((collection.pubs[tab.position -1].balance.toLong()).div(1e8)) + " BTC"
+                setBalance(tab.position-1)
             }
 
             override fun onTabUnselected(tab:
@@ -101,12 +103,14 @@ class TransactionsFragment : Fragment() {
 
         balanceLiveData.observe(viewLifecycleOwner) {
             binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
+            setBalance(-1)
         }
 
         binding.collectionBalanceFiat.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
         fiatBalanceLiveData.observe(viewLifecycleOwner, Observer {
             if (isAdded) {
                 binding.collectionBalanceFiat.text = it
+                setBalance(-1)
             }
         })
         transactionsViewModel.getMessage().observe(
@@ -124,11 +128,61 @@ class TransactionsFragment : Fragment() {
         setHasOptionsMenu(true)
     }
 
+    override fun onResume() {
+        setBalance(-1)
+        super.onResume()
+    }
+
+    fun setBalance(pubkeyIndex: Int) {
+        if (pubkeyIndex != -1) {
+            var blockedUtxoBalanceSum = 0L
+            val blockedUtxos =
+                UtxoMetaUtil.getBlockedAssociatedWithPubKey(collection.pubs[pubkeyIndex].pubKey)
+            blockedUtxos.forEach { utxo ->
+                blockedUtxoBalanceSum += utxo.amount
+            }
+            val balance = collection.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
+            binding.collectionBalanceFiat.text = getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
+            binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+        }
+        else {
+            var blockedUtxosBalanceSum = 0L
+            collection.pubs.forEach { pubKeyModel ->
+                val blockedUtxos1 =
+                    UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
+                blockedUtxos1.forEach { blockedUtxo ->
+                    blockedUtxosBalanceSum += blockedUtxo.amount
+                }
+            }
+            val balance = collection.balance - blockedUtxosBalanceSum
+            binding.collectionBalanceFiat.text = getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
+            binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+        }
+
+    }
+
+    private fun getFiatBalance(balance: Long?, rate: ExchangeRateRepository.Rate?): String {
+        if (rate != null) {
+            balance?.let {
+                return try {
+                    val fiatRate = MonetaryUtil.getInstance().getFiatFormat(prefsUtil.selectedCurrency)
+                        .format((balance / 1e8) * rate.rate)
+                    "$fiatRate ${rate.currency}"
+                } catch (e: Exception) {
+                    "00.00 ${rate.currency}"
+                }
+            }
+            return "00.00"
+        } else {
+            return "00.00"
+        }
+    }
+
     private fun setUpToolBar() {
         (activity as SentinelActivity).setSupportActionBar(binding.toolbarCollectionDetails)
         (activity as SentinelActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbarCollectionDetails.title = collection.collectionLabel
-        binding.collectionBalanceBtc.text = monetaryUtil.formatToBtc(collection.balance)
+        setBalance(-1)
     }
 
     fun initViewModel(collection: PubKeyCollection) {

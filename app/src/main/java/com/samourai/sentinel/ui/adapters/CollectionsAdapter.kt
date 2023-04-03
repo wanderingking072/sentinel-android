@@ -1,6 +1,5 @@
 package com.samourai.sentinel.ui.adapters
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,9 +10,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
-import com.samourai.sentinel.data.repository.TransactionsRepository
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter.CollectionHolder
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.UtxoMetaUtil
 import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent
 import timber.log.Timber
@@ -79,6 +78,10 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
     override fun getItemCount(): (Int) {
         return mDiffer.currentList.size
     }
+
+    fun getCollectionList(): MutableList<PubKeyCollection> {
+        return mDiffer.currentList
+    }
 //
 //    override fun getItemId(position: Int): Long {
 //        return getLongIdFromUUID(this.mDiffer.currentList[position].id);
@@ -92,10 +95,27 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
 
         val collection = mDiffer.currentList[position];
         holder.title.text = collection.collectionLabel;
-        holder.balance.text = "${df.format(collection.balance.div(1e8))} BTC"
+        holder.balance.text = "${df.format(setBalance(position).div(1e8))} BTC"
         holder.view.setOnClickListener {
             onClickListener(collection)
         }
+    }
+
+    fun setBalance(position: Int): Long {
+        val df = DecimalFormat("#")
+        df.minimumIntegerDigits = 1
+        df.minimumFractionDigits = 8
+        df.maximumFractionDigits = 8
+
+        var blockedUtxosBalanceSum = 0L
+        mDiffer.currentList[position].pubs.forEach { pubKeyModel ->
+            val blockedUtxos1 =
+                UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
+            blockedUtxos1.forEach { blockedUtxo ->
+                blockedUtxosBalanceSum += blockedUtxo.amount
+            }
+        }
+        return mDiffer.currentList[position].balance - blockedUtxosBalanceSum
     }
 
     fun update(newItems: ArrayList<PubKeyCollection>) {

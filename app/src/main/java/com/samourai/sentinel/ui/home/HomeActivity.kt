@@ -32,6 +32,7 @@ import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.UtxoMetaUtil
 import io.matthewnelson.topl_service.TorServiceController
 import io.matthewnelson.topl_service_base.TorServicePrefs
 import kotlinx.coroutines.*
@@ -47,6 +48,7 @@ class HomeActivity : SentinelActivity() {
     private var connectingDojo = false
     private lateinit var torServicePrefs: TorServicePrefs
     private lateinit var binding: ActivityHomeBinding
+    private val model: HomeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,9 +77,9 @@ class HomeActivity : SentinelActivity() {
             collectionsAdapter.update(it)
         })
 
-        model.getBalance().observe(this, {
+        model.getBalance().observe(this) {
             updateBalance(it)
-        })
+        }
 
         binding.exchangeRateTxt.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
 
@@ -165,6 +167,9 @@ class HomeActivity : SentinelActivity() {
         super.onResume()
         if (SentinelState.isTestNet() && !title.contains("TestNet")) {
             title = "$title | TestNet"
+        }
+        model.getBalance().observe(this) {
+            updateBalance(it)
         }
         binding.exchangeRateTxt.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
     }
@@ -256,7 +261,23 @@ class HomeActivity : SentinelActivity() {
     }
 
     private fun updateBalance(it: Long) {
-        binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(it)} BTC"
+        var blockedUtxosBalanceSum = 0L
+
+        for (i in 0..collectionsAdapter.getCollectionList().size-1){
+            collectionsAdapter.setBalance(i)
+        }
+        collectionsAdapter.getCollectionList().forEach{collection ->
+            collection.pubs.forEach { pubKeyModel ->
+                val blockedUtxos1 =
+                    UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
+                blockedUtxos1.forEach { blockedUtxo ->
+                    blockedUtxosBalanceSum += blockedUtxo.amount
+                }
+            }
+        }
+        val balance = it - blockedUtxosBalanceSum
+
+        binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(balance)} BTC"
     }
 
     private fun updateFiat(it: String) {
