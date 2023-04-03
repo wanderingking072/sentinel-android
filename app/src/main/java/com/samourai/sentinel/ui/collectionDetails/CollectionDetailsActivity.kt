@@ -123,9 +123,12 @@ class CollectionDetailsActivity : SentinelActivity() {
 
 
     override fun onBackPressed() {
-        if (sendFragment.isVisible) {
+        if (receiveFragment.isVisible) {
+            binding.fragmentHostContainerPager.setCurrentItem(1, true)
+        }
+        else if (sendFragment.isVisible) {
             if (sendFragment.onBackPressed()) {
-                super.onBackPressed()
+                binding.fragmentHostContainerPager.setCurrentItem(1, true)
             }
         } else {
             super.onBackPressed()
