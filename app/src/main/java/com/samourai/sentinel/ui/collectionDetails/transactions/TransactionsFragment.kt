@@ -129,7 +129,10 @@ class TransactionsFragment : Fragment() {
     }
 
     override fun onResume() {
-        setBalance(-1)
+        if (indexPubSelected.value != null)
+            setBalance(indexPubSelected.value!!-1)
+        else
+            setBalance(-1)
         super.onResume()
     }
 
