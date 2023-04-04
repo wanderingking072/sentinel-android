@@ -296,6 +296,7 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
                     updateList()
                 }
             }
+            clearSelection()
         }
 
         return true
