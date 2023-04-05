@@ -198,6 +198,7 @@ class ScanPubKeyFragment : Fragment() {
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.findViewById<Button>(R.id.pastePubKey).text = "Paste Pubkey"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
 
         val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
