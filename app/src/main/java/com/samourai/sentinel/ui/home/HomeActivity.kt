@@ -168,6 +168,7 @@ class HomeActivity : SentinelActivity() {
         if (SentinelState.isTestNet() && !title.contains("TestNet")) {
             title = "$title | TestNet"
         }
+        model.fetchBalance()
         model.getBalance().observe(this) {
             updateBalance(it)
         }
