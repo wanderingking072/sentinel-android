@@ -62,6 +62,8 @@ class HomeViewModel : ViewModel() {
     }
 
     fun fetchBalance() {
+        if (prefsUtil.apiEndPoint == null)
+            return
         if (netWorkJobs.isNotEmpty()) {
             netWorkJobs.forEach {
                 it?.cancel()
