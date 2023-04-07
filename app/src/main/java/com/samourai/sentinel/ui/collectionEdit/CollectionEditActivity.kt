@@ -187,6 +187,19 @@ class CollectionEditActivity : SentinelActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        if (binding.collectionEdiText.text.isNullOrEmpty() || binding.collectionEdiText.text.isBlank()) {
+            this@CollectionEditActivity.showFloatingSnackBar(
+                binding.collectionEdiText.parent as ViewGroup,
+                text = "Please enter collection label",
+                duration = Snackbar.LENGTH_SHORT
+            )
+            return
+        }
+        super.onBackPressed()
+    }
+
+
     private fun setUpPubKeyList() {
 
         val linearLayoutManager = LinearLayoutManager(this)
