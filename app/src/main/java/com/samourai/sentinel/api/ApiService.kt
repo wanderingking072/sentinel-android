@@ -9,10 +9,12 @@ import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.apiScope
 import com.samourai.wallet.util.XPUB
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
@@ -132,6 +134,27 @@ open class ApiService {
 
         return client.newCall(request).await()
     }
+
+    suspend fun importAddress(pubKey: String): Response {
+
+        buildClient(excludeAuthenticator = true)
+        client.newBuilder()
+            .connectTimeout(120, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
+            .callTimeout(120, TimeUnit.SECONDS)
+
+        val formBody = FormBody.Builder()
+            .add("xpub", pubKey)
+            .add("type", "restore")
+            .build()
+        val request = Request.Builder()
+            .url("${getAPIUrl()}/xpub")
+            .post(formBody)
+            .build()
+
+        return client.newCall(request).await()
+    }
+
 
     suspend fun getTxHex(utxoHash: String): Response {
         buildClient(excludeAuthenticator = true)

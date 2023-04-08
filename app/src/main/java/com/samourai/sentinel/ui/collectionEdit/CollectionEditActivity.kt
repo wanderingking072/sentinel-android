@@ -168,13 +168,12 @@ class CollectionEditActivity : SentinelActivity() {
         val apiService: ApiService by inject(ApiService::class.java)
 
         if (newPubKey != null) {
-            if (newPubKey.type == AddressTypes.BIP84 || newPubKey.type == AddressTypes.BIP49) {
-                //val serviceIntent = Intent(this, ImportSegWitService::class.java)
-                //serviceIntent.putExtra("segWit", newPubKey.type!!.name)
-                //serviceIntent.putExtra("pubKey", newPubKey.pubKey)
-
-                //ContextCompat.startForegroundService(this, serviceIntent)
-
+            if (newPubKey.type == AddressTypes.ADDRESS) {
+                apiScope.launch {
+                    apiService.importAddress(newPubKey.pubKey)
+                }
+            }
+            else if (newPubKey.type == AddressTypes.BIP84 || newPubKey.type == AddressTypes.BIP49) {
                 apiScope.launch {
                     apiService.importXpub(newPubKey.pubKey, newPubKey.type!!.name)
                 }
