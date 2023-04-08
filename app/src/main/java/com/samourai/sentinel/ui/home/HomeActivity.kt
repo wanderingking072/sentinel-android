@@ -102,7 +102,7 @@ class HomeActivity : SentinelActivity() {
             binding.swipeRefreshCollection.isRefreshing = it
         })
         model.getErrorMessage().observe(this) {
-            if (it != "null")
+            if (it != "null" &&  SentinelState.torState != SentinelState.TorState.WAITING)
                 this@HomeActivity.showFloatingSnackBar(
                     binding.fab,
                     text = "No data connection available. Please enable data"
