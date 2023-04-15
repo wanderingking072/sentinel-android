@@ -80,6 +80,10 @@ object UtxoMetaUtil {
         }
     }
 
+    fun clearAll() {
+        utxoBlockState.clear()
+    }
+
     @Synchronized
     private fun write() {
         scope.launch {

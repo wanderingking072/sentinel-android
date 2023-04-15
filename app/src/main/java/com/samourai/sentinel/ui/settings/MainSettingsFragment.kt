@@ -204,6 +204,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                                     collectionRepository.reset()
                                     dojoUtility.clearDojo()
                                     prefsUtil.clearAll()
+                                    UtxoMetaUtil.clearAll()
                                 }
                                 startActivity(Intent(activity, HomeActivity::class.java).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
