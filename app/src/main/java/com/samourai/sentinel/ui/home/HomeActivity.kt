@@ -286,7 +286,7 @@ class HomeActivity : SentinelActivity() {
     }
 
     private fun showPubKeyBottomSheet() {
-        val bottomSheetFragment = AddNewPubKeyBottomSheet()
+        val bottomSheetFragment = AddNewPubKeyBottomSheet(secure = prefsUtil.displaySecure!!)
         bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)
     }
 

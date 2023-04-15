@@ -30,11 +30,13 @@ import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent
 
 
-class AddNewPubKeyBottomSheet(private val pubKey: String = "") : GenericBottomSheet() {
+class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
 
     private val scanPubKeyFragment = ScanPubKeyFragment()
     private var newPubKeyListener: ((pubKey: PubKeyModel?) -> Unit)? = null

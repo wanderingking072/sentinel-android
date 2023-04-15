@@ -38,15 +38,20 @@ open class GenericBottomSheet(private val secure:Boolean = false) : BottomSheetD
 
     override fun getTheme(): Int = R.style.AppTheme_BottomSheet_Theme
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog = BottomSheetDialog(
-        requireContext(),
-        theme
-    )
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (secure)
             dialog?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = BottomSheetDialog(
+            requireContext(),
+            theme
+        )
+        if (secure)
+            dialog.window?.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        return dialog
     }
 }
 
