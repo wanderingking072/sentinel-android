@@ -1,14 +1,20 @@
 package com.samourai.sentinel.ui.views.codeScanner;
 
+import android.app.Dialog;
 import android.os.Bundle;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 
+import androidx.annotation.NonNull;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.samourai.sentinel.R;
+import com.samourai.sentinel.util.PrefsUtil;
 
 
 public class CameraFragmentBottomSheet extends BottomSheetDialogFragment {
@@ -32,6 +38,14 @@ public class CameraFragmentBottomSheet extends BottomSheetDialogFragment {
         return view;
     }
 
+    @NonNull
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        if (PrefsUtil.getInstance(requireContext()).getValue("displaySecure", true))
+            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+        return dialog;
+    }
     @Override
     public void onResume() {
         super.onResume();
