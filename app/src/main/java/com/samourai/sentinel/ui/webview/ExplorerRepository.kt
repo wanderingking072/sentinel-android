@@ -23,8 +23,8 @@ object ExplorerRepository {
     private val Explorers: ArrayList<Explorer> = arrayListOf(
             Explorer("https://oxt.me/transaction/${TX_KEY}", name = "oxt.me"),
             Explorer("https://blockstream.info/tx/${TX_KEY}", name = "blockstream.info"),
-            Explorer("https://blockchair.com/bitcoin/testnet/transaction/${TX_KEY}", name = "blockstream.info-testnet",testnet = true),
             Explorer("https://blockstream.info/testnet/tx/${TX_KEY}", name = "blockstream.info-testnet",testnet = true),
+            Explorer("https://blockchair.com/bitcoin/testnet/transaction/${TX_KEY}", name = "blockstream.info-testnet",testnet = true)
     )
 
     fun getExplorer(txId: String): String {
