@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
@@ -21,7 +20,6 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -30,7 +28,6 @@ import androidx.transition.TransitionManager
 import com.google.android.material.transition.MaterialContainerTransform
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
-import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.databinding.FragmentSpendBinding
@@ -77,7 +74,7 @@ class SendFragment : Fragment() {
     private var _fragmentSpendBinding: FragmentSpendBinding? = null
     private val fragmentSpendBinding get() = _fragmentSpendBinding!!
     private var indexPubSelector = -1
-    private val viewModel: SendViewModel by viewModels()
+    val viewModel: SendViewModel by viewModels()
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -234,9 +231,14 @@ class SendFragment : Fragment() {
         }
     }
 
+    fun getPsbtBytes() {
+        viewModel.getPsbtBytes()
+    }
+
     private fun sharePSBTFile() {
         val psbt = viewModel.getPsbtBytes() ?: return
-        val qrFile = "${requireContext().cacheDir.path}${File.separator}${UUID.randomUUID()}.psbt"
+        val fileUUID = UUID.randomUUID()
+        val qrFile = "${requireContext().cacheDir.path}${File.separator}${fileUUID}.psbt"
 
         val file = File(qrFile)
         if (file.exists()) {
@@ -244,28 +246,14 @@ class SendFragment : Fragment() {
         }
         file.writeBytes(psbt)
         file.setReadable(true, false)
-        val intent = Intent()
-        intent.action = Intent.ACTION_SEND
-        intent.type = "**/**"
-        if (Build.VERSION.SDK_INT >= 24) {
-            //From API 24 sending FIle on intent ,require custom file provider
-            intent.putExtra(
-                    Intent.EXTRA_STREAM, FileProvider.getUriForFile(
-                    requireContext(),
-                    requireContext()
-                            .packageName + ".provider", file
-            )
-            )
-        } else {
-            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "**/**"
+            putExtra(Intent.EXTRA_TITLE, "${fileUUID}.psbt")
         }
-        startActivity(
-                Intent.createChooser(
-                        intent,
-                        requireContext().getText(R.string.send_payment_code)
-                )
-        )
+        intent.putExtra("psbtContent", psbt)
 
+        requireActivity().startActivityForResult(intent, 1)
     }
 
     private fun containerTransform(enter: View, leaving: View) {

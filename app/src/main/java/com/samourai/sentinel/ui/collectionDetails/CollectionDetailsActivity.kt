@@ -1,5 +1,7 @@
 package com.samourai.sentinel.ui.collectionDetails
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
@@ -16,6 +18,7 @@ import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.collectionDetails.receive.ReceiveFragment
 import com.samourai.sentinel.ui.collectionDetails.send.SendFragment
 import com.samourai.sentinel.ui.collectionDetails.transactions.TransactionsFragment
+import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -121,6 +124,21 @@ class CollectionDetailsActivity : SentinelActivity() {
         transactionsFragment.indexPubSelected.observe(this, pubIndexObserver)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 1 && resultCode == Activity.RESULT_OK) {
+            data?.data?.also { uri ->
+                val fileContent = sendFragment.viewModel.getPsbtBytes()
+                val outputStream = contentResolver.openOutputStream(uri)
+                outputStream?.write(fileContent)
+                outputStream?.close()
+                this@CollectionDetailsActivity.showFloatingSnackBar(
+                    binding.root,
+                    text = "File saved to ${uri.path}"
+                )
+            }
+        }
+    }
 
     override fun onBackPressed() {
         if (receiveFragment.isVisible) {
