@@ -86,9 +86,6 @@ class HomeActivity : SentinelActivity() {
         model.getFiatBalance().observe(this, { updateFiat(it) })
 
         binding.fab.setOnClickListener {
-            if (prefsUtil.haptics!!) {
-                binding.fab.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-            }
             connectingDojo = false
             if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
                 this.askCameraPermission()

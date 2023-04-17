@@ -131,7 +131,5 @@ class LockScreenDialog(private val cancelable: Boolean = false, private val lock
         errorShake.duration = 420
         errorShake.interpolator = CycleInterpolator(4F)
         binding.pinEntryMaskLayout.startAnimation(errorShake)
-        if (prefsUtil.haptics!!)
-            binding.pinEntryMaskLayout.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
     }
 }

@@ -144,9 +144,6 @@ class CollectionEditActivity : SentinelActivity() {
                         pubKeyAdapter.setEditingPubKey(model.pubs[model.pubs.lastIndex].pubKey)
                     }
                 }
-                if (prefs.haptics!!) {
-//                    addNewPublicKey.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                }
             }
         } else {
             val collectionModel = PubKeyCollection()

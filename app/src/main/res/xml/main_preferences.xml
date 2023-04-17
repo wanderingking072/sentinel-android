@@ -77,12 +77,6 @@
         app:title="App Behavior">
 
         <CheckBoxPreference
-            android:summary="@string/options_haptic_2"
-            app:icon="@drawable/ic_baseline_touch_app_24"
-            app:key="haptics"
-            app:title="@string/options_haptic" />
-
-        <CheckBoxPreference
             android:summary="@string/setting_summary_displaySecure"
             app:icon="@drawable/ic_baseline_screen_lock_portrait_24"
             app:key="displaySecure"
