@@ -18,10 +18,15 @@ import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.data.db.dao.TxDao
+import com.samourai.sentinel.data.repository.TransactionsRepository
 import com.samourai.sentinel.ui.fragments.TransactionsDetailsBottomSheet
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
+import com.samourai.sentinel.util.apiScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent
+import timber.log.Timber
 
 /**
  * sentinel-android
@@ -85,6 +90,19 @@ class TransactionsListFragment(
         }
 
         transactionViewModel.txLiveData.observe(this.viewLifecycleOwner) {
+            if (it.isEmpty()) {
+                val transactionsRepository: TransactionsRepository by KoinJavaComponent.inject(
+                    TransactionsRepository::class.java
+                )
+                apiScope.launch {
+                    try {
+                        transactionsRepository.fetchFromServer(collection.id)
+                    } catch (e: Exception) {
+                        Timber.e(e)
+                        throw  CancellationException(e.message)
+                    }
+                }
+            }
             transactionAdapter.submitList(it)
         }
     }
