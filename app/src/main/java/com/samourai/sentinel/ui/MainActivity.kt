@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         val pinHash = prefsUtil.pinHash
         if (!pinHash.isNullOrEmpty()) {
             val fragmentManager = supportFragmentManager
-            val lockScreenDialog = LockScreenDialog(cancelable = false, lockScreenMessage = "Enter pin code")
+            val lockScreenDialog = LockScreenDialog(lockScreenMessage = "Enter pin code")
             val transaction = fragmentManager.beginTransaction()
             transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
             transaction.add(android.R.id.content, lockScreenDialog).commit()

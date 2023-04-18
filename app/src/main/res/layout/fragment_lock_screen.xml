@@ -8,6 +8,12 @@
     android:clickable="false"
     android:fitsSystemWindows="true">
 
+    <View
+        android:id="@+id/touch_interceptor"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent" />
+
     <com.samourai.sentinel.ui.views.PinEntryView
         android:id="@+id/pinEntryView"
         android:layout_width="0dp"

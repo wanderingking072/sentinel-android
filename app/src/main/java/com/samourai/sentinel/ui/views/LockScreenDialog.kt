@@ -9,8 +9,10 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.transition.ChangeBounds
 import android.transition.TransitionManager
-import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import android.view.animation.CycleInterpolator
 import android.view.animation.TranslateAnimation
 import android.widget.ImageView
@@ -29,11 +31,12 @@ import org.koin.java.KoinJavaComponent.inject
  *
  * @author Sarath
  */
-class LockScreenDialog(private val cancelable: Boolean = false, private val lockScreenMessage: String = "") : DialogFragment() {
+class LockScreenDialog(private val lockScreenMessage: String = "") : DialogFragment() {
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
     private var userInput = StringBuilder()
     private var strPassphrase = ""
     private var onConfirm: ((String) -> Unit)? = null
+    private lateinit var touchInterceptor: View
 
     private var _binding: FragmentLockScreenBinding? = null
     private val binding get() = _binding!!
@@ -45,6 +48,11 @@ class LockScreenDialog(private val cancelable: Boolean = false, private val lock
     ): View? {
         _binding = FragmentLockScreenBinding.inflate(inflater, container, false)
         val view = binding.root
+        touchInterceptor = view.findViewById(R.id.touch_interceptor)
+        touchInterceptor.setOnTouchListener { _, _ ->
+            // Consume all touch events on the touch interceptor
+            true
+        }
         return view
     }
 
