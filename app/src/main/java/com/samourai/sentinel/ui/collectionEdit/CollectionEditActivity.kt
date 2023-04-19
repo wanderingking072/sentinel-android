@@ -49,6 +49,7 @@ class CollectionEditActivity : SentinelActivity() {
     private var isEditNewPub = false
     private var editIndex: Int = -1
     private lateinit var newPubEdit: PubKeyModel
+    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -306,7 +307,7 @@ class CollectionEditActivity : SentinelActivity() {
 
 
     private fun showPubKeyBottomSheet() {
-        val bottomSheetFragment = AddNewPubKeyBottomSheet()
+        val bottomSheetFragment = AddNewPubKeyBottomSheet(secure = prefsUtil.displaySecure!!)
         bottomSheetFragment.setPubKeyListener {
             if (it != null) {
                 val items: ArrayList<PubKeyModel> = arrayListOf()
