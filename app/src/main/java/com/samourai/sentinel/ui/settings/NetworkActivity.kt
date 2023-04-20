@@ -53,6 +53,7 @@ class NetworkActivity : SentinelActivity() {
         dojoConnectionStatus = findViewById(R.id.network_dojo_status)
         torRenewBtn?.setOnClickListener {
             TorServiceController.newIdentity()
+            this.showFloatingSnackBar(findViewById(R.id.toolbarCollectionDetails), text = "Tor identity has been renewed")
         }
         SentinelState.torStateLiveData().observe(this, {
             setTorConnectionState(it)
