@@ -18,6 +18,7 @@ import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.util.ExportImportUtil
+import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -120,6 +121,8 @@ class ImportBackUpActivity : SentinelActivity() {
                             payload.second.let { ExportImportUtil().importPrefs(it) }
                         }
                         if (binding.importDojo.isChecked) {
+                            TorServiceController.startTor()
+                            prefsUtil.enableTor = true
                             payload.third?.let { ExportImportUtil().importDojo(it) }
                             prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")
                             prefsUtil.apiEndPoint = payload.second.getString("apiEndPoint")
@@ -129,7 +132,7 @@ class ImportBackUpActivity : SentinelActivity() {
                         throw CancellationException(e.message)
                     }
                 }.invokeOnCompletion {
-                    if (it == null) {
+                    if (it == null || it.toString().contains("Unable to resolve host")) {
                         requireRestart = true
                         showFloatingSnackBar(
                                 binding.importPastePayloadBtn, "Successfully imported",
