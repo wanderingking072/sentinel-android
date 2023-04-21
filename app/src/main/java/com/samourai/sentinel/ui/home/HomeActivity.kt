@@ -62,6 +62,7 @@ class HomeActivity : SentinelActivity() {
         val model: HomeViewModel by viewModels()
         if (SentinelState.isTorRequired() && SentinelState.torState == SentinelState.TorState.OFF) {
             TorServiceController.startTor()
+            prefsUtil.enableTor = true
         }
 
         setUp()
@@ -117,6 +118,7 @@ class HomeActivity : SentinelActivity() {
                     this.showFloatingSnackBar(binding.fab,
                             text="Please wait while Tor is turning on")
                     TorServiceController.startTor()
+                    prefsUtil.enableTor = true
                 }
                 if (SentinelState.torState == SentinelState.TorState.ON) {
                     model.fetchBalance()

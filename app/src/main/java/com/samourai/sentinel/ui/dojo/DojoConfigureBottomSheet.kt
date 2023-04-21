@@ -25,6 +25,7 @@ import com.samourai.sentinel.tor.TorEventsReceiver
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
+import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.apiScope
@@ -41,6 +42,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     private val connectManuallyFragment = ConnectManuallyFragment()
     private var dojoConfigurationListener: DojoConfigurationListener? = null
     private var cameraFragmentBottomSheet: CameraFragmentBottomSheet? = null
+    private val prefsUtil: PrefsUtil by KoinJavaComponent.inject(PrefsUtil::class.java);
 
     private var payload: String = ""
 
@@ -111,6 +113,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             setDojo()
         } else {
             TorServiceController.startTor()
+            prefsUtil.enableTor = true
             dojoConnectFragment.showTorProgress()
             TorServiceController.appEventBroadcaster.let {
                 (it as TorEventsReceiver).torLogs.observe(this.viewLifecycleOwner, { log ->

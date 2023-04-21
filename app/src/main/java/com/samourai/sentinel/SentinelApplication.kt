@@ -32,6 +32,7 @@ import kotlinx.coroutines.*
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
+import org.koin.java.KoinJavaComponent
 import timber.log.Timber
 import timber.log.Timber.DebugTree
 import java.io.File
@@ -41,6 +42,7 @@ import java.net.Proxy
 
 class SentinelApplication : Application() {
 
+    private val prefsUtil: PrefsUtil by KoinJavaComponent.inject(PrefsUtil::class.java);
 
     override fun onCreate() {
         super.onCreate()
@@ -136,6 +138,7 @@ class SentinelApplication : Application() {
         }
         if (SentinelState.isTorRequired()) {
             TorServiceController.startTor()
+            prefsUtil.enableTor = true
         }
     }
 

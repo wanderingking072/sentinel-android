@@ -69,14 +69,15 @@ class NetworkActivity : SentinelActivity() {
         }
         torButton!!.setOnClickListener {
             if (SentinelState.isTorStarted()) {
-                prefsUtil.enableTor = false
-                if (!dojoUtility.isDojoEnabled())
+                if (!dojoUtility.isDojoEnabled()) {
                     TorServiceController.stopTor()
+                    prefsUtil.enableTor = false
+                }
                 else
                     this.showFloatingSnackBar(torButton!!.rootView, text = "You wont be able to disable tor if dojo is enabled")
             } else {
-                prefsUtil.enableTor = true
                 TorServiceController.startTor()
+                prefsUtil.enableTor = true
             }
 
         }
