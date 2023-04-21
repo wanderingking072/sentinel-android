@@ -207,13 +207,13 @@ class ReceiveFragment : Fragment() {
 
     }
 
-    private fun     generateQR() {
+    private fun generateQR() {
         val display = activity?.windowManager?.defaultDisplay
         val size = Point()
         display?.getSize(size)
         val imgWidth = size.x - 200
         val addr = getAddress()
-        receiveAddressText.text = addr.lowercase()
+        receiveAddressText.text = addr
 
         try {
             val amount = NumberFormat.getInstance(Locale.US).parse(btcEditText.getText().toString().trim { it <= ' ' })
