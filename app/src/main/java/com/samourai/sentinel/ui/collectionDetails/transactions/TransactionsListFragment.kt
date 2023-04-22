@@ -90,19 +90,6 @@ class TransactionsListFragment(
         }
 
         transactionViewModel.txLiveData.observe(this.viewLifecycleOwner) {
-            if (it.isEmpty()) {
-                val transactionsRepository: TransactionsRepository by KoinJavaComponent.inject(
-                    TransactionsRepository::class.java
-                )
-                apiScope.launch {
-                    try {
-                        transactionsRepository.fetchFromServer(collection.id)
-                    } catch (e: Exception) {
-                        Timber.e(e)
-                        throw  CancellationException(e.message)
-                    }
-                }
-            }
             transactionAdapter.submitList(it)
         }
     }
