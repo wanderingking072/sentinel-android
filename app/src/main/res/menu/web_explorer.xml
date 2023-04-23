@@ -11,14 +11,6 @@
         app:showAsAction="always" />
 
     <item
-        android:id="@+id/menu_web_explorer"
-        android:icon="@drawable/ic_baseline_open_in_browser_24"
-        android:title="Open in browser"
-        app:iconTint="@color/white"
-        app:showAsAction="always" />
-
-
-    <item
         android:id="@+id/menu_web_copy_tx"
         android:title="Copy tx id"
         app:showAsAction="never" />
