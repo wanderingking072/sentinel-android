@@ -67,6 +67,7 @@ class ExplorerWebViewActivity : AppCompatActivity() {
                         message = "Tor is not enabled, built in web browser supports tor proxy",
                         negativeText = "Continue without tor", positiveText = "Turn on tor and load") {
                     if (!it) {
+                        ProxyController.getInstance().clearProxyOverride({},{})
                         load()
                     } else {
                         torStartAndLoad()
