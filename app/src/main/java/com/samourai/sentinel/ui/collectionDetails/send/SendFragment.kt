@@ -27,7 +27,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.transition.TransitionManager
 import com.google.android.material.transition.MaterialContainerTransform
 import com.samourai.sentinel.R
+import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.databinding.FragmentSpendBinding
@@ -41,6 +43,7 @@ import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
 import com.sparrowwallet.hummingbird.UR
 import com.sparrowwallet.hummingbird.registry.RegistryType
+import kotlinx.android.synthetic.main.fragment_compose_tx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -88,9 +91,9 @@ class SendFragment : Fragment() {
 
     override fun onResume() {
         if (indexPubSelector != -1)
-            setBalance(indexPubSelector)
+            setBalance(mCollection!!.pubs[indexPubSelector])
         else
-            setBalance(0)
+            setBalance(mCollection!!.pubs[0])
         super.onResume()
     }
 
@@ -121,7 +124,7 @@ class SendFragment : Fragment() {
 
 
         fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
-        setBalance(0)
+        setBalance(mCollection!!.pubs[0])
 
         if (isAdded) {
             setPubKeySelector()
@@ -395,8 +398,11 @@ class SendFragment : Fragment() {
             indexPubSelector = index
             return
         }
-        mCollection?.let {
-            val items = it.pubs.map { it.label }.toMutableList()
+
+        val newIndex = if (mCollection!!.pubs[index-1].type != AddressTypes.ADDRESS) index else 1
+
+        mCollection?.let { pubKeySelector ->
+            val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                 requireContext(),
@@ -405,12 +411,12 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.inputType = InputType.TYPE_NULL
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.threshold = items.size
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
-            val selectPubKeyModel = it.pubs[index-1]
+            val selectPubKeyModel = pubKeySelector.pubs[newIndex-1]
             viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
             transactionComposer.setPubKey(selectPubKeyModel)
             fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
-            setBalance(index-1)
-            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.get(index-1), false)
+            setBalance(mCollection!!.pubs[newIndex-1])
+            fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(mCollection!!.pubs.get(newIndex-1).label, false)
 
             view?.isEnabled = true
             view?.alpha = 1f
@@ -426,8 +432,8 @@ class SendFragment : Fragment() {
         if (mCollection == null) {
             return
         }
-        mCollection?.let {
-            val items = it.pubs.map { it.label }.toMutableList()
+        mCollection?.let { pubKeySelector ->
+            val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                     requireContext(),
@@ -437,11 +443,11 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.threshold = items.size
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
-                val selectPubKeyModel = it.pubs[index]
+                val selectPubKeyModel = getPubKeyModelByLabel(items[index])
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
                 fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
-                setBalance(index)
+                setBalance(getPubKeyModelByLabel(items[index]))
                     view?.isEnabled = true
                 view?.alpha = 1f
                 fragmentSpendBinding.composeBtn.isEnabled = true
@@ -450,17 +456,25 @@ class SendFragment : Fragment() {
                 return
             }
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.first(), false)
-            viewModel.setPublicKey(it.pubs[0], viewLifecycleOwner)
+            viewModel.setPublicKey(getPubKeyModelByLabel(items[0]), viewLifecycleOwner)
         }
     }
 
-    private fun setBalance(pubkeyIndex: Int) {
+    private fun getPubKeyModelByLabel(label: String): PubKeyModel {
+        mCollection?.pubs?.forEach {
+            if (it.label == label)
+                return it
+        }
+        return mCollection!!.pubs[0]
+    }
+
+    fun setBalance(pub: PubKeyModel) {
         var blockedUtxoBalanceSum = 0L
-        val blockedUtxos =  UtxoMetaUtil.getBlockedAssociatedWithPubKey(mCollection!!.pubs[pubkeyIndex].pubKey)
+        val blockedUtxos =  UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
         blockedUtxos.forEach{ utxo ->
             blockedUtxoBalanceSum += utxo.amount
         }
-        val balance = mCollection!!.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
+        val balance = pub.balance - blockedUtxoBalanceSum
         fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
     }
 
