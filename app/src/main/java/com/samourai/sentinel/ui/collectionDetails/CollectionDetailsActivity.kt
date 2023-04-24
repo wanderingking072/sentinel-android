@@ -11,6 +11,7 @@ import androidx.lifecycle.Observer
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.samourai.sentinel.R
+import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ActivityCollectionDetailsBinding
@@ -79,9 +80,17 @@ class CollectionDetailsActivity : SentinelActivity() {
                 R.id.bottom_nav_receive -> {
                     binding.fragmentHostContainerPager.setCurrentItem(0, true)
                 }
+
                 R.id.bottom_nav_send -> {
-                    binding.fragmentHostContainerPager.setCurrentItem(2, true)
+                    if (collectionOnlyHasSingleAddresses())
+                        this@CollectionDetailsActivity.showFloatingSnackBar(
+                            binding.root,
+                            text = "PSBT composing is not available for single addresses"
+                        )
+                    else
+                        binding.fragmentHostContainerPager.setCurrentItem(2, true)
                 }
+
                 R.id.bottom_nav_transaction -> {
                     binding.fragmentHostContainerPager.setCurrentItem(1, true)
                 }
@@ -101,7 +110,7 @@ class CollectionDetailsActivity : SentinelActivity() {
                     1 -> {
                         binding.bottomNav.selectedItemId = R.id.bottom_nav_transaction
                     }
-                    else -> {
+                    2 -> {
                         binding.bottomNav.selectedItemId = R.id.bottom_nav_send
                     }
                 }
@@ -151,6 +160,15 @@ class CollectionDetailsActivity : SentinelActivity() {
         } else {
             super.onBackPressed()
         }
+    }
+
+    private fun collectionOnlyHasSingleAddresses(): Boolean {
+        collection?.pubs?.forEach {
+            if (it.type  != AddressTypes.ADDRESS)
+                return false
+        }
+
+        return true
     }
 
     private fun checkIntent() {
