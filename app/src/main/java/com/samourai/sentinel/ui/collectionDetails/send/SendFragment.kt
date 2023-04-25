@@ -468,7 +468,7 @@ class SendFragment : Fragment() {
         return mCollection!!.pubs[0]
     }
 
-    fun setBalance(pub: PubKeyModel) {
+    private fun setBalance(pub: PubKeyModel) {
         var blockedUtxoBalanceSum = 0L
         val blockedUtxos =  UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
         blockedUtxos.forEach{ utxo ->

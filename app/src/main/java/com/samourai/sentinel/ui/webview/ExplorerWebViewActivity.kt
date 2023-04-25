@@ -77,11 +77,11 @@ class ExplorerWebViewActivity : AppCompatActivity() {
                         message = "Tor is not enabled, built in web browser supports tor proxy",
                         negativeText = "Continue without tor", positiveText = "Turn on tor and load") {
                     if (!it) {
-                        ProxyController.getInstance().clearProxyOverride({},{})
                         load()
                     } else {
                         defaultBackTor = true
-                        torStartAndLoad()
+                        TorServiceController.startTor()
+                        load()
                     }
                 }
             }
@@ -96,30 +96,18 @@ class ExplorerWebViewActivity : AppCompatActivity() {
     private fun setProxy() {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
 
-            val proxyConfig = ProxyConfig.Builder()
+            if (SentinelState.torProxy != null) {
+                val proxyConfig = ProxyConfig.Builder()
                     .addProxyRule("SOCKS:/${SentinelState.torProxy?.address().toString()}")
                     .build()
 
-            Timber.i("Proxy: SOCKS:/${SentinelState.torProxy?.address().toString()}")
-            ProxyController.getInstance().setProxyOverride(proxyConfig, {
-
-            }, {
-
-            })
-            load()
-        }
-    }
-
-    private fun torStartAndLoad() {
-        if (SentinelState.torProxy == null)
-            setUpTor()
-        TorServiceController.startTor()
-        SentinelState.torStateLiveData().observe(this) {
-            if (it == ON && SentinelState.torProxy != null) {
-                setProxy()
+                Timber.i("Proxy: SOCKS:/${SentinelState.torProxy?.address().toString()}")
+                ProxyController.getInstance().setProxyOverride(proxyConfig, {}, {})
+                load()
             }
         }
     }
+
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun load() {
@@ -212,86 +200,5 @@ class ExplorerWebViewActivity : AppCompatActivity() {
             cm.setPrimaryClip(clipData)
             Toast.makeText(applicationContext, getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun setUpTor() {
-        TorServiceController.Builder(
-            application = application,
-            torServiceNotificationBuilder = getTorNotificationBuilder(),
-            backgroundManagerPolicy = gePolicyManager(),
-            buildConfigVersionCode = BuildConfig.VERSION_CODE,
-            // Can instantiate directly here then access it from
-            defaultTorSettings = SentinelTorSettings(),
-            geoipAssetPath = "common/geoip",
-            geoip6AssetPath = "common/geoip6"
-        )
-            .addTimeToRestartTorDelay(milliseconds = 100L)
-            .addTimeToStopServiceDelay(milliseconds = 100L)
-            .setEventBroadcaster(TorEventsReceiver())
-            .setBuildConfigDebug(buildConfigDebug = BuildConfig.DEBUG)
-            .build()
-
-        TorServiceController.appEventBroadcaster?.let {
-
-            (it as TorEventsReceiver).liveTorState.observeForever { torState ->
-                when (torState.state) {
-                    "Tor: Off" -> {
-                        SentinelState.torState = OFF
-                    }
-                    "Tor: Starting" -> {
-                        SentinelState.torState = WAITING
-                    }
-                    "Tor: Stopping" -> {
-                        SentinelState.torState = WAITING
-                    }
-                }
-            }
-            it.torLogs.observeForever { log ->
-                if (log.contains("Bootstrapped 100%")) {
-                    it.torPortInfo.value?.socksPort?.let { it1 -> createProxy(it1) }
-                    torState = ON
-                }
-            }
-            it.torPortInfo.observeForever { torInfo ->
-                torInfo.socksPort?.let { port ->
-                    createProxy(port)
-                }
-            }
-        }
-    }
-
-
-    private fun createProxy(proxyUrl: String) {
-        val host = proxyUrl.split(":")[0].trim()
-        val port = proxyUrl.split(":")[1]
-        val proxy = Proxy(
-            Proxy.Type.SOCKS, InetSocketAddress(
-                host, port.trim().toInt())
-        )
-        SentinelState.torProxy = proxy;
-        setProxy()
-    }
-
-    private fun gePolicyManager(): BackgroundManager.Builder.Policy {
-        return BackgroundManager.Builder()
-            .runServiceInForeground(true)
-    }
-
-    private fun getTorNotificationBuilder(): ServiceNotification.Builder {
-        return ServiceNotification.Builder(
-            channelName = "Tor Service",
-            channelDescription = "Tor foreground service notifications ",
-            channelID = "TOR_CHANNEL",
-            notificationID = 121
-        )
-            .setActivityToBeOpenedOnTap(
-                clazz = HomeActivity::class.java,
-                intentExtrasKey = null,
-                intentExtras = null,
-                intentRequestCode = null
-            )
-            .enableTorRestartButton(enable = true)
-            .enableTorStopButton(enable = true)
-            .showNotification(show = true)
     }
 }
