@@ -93,7 +93,7 @@ class SendFragment : Fragment() {
         if (indexPubSelector != -1)
             setBalance(mCollection!!.pubs[indexPubSelector])
         else
-            setBalance(mCollection!!.pubs[0])
+            setBalance(mCollection!!.pubs[findFirstNonAddressPubkey()-1])
         super.onResume()
     }
 
@@ -124,7 +124,7 @@ class SendFragment : Fragment() {
 
 
         fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
-        setBalance(mCollection!!.pubs[0])
+        setBalance(mCollection!!.pubs[findFirstNonAddressPubkey()-1])
 
         if (isAdded) {
             setPubKeySelector()
@@ -399,7 +399,7 @@ class SendFragment : Fragment() {
             return
         }
 
-        val newIndex = if (mCollection!!.pubs[index-1].type != AddressTypes.ADDRESS) index else 1
+        val newIndex = if (mCollection!!.pubs[index-1].type != AddressTypes.ADDRESS) index else findFirstNonAddressPubkey()
 
         mCollection?.let { pubKeySelector ->
             val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
@@ -422,6 +422,14 @@ class SendFragment : Fragment() {
             view?.alpha = 1f
             fragmentSpendBinding.composeBtn.isEnabled = true
             }
+    }
+
+    private fun findFirstNonAddressPubkey(): Int {
+        mCollection!!.pubs.forEach {
+            if (it.type != AddressTypes.ADDRESS)
+                return mCollection!!.pubs.indexOf(it)+1
+        }
+        return 1
     }
 
     private fun setPubKeySelector() {
