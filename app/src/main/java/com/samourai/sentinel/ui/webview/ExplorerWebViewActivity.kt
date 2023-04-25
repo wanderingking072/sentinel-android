@@ -81,7 +81,6 @@ class ExplorerWebViewActivity : AppCompatActivity() {
                     } else {
                         defaultBackTor = true
                         TorServiceController.startTor()
-                        load()
                     }
                 }
             }
@@ -137,8 +136,9 @@ class ExplorerWebViewActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.web_explorer, menu)
-        SentinelState.torStateLiveData().observe(this, {
-            menu.findItem(R.id.menu_web_tor).icon = ContextCompat.getDrawable(applicationContext, R.drawable.ic_tor_on)
+        SentinelState.torStateLiveData().observe(this) {
+            menu.findItem(R.id.menu_web_tor).icon =
+                ContextCompat.getDrawable(applicationContext, R.drawable.ic_tor_on)
             val icon = menu.findItem(R.id.menu_web_tor).icon
             when (it) {
                 WAITING -> {
@@ -146,15 +146,22 @@ class ExplorerWebViewActivity : AppCompatActivity() {
                 }
                 ON -> {
                     icon.setTint(ContextCompat.getColor(applicationContext, R.color.md_green_600))
+                    load()
                 }
                 OFF -> {
-                    menu.findItem(R.id.menu_web_tor).icon = ContextCompat.getDrawable(applicationContext, R.drawable.ic_tor_disabled)
-                    menu.findItem(R.id.menu_web_tor).icon.setTint(ContextCompat.getColor(applicationContext, R.color.md_grey_400))
+                    menu.findItem(R.id.menu_web_tor).icon =
+                        ContextCompat.getDrawable(applicationContext, R.drawable.ic_tor_disabled)
+                    menu.findItem(R.id.menu_web_tor).icon.setTint(
+                        ContextCompat.getColor(
+                            applicationContext,
+                            R.color.md_grey_400
+                        )
+                    )
                 }
                 else -> {
                 }
             }
-        })
+        }
         return super.onCreateOptionsMenu(menu)
     }
 
