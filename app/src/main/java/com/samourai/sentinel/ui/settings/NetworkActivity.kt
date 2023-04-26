@@ -1,11 +1,14 @@
 package com.samourai.sentinel.ui.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
@@ -13,6 +16,7 @@ import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.dojo.DojoUtility
+import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
@@ -64,8 +68,12 @@ class NetworkActivity : SentinelActivity() {
                     if (it)
                         removeDojo()
                 }
-            } else
-                showDojoSetUpBottomSheet()
+            } else {
+                if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext))
+                    this.askCameraPermission()
+                else
+                    showDojoSetUpBottomSheet()
+            }
         }
         torButton!!.setOnClickListener {
             if (SentinelState.isTorStarted()) {
@@ -82,6 +90,17 @@ class NetworkActivity : SentinelActivity() {
 
         }
         setDojoStatus()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            showDojoSetUpBottomSheet()
+        } else {
+            if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                Toast.makeText(this, "Camera Permission Denied", Toast.LENGTH_LONG).show()
+                showDojoSetUpBottomSheet()
+            }
+        }
     }
 
     private fun removeDojo() {
