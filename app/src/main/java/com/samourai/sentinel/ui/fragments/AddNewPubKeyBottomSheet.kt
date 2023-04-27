@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
+import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
@@ -128,6 +129,18 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
     private fun validate(code: String) {
         val payload = FormatsUtil.extractPublicKey(code)
         val type = FormatsUtil.getPubKeyType(payload)
+        if (FormatsUtil.isValidBitcoinAddress(payload.trim()) || FormatsUtil.isValidXpub(payload)) {
+            if (isPublicKeyTesnet(payload) && !SentinelState.isTestNet()) {
+                Toast.makeText(context, "Can't track Testnet public keys in Mainnet", Toast.LENGTH_LONG).show()
+                this.dismiss()
+                return
+            }
+            if (!isPublicKeyTesnet(payload) && SentinelState.isTestNet()) {
+                Toast.makeText(context, "Can't track Mainnet public keys in Testnet", Toast.LENGTH_LONG).show()
+                this.dismiss()
+                return
+            }
+        }
         when {
             FormatsUtil.isValidBitcoinAddress(payload.trim()) -> {
                 if (newPubKeyListener != null) {
@@ -158,6 +171,14 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
                 Toast.makeText(context, "Invalid public key or payload", Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    private fun isPublicKeyTesnet(payload: String): Boolean {
+        if (payload.lowercase().startsWith("tb") || payload.lowercase().startsWith("2") || payload.lowercase().startsWith("m"))
+            return true
+        if (payload.lowercase().startsWith("tpub") || payload.lowercase().startsWith("upub") || payload.lowercase().startsWith("vpub"))
+            return true
+        return false
     }
 
     private fun setUpViewPager() {
