@@ -1,13 +1,12 @@
 package com.samourai.sentinel.ui.dojo
 
 import android.Manifest
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
-import android.text.Editable
+import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,9 +20,8 @@ import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
+import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.tor.TorEventsReceiver
-import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
-import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
@@ -31,8 +29,10 @@ import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.apiScope
 import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.*
-import org.koin.android.ext.android.bind
+import okhttp3.*
+import org.json.JSONObject
 import org.koin.java.KoinJavaComponent
+import java.io.IOException
 
 class DojoConfigureBottomSheet : GenericBottomSheet() {
     private var payloadPassed: String? = null;
@@ -41,7 +41,6 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     private val dojoConnectFragment = DojoConnectFragment()
     private val connectManuallyFragment = ConnectManuallyFragment()
     private var dojoConfigurationListener: DojoConfigurationListener? = null
-    private var cameraFragmentBottomSheet: CameraFragmentBottomSheet? = null
     private val prefsUtil: PrefsUtil by KoinJavaComponent.inject(PrefsUtil::class.java);
 
     private var payload: String = ""
@@ -116,12 +115,13 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             prefsUtil.enableTor = true
             dojoConnectFragment.showTorProgress()
             TorServiceController.appEventBroadcaster.let {
-                (it as TorEventsReceiver).torLogs.observe(this.viewLifecycleOwner, { log ->
+                (it as TorEventsReceiver).torLogs.observe(this.viewLifecycleOwner) { log ->
                     if (log.contains("Bootstrapped 100%")) {
                         dojoConnectFragment.showTorProgressSuccess()
+                        Thread.sleep(500)
                         setDojo()
                     }
-                })
+                }
             }
         }
     }
@@ -130,29 +130,74 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         if (connectManuallyFragment.dojoPayload?.isNotEmpty() == true && connectManuallyFragment.dojoPayload != null)
             payload = connectManuallyFragment.dojoPayload!!
         dojoConnectFragment.showDojoProgress()
-        apiScope.launch {
-            delay(100)
-            try {
-                val call = async { dojoUtil.setDojo(payload) }
-                val response = call.await()
-                if (response.isSuccessful) {
-                    val body = response.body?.string()
-                    if (body != null) {
-                        dojoUtil.setAuthToken(body)
-                    }
-                    withContext(Dispatchers.Main) {
-                        dojoConnectFragment.showDojoProgressSuccess()
-                        Handler().postDelayed(Runnable {
-                            this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
-                            this@DojoConfigureBottomSheet.dismiss()
-                        }, 500)
+        try {
+            val pairing = fromJSON<DojoPairing>(payload)
+                ?: throw  Exception("Invalid payload")
+            val client = OkHttpClient.Builder().proxy(SentinelState.torProxy).build()
+
+            val requestBody = FormBody.Builder()
+                .add("apikey", pairing.pairing?.apikey.toString())
+                .build()
+
+            val request = Request.Builder()
+                .url(pairing.pairing!!.url!!.toString().plus("/auth/login"))
+                .post(requestBody)
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
+
+                override fun onResponse(call: Call, response: Response) {
+                    if (response.isSuccessful) {
+                        val string = response.body?.string() ?: "{}"
+                        val json = JSONObject(string)
+                        dojoUtil.setDojoPayload(payload)
+                        prefsUtil.apiEndPointTor = pairing.pairing.url
+                        prefsUtil.apiEndPoint = pairing.pairing.url
+                        dojoUtil.setAuthToken(json.toString())
+                        apiScope.launch {
+                            dojoUtil.writePayload(pairing);
+                            withContext(Dispatchers.Main) {
+                                dismissAllOrToast(true)
+                            }
+                        }
+                    } else if (response.code == 401) {
+                        Log.d("DojoConfiguration", "Unauthorized: wrong API key")
+                        dismissAllOrToast(false)
+                    } else {
+                        dismissAllOrToast(false)
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+                override fun onFailure(call: Call, e: IOException) {
+                    throw Exception("Something went wrong: " + e)
+                }
+            })
+        } catch (e: Exception) {
+            Handler().postDelayed(Runnable {
+                this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
+                this@DojoConfigureBottomSheet.dismiss()
+            }, 500)
+            Toast.makeText(requireContext(), "Error: $e", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun dismissAllOrToast(wasDojoSet: Boolean) {
+        if (wasDojoSet) {
+            dojoConnectFragment.showDojoProgressSuccess()
+            Handler().postDelayed(Runnable {
+                this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
+                this@DojoConfigureBottomSheet.dismiss()
+            }, 500)
+        }
+        else {
+            Handler(Looper.getMainLooper()).post {
+                Handler().postDelayed(Runnable {
+                    this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
+                    this@DojoConfigureBottomSheet.dismiss()
+                }, 500)
+                Toast.makeText(requireContext(), "Error: please check API key and try again", Toast.LENGTH_LONG).show()
             }
         }
-
     }
 
     fun setDojoConfigurationListener(dojoConfigurationListener: DojoConfigurationListener?) {
@@ -194,10 +239,6 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
         this.dojoConfigurationListener?.onDismiss()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
     }
 
     fun setPayload(dojoPayload: String?) {
@@ -278,12 +319,6 @@ class DojoConnectFragment : Fragment() {
 }
 
 class ConnectManuallyFragment : Fragment() {
-
-
-    private lateinit var checkImageTor: ImageView
-    private lateinit var checkImageDojo: ImageView
-    private lateinit var progressTor: ProgressBar
-    private lateinit var progressDojo: ProgressBar
     private var connectOnClickListener: View.OnClickListener? = null
     private var onionText : TextInputEditText? = null
     private var apiText : TextInputEditText? = null
@@ -305,9 +340,9 @@ class ConnectManuallyFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        onionText = view.findViewById<TextInputEditText>(R.id.setUpWalletAddressInput)
-        apiText = view.findViewById<TextInputEditText>(R.id.setUpWalletApiKeyInput)
-        connectButton = view.findViewById<MaterialButton>(R.id.setUpWalletConnectDojo)
+        onionText = view.findViewById(R.id.setUpWalletAddressInput)
+        apiText = view.findViewById(R.id.setUpWalletApiKeyInput)
+        connectButton = view.findViewById(R.id.setUpWalletConnectDojo)
 
         connectButton?.setOnClickListener(View.OnClickListener {
             if (onionText?.text?.isBlank() == true || apiText?.text?.isBlank() == true)
@@ -323,31 +358,6 @@ class ConnectManuallyFragment : Fragment() {
                         "}"
             connectOnClickListener?.onClick(view)
         })
-    }
-
-
-    fun showTorProgress() {
-        progressTor.visibility = View.VISIBLE
-        checkImageTor.visibility = View.INVISIBLE
-        progressTor.animate()
-            .alpha(1f)
-            .setDuration(600)
-            .start()
-    }
-
-    fun showTorProgressSuccess() {
-        progressTor.visibility = View.INVISIBLE
-        checkImageTor.visibility = View.VISIBLE
-    }
-
-    fun showDojoProgress() {
-        progressDojo.visibility = View.VISIBLE
-        checkImageDojo.visibility = View.INVISIBLE
-    }
-
-    fun showDojoProgressSuccess() {
-        progressDojo.visibility = View.INVISIBLE
-        checkImageDojo.visibility = View.VISIBLE
     }
 }
 
@@ -401,10 +411,6 @@ class ScanFragment : Fragment() {
         if (AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, appContext)) {
             mCodeScanner?.startScanner()
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
     }
 
 }

@@ -140,7 +140,6 @@ class NetworkActivity : SentinelActivity() {
 
     }
 
-
     fun setDojoStatus() {
         if (dojoUtility.isDojoEnabled()) {
             dojoConnectionStatus?.text = getString(R.string.Enabled)
@@ -189,6 +188,9 @@ class NetworkActivity : SentinelActivity() {
             override fun onDismiss() {
                 //Update dojo status
                 setDojoStatus()
+                if (!prefsUtil.isAPIEndpointEnabled()) {
+                    removeDojo()
+                }
             }
         })
     }

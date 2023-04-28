@@ -74,7 +74,7 @@ class DojoUtility {
         return dojoPayload != null
     }
 
-    private suspend fun writePayload(dojoPairing: DojoPairing) = withContext(Dispatchers.IO) {
+    suspend fun writePayload(dojoPairing: DojoPairing) = withContext(Dispatchers.IO) {
         dbHandler.getDojoStore().write(dojoPairing, true)
     }
 
@@ -130,6 +130,12 @@ class DojoUtility {
 
     fun exportDojoPayload(): String? {
         return dojoPayload?.toJSON()
+    }
+
+    fun setDojoPayload(payloadString: String) {
+        val payload = fromJSON<DojoPairing>(payloadString)
+            ?: throw  Exception("Invalid payload")
+        this.dojoPayload = payload
     }
 
     fun import(dojoPairing: JSONObject) {
