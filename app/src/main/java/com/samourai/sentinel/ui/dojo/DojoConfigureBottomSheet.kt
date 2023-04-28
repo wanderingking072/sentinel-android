@@ -17,22 +17,28 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.invertedx.hummingbird.QRScanner
+import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.tor.TorEventsReceiver
+import com.samourai.sentinel.tor.prefs.SentinelTorSettings
+import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
-import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.apiScope
 import io.matthewnelson.topl_service.TorServiceController
+import io.matthewnelson.topl_service.lifecycle.BackgroundManager
+import io.matthewnelson.topl_service.notification.ServiceNotification
 import kotlinx.coroutines.*
 import okhttp3.*
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent
 import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.Proxy
 
 class DojoConfigureBottomSheet : GenericBottomSheet() {
     private var payloadPassed: String? = null;
@@ -111,6 +117,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             dojoConnectFragment.showTorProgressSuccess()
             setDojo()
         } else {
+            setUpTor()
             TorServiceController.startTor()
             prefsUtil.enableTor = true
             dojoConnectFragment.showTorProgress()
@@ -118,7 +125,6 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                 (it as TorEventsReceiver).torLogs.observe(this.viewLifecycleOwner) { log ->
                     if (log.contains("Bootstrapped 100%")) {
                         dojoConnectFragment.showTorProgressSuccess()
-                        Thread.sleep(500)
                         setDojo()
                     }
                 }
@@ -169,7 +175,13 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                 }
 
                 override fun onFailure(call: Call, e: IOException) {
-                    throw Exception("Something went wrong: " + e)
+                    if (e.message!!.contains("Unable to resolve host")) {
+                        Thread.sleep(5000)
+                        if (SentinelState.torProxy != null)
+                            setDojo()
+                    }
+                    else
+                        throw Exception("Something went wrong: " + e)
                 }
             })
         } catch (e: Exception) {
@@ -199,6 +211,94 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             }
         }
     }
+
+
+
+    private fun setUpTor() {
+        TorServiceController.Builder(
+            application = requireActivity().application,
+            torServiceNotificationBuilder = getTorNotificationBuilder(),
+            backgroundManagerPolicy = gePolicyManager(),
+            buildConfigVersionCode = BuildConfig.VERSION_CODE,
+            // Can instantiate directly here then access it from
+            defaultTorSettings = SentinelTorSettings(),
+            geoipAssetPath = "common/geoip",
+            geoip6AssetPath = "common/geoip6"
+        )
+            .addTimeToRestartTorDelay(milliseconds = 100L)
+            .addTimeToStopServiceDelay(milliseconds = 100L)
+            .setEventBroadcaster(TorEventsReceiver())
+            .setBuildConfigDebug(buildConfigDebug = BuildConfig.DEBUG)
+            .build()
+
+        TorServiceController.appEventBroadcaster?.let {
+
+            (it as TorEventsReceiver).liveTorState.observeForever { torState ->
+                when (torState.state) {
+                    "Tor: Off" -> {
+                        SentinelState.torState = SentinelState.TorState.OFF
+                    }
+                    "Tor: Starting" -> {
+                        SentinelState.torState = SentinelState.TorState.WAITING
+                    }
+                    "Tor: Stopping" -> {
+                        SentinelState.torState = SentinelState.TorState.WAITING
+                    }
+                }
+            }
+            it.torLogs.observeForever { log ->
+                if (log.contains("Bootstrapped 100%")) {
+                    it.torPortInfo.value?.socksPort?.let { it1 -> createProxy(it1) }
+                    SentinelState.torState = SentinelState.TorState.ON
+                }
+            }
+            it.torPortInfo.observeForever { torInfo ->
+                torInfo.socksPort?.let { port ->
+                    createProxy(port)
+                }
+            }
+        }
+        if (SentinelState.isTorRequired()) {
+            TorServiceController.startTor()
+            prefsUtil.enableTor = true
+        }
+    }
+
+
+    private fun createProxy(proxyUrl: String) {
+        val host = proxyUrl.split(":")[0].trim()
+        val port = proxyUrl.split(":")[1]
+        val proxy = Proxy(
+            Proxy.Type.SOCKS, InetSocketAddress(
+            host, port.trim().toInt())
+        )
+        SentinelState.torProxy = proxy;
+    }
+
+    private fun gePolicyManager(): BackgroundManager.Builder.Policy {
+        return BackgroundManager.Builder()
+            .runServiceInForeground(true)
+    }
+
+    private fun getTorNotificationBuilder(): ServiceNotification.Builder {
+        return ServiceNotification.Builder(
+            channelName = "Tor Service",
+            channelDescription = "Tor foreground service notifications ",
+            channelID = "TOR_CHANNEL",
+            notificationID = 121
+        )
+            .setActivityToBeOpenedOnTap(
+                clazz = HomeActivity::class.java,
+                intentExtrasKey = null,
+                intentExtras = null,
+                intentRequestCode = null
+            )
+            .enableTorRestartButton(enable = true)
+            .enableTorStopButton(enable = true)
+            .showNotification(show = true)
+    }
+
+
 
     fun setDojoConfigurationListener(dojoConfigurationListener: DojoConfigurationListener?) {
         this.dojoConfigurationListener = dojoConfigurationListener
