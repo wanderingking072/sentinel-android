@@ -49,6 +49,7 @@ class HomeActivity : SentinelActivity() {
     private lateinit var torServicePrefs: TorServicePrefs
     private lateinit var binding: ActivityHomeBinding
     private val model: HomeViewModel by viewModels()
+    private var balance = -1L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,6 +81,7 @@ class HomeActivity : SentinelActivity() {
 
         model.getBalance().observe(this) {
             updateBalance(it)
+            balance = it
         }
 
         binding.exchangeRateTxt.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
@@ -167,10 +169,9 @@ class HomeActivity : SentinelActivity() {
         if (SentinelState.isTestNet() && !title.contains("TestNet")) {
             title = "$title | TestNet"
         }
-        model.fetchBalance()
-        model.getBalance().observe(this) {
-            updateBalance(it)
-        }
+        if (balance != -1L)
+            updateBalance(balance)
+
         binding.exchangeRateTxt.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
     }
 
