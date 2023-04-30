@@ -83,7 +83,14 @@ class TransactionsDetailsBottomSheet(private var tx: Tx, val secure: Boolean = f
         fmt.timeZone = TimeZone.getDefault()
         binding.txDetailsAmount.text = "${MonetaryUtil.getInstance().formatToBtc(tx.result)} BTC | ${getFiatBalance(tx.result, exchangeRateRepository.getRateLive().value)} "
         binding.txDetailsBlockId.text = "${tx.block_height ?: "__"}"
-        binding.txDetailsConfirmation.text = tx.confirmations.toString()
+        var latestBlockHeight = 1L
+        if (SentinelState.blockHeight != null)
+            latestBlockHeight = SentinelState.blockHeight?.height!!
+        val txBlockHeight = tx.block_height ?: 0
+        binding.txDetailsConfirmation.text =
+                if (latestBlockHeight > 0L && txBlockHeight > 0L) ((latestBlockHeight.minus(
+                    txBlockHeight
+                )) + 1).toString() else 0.toString()
         if (tx.result != null)
             binding.txDetailsTime.text = "${fmt.format(Date(tx.time * 1000))} "
         binding.txDetailsHash.text = tx.hash

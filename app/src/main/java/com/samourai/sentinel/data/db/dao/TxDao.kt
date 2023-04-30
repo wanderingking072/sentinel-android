@@ -32,7 +32,7 @@ interface TxDao {
     @Query("SELECT * from transactions WHERE collectionId=:collectionID  ORDER BY time DESC LIMIT $TX_PAGE_SIZE")
     fun getTxAssociatedToCollection(collectionID: String): DataSource.Factory<Int, Tx>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(tx: Tx)
 
     @Query("DELETE FROM transactions")
