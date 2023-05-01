@@ -174,7 +174,7 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
     }
 
     private fun isPublicKeyTesnet(payload: String): Boolean {
-        if (payload.lowercase().startsWith("tb") || payload.lowercase().startsWith("2") || payload.lowercase().startsWith("m"))
+        if (payload.lowercase().startsWith("tb") || payload.lowercase().startsWith("2") || payload.lowercase().startsWith("m") || payload.lowercase().startsWith("n"))
             return true
         if (payload.lowercase().startsWith("tpub") || payload.lowercase().startsWith("upub") || payload.lowercase().startsWith("vpub"))
             return true
