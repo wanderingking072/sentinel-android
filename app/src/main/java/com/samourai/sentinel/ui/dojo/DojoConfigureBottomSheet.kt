@@ -180,8 +180,9 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                         if (SentinelState.torProxy != null)
                             setDojo()
                     }
-                    else
-                        throw Exception("Something went wrong: " + e)
+                    else {
+                        dismissAllOrToast(false)
+                    }
                 }
             })
         } catch (e: Exception) {
@@ -193,8 +194,8 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         }
     }
 
-    fun dismissAllOrToast(wasDojoSet: Boolean) {
-        if (wasDojoSet) {
+    fun dismissAllOrToast(wasResponseSuccessful: Boolean) {
+        if (wasResponseSuccessful) {
             dojoConnectFragment.showDojoProgressSuccess()
             Handler().postDelayed(Runnable {
                 this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
@@ -207,7 +208,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                     this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
                     this@DojoConfigureBottomSheet.dismiss()
                 }, 500)
-                Toast.makeText(requireContext(), "Error: please check API key and try again", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Unable to connect to Dojo. Check URL / API key and try again", Toast.LENGTH_LONG).show()
             }
         }
     }
