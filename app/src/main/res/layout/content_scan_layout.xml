@@ -35,7 +35,7 @@
             <com.invertedx.hummingbird.QRScanner
                 android:id="@+id/scannerViewXpub"
                 android:layout_width="300dp"
-                android:layout_height="300dp"
+                android:layout_height="320dp"
                 android:layout_marginBottom="16dp"
                 app:autoFocusButtonColor="@android:color/white"
                 app:autoFocusButtonVisible="false"
