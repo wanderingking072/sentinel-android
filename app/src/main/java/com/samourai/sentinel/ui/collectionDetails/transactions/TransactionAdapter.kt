@@ -81,7 +81,6 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
         holder.txAmount.text = tx.result?.let {"${df.format(it.div(1e8))} BTC"}
         if (tx.result != null) {
             if (tx.result > 0) {
-                println("Enetered here\n" + tx.result)
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_baseline_incoming_arrow));
                 holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.md_green_A400))
             } else {
