@@ -5,7 +5,6 @@ import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.viewpager.widget.ViewPager
-import com.google.android.material.tabs.TabLayout
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
@@ -37,10 +36,10 @@ class UtxosActivity : SentinelActivity() {
 
         binding.pager.post {
             utxoViewModel.getPubKeys().observe(this) {
-            pubKeys.clear()
-            pubKeys.addAll(it)
-            binding.pager.adapter?.notifyDataSetChanged()
-            listenChanges(utxoViewModel)
+                pubKeys.clear()
+                pubKeys.addAll(it)
+                binding.pager.adapter?.notifyDataSetChanged()
+                listenChanges(utxoViewModel)
             }
         }
         //wait for pager to get ready before setting the index

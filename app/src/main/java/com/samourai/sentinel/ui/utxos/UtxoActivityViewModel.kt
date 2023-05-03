@@ -25,8 +25,6 @@ internal class UtxoActivityViewModel(private val pubKeyCollection: PubKeyCollect
             pubCollection.forEach {
                 if (it.id == pubKeyCollection.id) {
                     mediator.value = it.pubs
-                } else {
-                    mediator.value = ArrayList()
                 }
             }
         }
