@@ -120,8 +120,8 @@ class TransactionsDetailsBottomSheet(private var tx: Tx, val secure: Boolean = f
                         if (jsonObject.has("fees")) {
                             fee = jsonObject.getLong("fees")
                         }
-                        if (jsonObject.has("feerate")) {
-                            feeRate = jsonObject.getLong("feerate")
+                        if (jsonObject.has("vfeerate")) {
+                            feeRate = jsonObject.getLong("vfeerate")
                         }
                         if (jsonObject.has("size")) {
                             size = jsonObject.getLong("size")

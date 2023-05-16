@@ -276,7 +276,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="start"
                         android:layout_weight="1"
-                        android:text="Fees" />
+                        android:text="Fees (sats)" />
 
                     <FrameLayout
                         android:layout_width="wrap_content"
@@ -325,7 +325,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="start"
                         android:layout_weight="1"
-                        android:text="Fee rate" />
+                        android:text="Fee rate (sat/vbyte)" />
 
 
                     <FrameLayout
@@ -375,7 +375,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="start"
                         android:layout_weight="1"
-                        android:text="Size" />
+                        android:text="Size (bytes)" />
 
                     <TextView
                         android:id="@+id/txDetailsSize"
