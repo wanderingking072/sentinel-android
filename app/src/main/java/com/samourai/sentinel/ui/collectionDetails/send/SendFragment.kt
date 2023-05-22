@@ -91,10 +91,14 @@ class SendFragment : Fragment() {
 
     override fun onResume() {
         if (indexPubSelector != -1)
-            setBalance(mCollection!!.pubs[indexPubSelector])
+            setBalance(mCollection!!.pubs[indexPubSelector-1])
         else
             setBalance(mCollection!!.pubs[findFirstNonAddressPubkey()-1])
         super.onResume()
+    }
+
+    fun setIndexPubSelector(index: Int) {
+        indexPubSelector = index
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -130,7 +134,6 @@ class SendFragment : Fragment() {
             setPubKeySelector()
             if (indexPubSelector != -1) {
                 setDropDownPub(indexPubSelector)
-                indexPubSelector = -1
             }
         }
 

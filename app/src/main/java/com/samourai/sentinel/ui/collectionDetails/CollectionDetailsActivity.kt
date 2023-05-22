@@ -128,6 +128,7 @@ class CollectionDetailsActivity : SentinelActivity() {
         val pubIndexObserver = Observer<Int> { newIndex ->
             receiveFragment.setDropDownPub(newIndex)
             sendFragment.setDropDownPub(newIndex)
+            sendFragment.setIndexPubSelector(newIndex)
         }
 
         transactionsFragment.indexPubSelected.observe(this, pubIndexObserver)
