@@ -142,16 +142,16 @@ class ExplorerWebViewActivity : AppCompatActivity() {
             val icon = menu.findItem(R.id.menu_web_tor).icon
             when (it) {
                 WAITING -> {
-                    icon.setTint(ContextCompat.getColor(applicationContext, R.color.md_amber_300))
+                    icon?.setTint(ContextCompat.getColor(applicationContext, R.color.md_amber_300))
                 }
                 ON -> {
-                    icon.setTint(ContextCompat.getColor(applicationContext, R.color.md_green_600))
+                    icon?.setTint(ContextCompat.getColor(applicationContext, R.color.md_green_600))
                     load()
                 }
                 OFF -> {
                     menu.findItem(R.id.menu_web_tor).icon =
                         ContextCompat.getDrawable(applicationContext, R.drawable.ic_tor_disabled)
-                    menu.findItem(R.id.menu_web_tor).icon.setTint(
+                    menu.findItem(R.id.menu_web_tor).icon?.setTint(
                         ContextCompat.getColor(
                             applicationContext,
                             R.color.md_grey_400

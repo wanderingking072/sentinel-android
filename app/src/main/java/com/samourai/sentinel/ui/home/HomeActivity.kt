@@ -377,7 +377,7 @@ class HomeActivity : SentinelActivity() {
     private fun setNetWorkMenu(menu: Menu) {
         val alertMenuItem: MenuItem = menu.findItem(R.id.activity_home_menu_network)
         val rootView = alertMenuItem.actionView
-        val statusCircle = rootView.findViewById<View>(R.id.home_menu_network_shape) as FrameLayout
+        val statusCircle = rootView?.findViewById<View>(R.id.home_menu_network_shape) as FrameLayout
         val shape = ContextCompat.getDrawable(applicationContext, R.drawable.circle_shape)
         shape?.setTint(ContextCompat.getColor(applicationContext, R.color.red))
         statusCircle.background = shape

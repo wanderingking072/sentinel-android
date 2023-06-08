@@ -15,6 +15,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.common.collect.ImmutableList
 import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
@@ -31,10 +33,22 @@ import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
+import com.samourai.wallet.util.Util.bytesToHex
+import com.samourai.wallet.util.XPUB
+import com.sparrowwallet.hummingbird.URDecoder
+import com.sparrowwallet.hummingbird.registry.CryptoAccount
+import com.sparrowwallet.hummingbird.registry.PathComponent
+import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.bitcoinj.core.Base58
+import org.bitcoinj.core.ECKey
+import org.bitcoinj.crypto.ChildNumber
+import org.bitcoinj.crypto.DeterministicKey
+import org.bitcoinj.crypto.LazyECPoint
 import org.koin.java.KoinJavaComponent
+import java.nio.ByteBuffer
 
 
 class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
@@ -232,8 +246,33 @@ class ScanPubKeyFragment : Fragment() {
             }
         }
 
-        mCodeScanner?.setURDecodeListener { bytes, type ->
-            //  TODO: Handle UR Qr
+        mCodeScanner?.setURDecodeListener { result ->
+            mCodeScanner?.stopScanner()
+            result.fold(
+                onSuccess = {
+                    val xpub = getXpubFromUR(it)
+                    if (xpub != null) {
+                        onScan(xpub)
+                    }
+                    else {
+                        MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Error decoding public key")
+                            .setPositiveButton("Ok") { dialog, which ->
+                                dialog.dismiss()
+                            }.show()
+                        mCodeScanner?.stopScanner()
+                    }
+                },
+                onFailure = {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Error decoding UR")
+                        .setMessage("Exception: ${it.message}")
+                        .setPositiveButton("Ok") { dialog, which ->
+                            dialog.dismiss()
+                        }.show()
+                    mCodeScanner?.stopScanner()
+                }
+            )
         }
 
         view.findViewById<Button>(R.id.pastePubKey).setOnClickListener {
@@ -253,6 +292,49 @@ class ScanPubKeyFragment : Fragment() {
             }
         }
 
+    }
+
+    private fun getXpubFromUR(it: URDecoder.Result): String? {
+        if (it.ur.registryType == RegistryType.CRYPTO_ACCOUNT) {
+            val cryptoAccount = it.ur.decodeFromRegistry() as CryptoAccount
+            for (outputDescriptor in cryptoAccount.outputDescriptors) {
+                val cryptoHDKey = outputDescriptor.hdKey
+                var lastChild = ChildNumber.ZERO
+                var depth = 1
+                var parentFingerprint = ByteArray(4)
+                var version: Int
+                if (cryptoHDKey.origin != null) {
+                    if (cryptoHDKey.origin.components.isNotEmpty()) {
+                        val lastComponent: PathComponent =
+                            cryptoHDKey.origin.components[cryptoHDKey.origin.components.size - 1]
+                        lastChild = ChildNumber(lastComponent.index, lastComponent.isHardened)
+                        depth = cryptoHDKey.origin.depth
+                    }
+                    if (cryptoHDKey.origin.sourceFingerprint != null) {
+                        parentFingerprint = cryptoHDKey.parentFingerprint
+                    }
+                }
+                val parentFingerprintInt = ByteBuffer.wrap(parentFingerprint).int
+
+                if (cryptoHDKey.origin.path.substring(0..1) == "44")
+                    version = if (SentinelState.isTestNet())  XPUB.MAGIC_TPUB else XPUB.MAGIC_XPUB
+                else if (cryptoHDKey.origin.path.substring(0..1) == "49")
+                    version = if (SentinelState.isTestNet())  XPUB.MAGIC_UPUB else XPUB.MAGIC_YPUB
+                else
+                    version = if (SentinelState.isTestNet())  XPUB.MAGIC_VPUB else XPUB.MAGIC_ZPUB
+
+                val xpub = XPUB.makeXPUB(
+                    version,
+                    depth.toByte(),
+                    parentFingerprintInt,
+                    lastChild.i,
+                    cryptoHDKey.chainCode,
+                    cryptoHDKey.key
+                )
+                return xpub
+            }
+        }
+        return null
     }
 
     override fun onResume() {
