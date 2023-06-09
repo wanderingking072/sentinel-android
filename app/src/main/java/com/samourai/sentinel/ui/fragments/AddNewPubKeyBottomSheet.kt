@@ -16,7 +16,6 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.common.collect.ImmutableList
 import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
@@ -33,7 +32,6 @@ import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
-import com.samourai.wallet.util.Util.bytesToHex
 import com.samourai.wallet.util.XPUB
 import com.sparrowwallet.hummingbird.URDecoder
 import com.sparrowwallet.hummingbird.registry.CryptoAccount
@@ -42,13 +40,11 @@ import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.bitcoinj.core.Base58
-import org.bitcoinj.core.ECKey
 import org.bitcoinj.crypto.ChildNumber
-import org.bitcoinj.crypto.DeterministicKey
-import org.bitcoinj.crypto.LazyECPoint
+import org.json.JSONObject
 import org.koin.java.KoinJavaComponent
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 
 class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
@@ -333,6 +329,16 @@ class ScanPubKeyFragment : Fragment() {
                 )
                 return xpub
             }
+        }
+        else if (it.ur.registryType == RegistryType.BYTES) {
+            val urBytes = it.ur.decodeFromRegistry()
+            val decoder = StandardCharsets.UTF_8.newDecoder()
+            val buf = ByteBuffer.wrap(urBytes as ByteArray)
+            val charBuffer = decoder.decode(buf)
+            val xpubsJson = JSONObject(charBuffer.toString())
+            if (xpubsJson.has("bip84"))
+                return xpubsJson.getJSONObject("bip84").getString("_pub")
+            println("This are the bytes: " + urBytes)
         }
         return null
     }
