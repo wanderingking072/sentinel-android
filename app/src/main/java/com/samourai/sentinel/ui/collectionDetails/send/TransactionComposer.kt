@@ -283,7 +283,19 @@ class TransactionComposer {
                             }
                         }
                         if (txData != "")
-                            psbt!!.addInputCompatibility(networkParameters, Hex.decodeHex(data), eckeyInput, outPoint.value.value, purpose, type, getAccount()!!.id, chainIndex, addressIndex, txData, 0);
+                            psbt!!.addInputCompatibility(
+                                networkParameters,
+                                Hex.decodeHex(data),
+                                eckeyInput,
+                                outPoint.value.value,
+                                purpose,
+                                type,
+                                getAccount()!!.id,
+                                chainIndex,
+                                addressIndex,
+                                txData,
+                                input.txOutputN!!
+                            );
                     }
                     else if (purpose == 44) {
                         val response = apiService.getTxHex(outPoint.hash.toString())
