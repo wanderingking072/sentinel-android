@@ -82,11 +82,16 @@ class TransactionComposer {
 
         val utxos: ArrayList<UTXO> = arrayListOf();
         for (utxoCoin in inputUtxos) {
-            val u = UTXO()
-            val outs: MutableList<MyTransactionOutPoint> = ArrayList()
-            outs.add(utxoCoin.getOutPoints())
-            u.outpoints = outs
-            utxos.add(u)
+            if (utxoCoin.pubKey != selectPubKeyModel?.pubKey) {
+                continue
+            }
+            else {
+                val u = UTXO()
+                val outs: MutableList<MyTransactionOutPoint> = ArrayList()
+                outs.add(utxoCoin.getOutPoints())
+                u.outpoints = outs
+                utxos.add(u)
+            }
         }
         // sort in ascending order by value
         Collections.sort(utxos, UTXO.UTXOComparator())
