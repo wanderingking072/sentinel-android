@@ -103,15 +103,18 @@ class CollectionEditActivity : SentinelActivity() {
 
         binding.collectionEditNestedScroll.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
             if (scrollY > oldScrollY + 12 && binding.addNewPubFab.isExtended) {
-                binding.addNewPubFab.shrink()
+                binding.addNewPubFab.hide()
             }
             if (scrollY < oldScrollY - 12 && !binding.addNewPubFab.isExtended) {
+                binding.addNewPubFab.show()
                 binding.addNewPubFab.extend()
             }
             if (scrollY == 0) {
+                binding.addNewPubFab.show()
                 binding.addNewPubFab.extend()
             }
         })
+
     }
 
     private fun checkIntent() {
