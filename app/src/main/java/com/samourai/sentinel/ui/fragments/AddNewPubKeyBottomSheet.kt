@@ -122,6 +122,7 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
         if (newPubKeyListener != null) {
             this.newPubKeyListener?.let { it(pubKeyModel) }
             this.dismiss()
+            newPubKeyListener = null
             return
         }
         if (selectedPubKeyCollection != null) {

@@ -296,6 +296,7 @@ class CollectionEditActivity : SentinelActivity() {
                     viewModel.updateKey(i, pubKeyModel)
                     pubKeyAdapter.notifyItemChanged(i)
                 },
+                isCancelable = false,
                 maxLen = 30,
                 labelEditText = "Label",
                 value = pubKeyModel.label,
