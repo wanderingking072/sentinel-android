@@ -95,7 +95,7 @@ class CollectionEditActivity : SentinelActivity() {
             } else {
                 if (AppUtil.getInstance(applicationContext).isOfflineMode
                     ||  SentinelState.torState ==SentinelState.TorState.WAITING)
-                    Toast.makeText(this, "Please check connectivity and try again.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "No data connection. Please wait, then try again", Toast.LENGTH_LONG).show()
                 else
                     showPubKeyBottomSheet()
             }
