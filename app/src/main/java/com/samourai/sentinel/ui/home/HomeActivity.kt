@@ -93,7 +93,11 @@ class HomeActivity : SentinelActivity() {
             if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
                 this.askCameraPermission()
             } else {
-                showPubKeyBottomSheet()
+                if (AppUtil.getInstance(applicationContext).isOfflineMode
+                    ||  SentinelState.torState ==SentinelState.TorState.WAITING)
+                    Toast.makeText(this, "Please check connectivity and try again.", Toast.LENGTH_LONG).show()
+                else
+                    showPubKeyBottomSheet()
             }
 
         }

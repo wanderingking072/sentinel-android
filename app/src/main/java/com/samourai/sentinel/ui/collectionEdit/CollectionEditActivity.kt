@@ -17,6 +17,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
+import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
@@ -32,6 +33,7 @@ import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.alertWithInput
 import com.samourai.sentinel.ui.views.confirm
+import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.*
 import org.koin.java.KoinJavaComponent.inject
@@ -91,7 +93,11 @@ class CollectionEditActivity : SentinelActivity() {
             if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
                 this.askCameraPermission()
             } else {
-                showPubKeyBottomSheet()
+                if (AppUtil.getInstance(applicationContext).isOfflineMode
+                    ||  SentinelState.torState ==SentinelState.TorState.WAITING)
+                    Toast.makeText(this, "Please check connectivity and try again.", Toast.LENGTH_LONG).show()
+                else
+                    showPubKeyBottomSheet()
             }
         }
 
