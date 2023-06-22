@@ -87,10 +87,7 @@ class TransactionsDetailsBottomSheet(private var tx: Tx, val secure: Boolean = f
         if (SentinelState.blockHeight != null)
             latestBlockHeight = SentinelState.blockHeight?.height!!
         val txBlockHeight = tx.block_height ?: 0
-        binding.txDetailsConfirmation.text =
-                if (latestBlockHeight > 0L && txBlockHeight > 0L) ((latestBlockHeight.minus(
-                    txBlockHeight
-                )) + 1).toString() else 0.toString()
+        binding.txDetailsConfirmation.text = tx.confirmations.toString() ?: "0"
         if (tx.result != null)
             binding.txDetailsTime.text = "${fmt.format(Date(tx.time * 1000))} "
         binding.txDetailsHash.text = tx.hash

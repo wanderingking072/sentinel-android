@@ -91,11 +91,13 @@ class TransactionsRepository {
                         val items = response.txs.map { tx ->
                             tx.associatedPubKey = pubKeyAssociated.pubKey
                             val txBlockHeight = tx.block_height ?: 0
+                            if (tx.block_height != null)
+                                txDao.updateTxConfirmations(tx.hash, latestBlockHeight.minus(tx.block_height).plus(1))
                             tx.collectionId = collectionId
                             tx.confirmations =
-                                if (latestBlockHeight > 0L && txBlockHeight > 0L) (latestBlockHeight.minus(
-                                    txBlockHeight
-                                )) + 1 else 0
+                                if (latestBlockHeight > 0L && txBlockHeight > 0L)
+                                        (latestBlockHeight.minus(txBlockHeight)) + 1
+                                else 0
                             tx
                         }
                         response.unspent_outputs?.let {

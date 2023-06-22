@@ -95,7 +95,7 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
         if (position != 0) {
             val previous = getItem(position - 1)!!
             val datePrev = Date().apply { time = previous.time * 1000 }
-            if (isSameDay(datePrev, current)) {
+            if (isSameDay(datePrev, current) && previous.confirmations >= MAX_CONFIRM_COUNT) {
                 //No-OP
             } else {
                 holder.showDivider()
