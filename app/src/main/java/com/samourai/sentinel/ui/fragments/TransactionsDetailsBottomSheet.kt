@@ -106,7 +106,7 @@ class TransactionsDetailsBottomSheet(private var tx: Tx, val secure: Boolean = f
     private fun fetchFee() {
         job = apiScope.launch(Dispatchers.IO) {
             try {
-                val response = apiService.getTx(tx.hash)
+                val response = apiService.getTx(tx.hash.split("-")[0])
                 if (response.isSuccessful) {
                     val body = response.body?.string()
                     if (body != null) {

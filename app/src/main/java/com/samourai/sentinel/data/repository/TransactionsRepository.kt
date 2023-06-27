@@ -54,7 +54,7 @@ class TransactionsRepository {
         try {
             logThreadInfo("fetchFromServer")
             val collection = collectionRepository.findById(collectionId) ?: return
-            val newTransactions: ArrayList<Tx> = arrayListOf();
+            var newTransactions: ArrayList<Tx> = arrayListOf();
             val utxos: ArrayList<Utxo> = arrayListOf();
             val jobs: ArrayList<Deferred<Response>> = arrayListOf()
             collection.pubs.forEach {
@@ -143,6 +143,7 @@ class TransactionsRepository {
             apiScope.launch(Dispatchers.Main) {
                 loading.postValue(false)
             }
+            newTransactions = keepTransactionWihVariousPubkeys(newTransactions)
             saveTx(newTransactions, collectionId)
             saveUtxos(utxos, collectionId)
         } catch (e: Exception) {
@@ -151,6 +152,25 @@ class TransactionsRepository {
             }
             throw  e
         }
+    }
+
+    private fun keepTransactionWihVariousPubkeys(transactions: ArrayList<Tx>): ArrayList<Tx> {
+        val groupedTransactions = transactions.groupBy { it.hash }
+        val hashes: HashMap<String, Int> = hashMapOf()
+        println("ROUND 2 FIGHT!")
+        groupedTransactions.forEach {
+            if (it.value.size > 1) {
+                hashes[it.value[0].hash] = 0
+            }
+        }
+        transactions.forEach {
+            if (hashes.contains(it.hash)) {
+                val counter = hashes[it.hash]?.plus(1)
+                hashes[it.hash] = counter!!.toInt()
+                it.hash = it.hash + "-" + hashes[it.hash]
+            }
+        }
+        return transactions
     }
 
     fun loadingState(): LiveData<Boolean> {

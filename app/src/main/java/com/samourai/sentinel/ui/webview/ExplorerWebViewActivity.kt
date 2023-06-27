@@ -54,7 +54,7 @@ class ExplorerWebViewActivity : AppCompatActivity() {
 
         if (SentinelState.selectedTx != null) {
             tx = SentinelState.selectedTx!!
-            title = tx!!.hash
+            title = tx!!.hash.split("-")[0]
         } else {
             finish()
         }
@@ -128,7 +128,7 @@ class ExplorerWebViewActivity : AppCompatActivity() {
             }
         }
         tx?.let {
-            url = ExplorerRepository.getExplorer(it.hash)
+            url = ExplorerRepository.getExplorer(it.hash.split("-")[0])
             binding.webView.loadUrl(url)
         }
 

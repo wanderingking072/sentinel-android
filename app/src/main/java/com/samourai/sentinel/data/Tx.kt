@@ -13,7 +13,7 @@ import java.lang.reflect.Type
 @Entity(tableName = "transactions")
 data class Tx(
         @PrimaryKey
-        val hash: String,
+        var hash: String,
         val time: Long,
         var associatedPubKey: String = "",
         var collectionId: String = "",
