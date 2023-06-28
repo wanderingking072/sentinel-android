@@ -5,6 +5,7 @@ import com.samourai.sentinel.core.SentinelState.Companion.getNetworkParam
 import com.samourai.sentinel.core.segwit.bech32.Bech32
 import com.samourai.sentinel.core.segwit.bech32.Bech32Segwit
 import com.samourai.sentinel.data.AddressTypes
+import com.samourai.wallet.util.FormatsUtilGeneric
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.AddressFormatException
 import org.bitcoinj.core.Base58
@@ -137,6 +138,12 @@ class FormatsUtil private constructor() {
                         ret = true
                     }
                 } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                try {
+                    ret = FormatsUtilGeneric.getInstance().isValidP2TR(address)
+                }
+                catch (e: Exception) {
                     e.printStackTrace()
                 }
             } else {
