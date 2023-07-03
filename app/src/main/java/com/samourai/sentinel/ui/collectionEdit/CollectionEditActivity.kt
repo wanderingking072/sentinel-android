@@ -66,7 +66,7 @@ class CollectionEditActivity : SentinelActivity() {
         setUpPubKeyList()
 
         viewModel.getCollection().observe(this) {
-            binding.collectionEdiText.setText(it.collectionLabel)
+            binding.collectionEdiText.setText(it.collectionLabel.trimEnd())
             binding.collectionEdiText.doOnTextChanged { text, _, _, _ ->
                 it.collectionLabel = text.toString()
             }
