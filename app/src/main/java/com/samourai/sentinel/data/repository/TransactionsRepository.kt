@@ -157,7 +157,6 @@ class TransactionsRepository {
     private fun keepTransactionWihVariousPubkeys(transactions: ArrayList<Tx>): ArrayList<Tx> {
         val groupedTransactions = transactions.groupBy { it.hash }
         val hashes: HashMap<String, Int> = hashMapOf()
-        println("ROUND 2 FIGHT!")
         groupedTransactions.forEach {
             if (it.value.size > 1) {
                 hashes[it.value[0].hash] = 0

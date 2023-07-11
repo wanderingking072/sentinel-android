@@ -295,7 +295,7 @@
     <string name="step2_text">Scan the QR code of the signed transaction that your wallet provides you with the Sentinel app</string>
     <string name="address_number1_bip44">Addresses starting with \"1\" (BIP44)</string>
     <string name="address_number3_bip49">Addresses starting with \"3\" (BIP49)</string>
-    <string name="address_starting_bc_bip84">Addresses starting with \"bc1\" (BIP84)</string>
+    <string name="address_starting_bc_bip84">Addresses starting with \"bc1q\" (BIP84)</string>
     <string name="request_amount">Request Amount</string>
     <string name="path">Path</string>
     <string name="advanced">Advanced</string>
