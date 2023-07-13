@@ -1,18 +1,26 @@
 package com.samourai.sentinel.data.repository
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
-import com.samourai.sentinel.data.*
-import com.samourai.sentinel.data.db.SentinelCollectionStore
+import com.samourai.sentinel.data.AddressTypes
+import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.data.PubKeyModel
+import com.samourai.sentinel.data.Tx
+import com.samourai.sentinel.data.Utxo
+import com.samourai.sentinel.data.WalletResponse
 import com.samourai.sentinel.data.db.dao.TxDao
 import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.ui.utils.logThreadInfo
 import com.samourai.sentinel.util.apiScope
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.Response
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
@@ -142,6 +150,10 @@ class TransactionsRepository {
             }
             apiScope.launch(Dispatchers.Main) {
                 loading.postValue(false)
+            }
+            withContext(Dispatchers.IO) {
+                utxoDao.delete()
+                txDao.delete()
             }
             newTransactions = keepTransactionWihVariousPubkeys(newTransactions)
             saveTx(newTransactions, collectionId)
