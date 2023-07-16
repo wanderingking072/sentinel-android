@@ -10,13 +10,16 @@ import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.Utxo
 import com.samourai.sentinel.send.FeeUtil
 import com.samourai.sentinel.send.SendFactory
+import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.wallet.psbt.PSBT
 import com.samourai.wallet.segwit.SegwitAddress
 import com.samourai.wallet.send.MyTransactionOutPoint
 import com.samourai.wallet.send.UTXO
+import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.channels.Channel
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.lang3.tuple.Triple
+import org.bitcoinj.core.Address
 import org.bitcoinj.core.ECKey
 import org.bitcoinj.params.MainNetParams
 import org.json.JSONObject
@@ -47,7 +50,7 @@ class TransactionComposer {
     private val minerFeeChannel = Channel<Long>()
     private val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
     private var txData:String = ""
-
+    private val HARDENED = 2147483648
 
     fun setBalance(value: Long) {
         this.balance = value;
@@ -255,6 +258,8 @@ class TransactionComposer {
         for (outPoint in outPoints) {
             for (input in inputUtxos) {
                 if (input.txHash == outPoint.hash.toString() && outPoint.txOutputN == input.txOutputN) {
+                    val xpub = XPUB(this.selectPubKeyModel!!.pubKey)
+                    val accountIdx = (xpub.child + HARDENED)-1
                     val path: String = input.path;
                     val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
                     val chainIndex = path.split("/".toRegex()).toTypedArray()[1].toInt()
@@ -264,7 +269,7 @@ class TransactionComposer {
                         getAccount()?.receive?.getAddressAt(addressIndex)?.ecKey
                     }
 
-                    if (purpose == 84) {
+                    if (purpose == 84 && FormatsUtil.isValidBech32(input.addr!!)) {
                         psbt?.addInput(
                             networkParameters,
                             Hex.decodeHex(data),
@@ -272,12 +277,13 @@ class TransactionComposer {
                             outPoint.value.value,
                             purpose,
                             addressIndex,
-                            getAccount()!!.id,
+                            accountIdx.toInt(),
                             chainIndex,
                             addressIndex
                         )
                     }
-                    else if (purpose == 49) {
+
+                    else if (purpose == 49 || Address.fromBase58(SentinelState.getNetworkParam(), input.addr!!).isP2SHAddress) {
                         val response = apiService.getTxHex(outPoint.hash.toString())
                         if (response.isSuccessful) {
                             val body = response.body?.string()
@@ -295,14 +301,14 @@ class TransactionComposer {
                                 outPoint.value.value,
                                 purpose,
                                 type,
-                                getAccount()!!.id,
+                                accountIdx.toInt(),
                                 chainIndex,
                                 addressIndex,
                                 txData,
                                 input.txOutputN!!
                             );
                     }
-                    else if (purpose == 44) {
+                    else if (purpose == 44 || !FormatsUtil.isValidBech32(input.addr!!)) {
                         val response = apiService.getTxHex(outPoint.hash.toString())
                         if (response.isSuccessful) {
                             val body = response.body?.string()
@@ -319,7 +325,7 @@ class TransactionComposer {
                             outPoint.value.value,
                             purpose,
                             type,
-                            getAccount()!!.id,
+                            accountIdx.toInt(),
                             chainIndex,
                             addressIndex,
                             txData
