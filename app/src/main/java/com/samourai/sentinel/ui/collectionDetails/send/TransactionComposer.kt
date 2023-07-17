@@ -259,7 +259,8 @@ class TransactionComposer {
             for (input in inputUtxos) {
                 if (input.txHash == outPoint.hash.toString() && outPoint.txOutputN == input.txOutputN) {
                     val xpub = XPUB(this.selectPubKeyModel!!.pubKey)
-                    val accountIdx = (xpub.child + HARDENED)-1
+                    xpub.decode()
+                    val accountIdx = (xpub.child + HARDENED)
                     val path: String = input.path;
                     val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
                     val chainIndex = path.split("/".toRegex()).toTypedArray()[1].toInt()
