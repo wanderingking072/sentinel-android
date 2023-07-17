@@ -5,7 +5,7 @@ import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 import com.samourai.sentinel.core.SentinelState
-import com.samourai.sentinel.core.segwit.bech32.Bech32Util
+import com.samourai.wallet.segwit.bech32.Bech32UtilGeneric
 import com.samourai.wallet.send.MyTransactionOutPoint
 import org.bitcoinj.core.Sha256Hash
 import org.bitcoinj.script.Script
@@ -54,8 +54,8 @@ data class Utxo(
         val value = value?.let { BigInteger.valueOf(it) }
         val scriptBytes = Hex.decode(script)
         var address: String? = null
-        address = if (Bech32Util.getInstance().isBech32Script(script)) {
-            Bech32Util.getInstance().getAddressFromScript(script)
+        address = if (Bech32UtilGeneric.getInstance().isBech32Script(script)) {
+            Bech32UtilGeneric.getInstance().getAddressFromScript(script, SentinelState.getNetworkParam())
         } else {
             Script(scriptBytes).getToAddress(SentinelState.getNetworkParam()).toString()
         }

@@ -6,8 +6,9 @@ import android.widget.Toast;
 import com.samourai.sentinel.R;
 import com.samourai.sentinel.core.SentinelState;
 import com.samourai.sentinel.core.segwit.P2SH_P2WPKH;
-import com.samourai.sentinel.core.segwit.bech32.Bech32Util;
+
 import com.samourai.sentinel.util.FormatsUtil;
+import com.samourai.wallet.segwit.bech32.Bech32UtilGeneric;
 import com.samourai.wallet.send.MyTransactionOutPoint;
 
 import org.bitcoinj.core.Address;
@@ -149,7 +150,7 @@ public class SendFactory	{
 
             TransactionOutput output = null;
             if(FormatsUtil.Companion.isValidBech32(toAddress))   {
-                output = Bech32Util.getInstance().getTransactionOutput(toAddress, value.longValue());
+                output = Bech32UtilGeneric.getInstance().getTransactionOutput(toAddress, value.longValue(), SentinelState.Companion.getNetworkParam());
             }
             else    {
                 Script toOutputScript = ScriptBuilder.createOutputScript(org.bitcoinj.core.Address.fromBase58(SentinelState.Companion.getNetworkParam(), toAddress));
@@ -209,9 +210,9 @@ public class SendFactory	{
 
             String script = Hex.toHexString(connectedPubKeyScript);
             String address = null;
-            if(Bech32Util.getInstance().isBech32Script(script))    {
+            if(Bech32UtilGeneric.getInstance().isBech32Script(script))    {
                 try {
-                    address = Bech32Util.getInstance().getAddressFromScript(script);
+                    address = Bech32UtilGeneric.getInstance().getAddressFromScript(script, SentinelState.Companion.getNetworkParam());
                 }
                 catch(Exception e) {
                     ;

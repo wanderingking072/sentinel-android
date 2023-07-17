@@ -1,7 +1,6 @@
 package com.samourai.sentinel.send;
 
 import com.samourai.sentinel.core.SentinelState;
-import com.samourai.wallet.segwit.bech32.Bech32;
 import com.samourai.sentinel.sweep.MyTransactionInput;
 import com.samourai.sentinel.util.FormatsUtil;
 import com.samourai.wallet.segwit.bech32.Bech32UtilGeneric;
@@ -21,7 +20,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
