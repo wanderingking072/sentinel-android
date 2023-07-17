@@ -1,9 +1,10 @@
 package com.samourai.sentinel.send;
 
 import com.samourai.sentinel.core.SentinelState;
-import com.samourai.sentinel.core.segwit.bech32.Bech32Util;
+import com.samourai.wallet.segwit.bech32.Bech32;
 import com.samourai.sentinel.sweep.MyTransactionInput;
 import com.samourai.sentinel.util.FormatsUtil;
+import com.samourai.wallet.segwit.bech32.Bech32UtilGeneric;
 import com.samourai.wallet.send.MyTransactionOutPoint;
 import com.samourai.wallet.util.FormatsUtilGeneric;
 
@@ -87,7 +88,7 @@ public class SendFactory	{
                 toOutputScript = new ScriptBuilder().op(ScriptOpCodes.OP_RETURN).data(Hex.decode(toAddress)).build();
                 output = new TransactionOutput(SentinelState.Companion.getNetworkParam(), null, Coin.valueOf(0L), toOutputScript.getProgram());
             } else if (FormatsUtil.Companion.isValidBech32(toAddress)) {
-                output = Bech32Util.getInstance().getTransactionOutput(toAddress, value.longValue());
+                output = Bech32UtilGeneric.getInstance().getTransactionOutput(toAddress, value.longValue(), SentinelState.Companion.getNetworkParam());
             } else {
                 toOutputScript = ScriptBuilder.createOutputScript(org.bitcoinj.core.Address.fromBase58(SentinelState.Companion.getNetworkParam(), toAddress));
                 output = new TransactionOutput(SentinelState.Companion.getNetworkParam(), null, Coin.valueOf(value.longValue()), toOutputScript.getProgram());

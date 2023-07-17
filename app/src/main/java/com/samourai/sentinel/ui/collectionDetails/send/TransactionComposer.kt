@@ -1,6 +1,5 @@
 package com.samourai.sentinel.ui.collectionDetails.send
 
-import android.provider.Telephony.Mms.Sent
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.core.SentinelState.Companion.bDust
@@ -16,6 +15,7 @@ import com.samourai.wallet.psbt.PSBT
 import com.samourai.wallet.segwit.SegwitAddress
 import com.samourai.wallet.send.MyTransactionOutPoint
 import com.samourai.wallet.send.UTXO
+import com.samourai.wallet.util.FormatsUtilGeneric
 import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.channels.Channel
 import org.apache.commons.codec.binary.Hex
@@ -27,7 +27,8 @@ import org.json.JSONObject
 import org.koin.java.KoinJavaComponent
 import timber.log.Timber
 import java.math.BigInteger
-import java.util.*
+import java.util.Collections
+import java.util.Vector
 
 
 /**
@@ -200,7 +201,7 @@ class TransactionComposer {
             throw ComposeException("Change is dust")
         }
         var changeType = "P2PKH"
-        if (FormatsUtil.isValidBech32(address))
+        if (FormatsUtilGeneric.getInstance().isValidBech32(address))
             changeType = "P2WPKH"
         else if (Address.fromBase58(SentinelState.getNetworkParam(), address).isP2SHAddress)
             changeType = "P2SH"
@@ -220,7 +221,7 @@ class TransactionComposer {
 
         val transaction = try {
             SendFactory.getInstance()
-                .makeTransaction(0, outPoints, receivers)
+                .makeTransaction(accountIdx.toInt(), outPoints, receivers)
         } catch (e: Exception) {
             throw   ComposeException("Unable to create tx")
         }
