@@ -1,5 +1,6 @@
 package com.samourai.sentinel.ui.collectionDetails.send
 
+import android.provider.Telephony.Mms.Sent
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.core.SentinelState.Companion.bDust
@@ -82,6 +83,9 @@ class TransactionComposer {
         var totalValueSelected = 0L
         var change: Long
         var fee: BigInteger? = BigInteger.ZERO
+
+        val xpub = XPUB(this.selectPubKeyModel!!.pubKey)
+        val accountIdx = (xpub.child + HARDENED)-1
 
         val utxos: ArrayList<UTXO> = arrayListOf();
         for (utxoCoin in inputUtxos) {
@@ -195,7 +199,13 @@ class TransactionComposer {
         if (change < 0L && change < bDust.toLong()) {
             throw ComposeException("Change is dust")
         }
-        val changeAddress = getNextChangeAddress()
+        var changeType = "P2PKH"
+        if (FormatsUtil.isValidBech32(address))
+            changeType = "P2WPKH"
+        else if (Address.fromBase58(SentinelState.getNetworkParam(), address).isP2SHAddress)
+            changeType = "P2SH"
+
+        val changeAddress = getNextChangeAddress(accountIdx, changeType)
             ?: throw ComposeException("Change address is invalid");
         receivers[changeAddress] = BigInteger.valueOf(change)
 
@@ -365,7 +375,7 @@ class TransactionComposer {
         }
     }
 
-    private fun getNextChangeAddress(): String? {
+    private fun getNextChangeAddress(accountIdx: Long = 0L, toAddrType: String = ""): String? {
         val pubKey = this.selectPubKeyModel;
         changeIndex = pubKey?.change_index!! + 1
         val account = getAccount()
@@ -385,9 +395,19 @@ class TransactionComposer {
             AddressTypes.BIP84 -> {
                 val address = account?.getChain(1)?.getAddressAt(changeIndex!!)
                 val ecKey = address?.ecKey
+                var changeAddress = ""
                 changeECKey = address?.ecKey
                 val segwitAddress = SegwitAddress(ecKey?.pubKey, SentinelState.getNetworkParam())
-                segwitAddress.bech32AsString
+                if (accountIdx == 2147483646L && toAddrType == "P2SH") {
+                    changeAddress = segwitAddress.address.toString()
+                }
+                else if (accountIdx == 2147483646L && toAddrType == "P2PKH") {
+                    changeAddress = address!!.address.toString()
+                }
+                else {
+                    changeAddress = segwitAddress.bech32AsString
+                }
+                changeAddress
             }
             AddressTypes.ADDRESS -> {
                 pubKey.pubKey
