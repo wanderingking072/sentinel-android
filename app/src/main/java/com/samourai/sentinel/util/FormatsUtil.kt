@@ -3,7 +3,7 @@ package com.samourai.sentinel.util
 import android.util.Patterns
 import com.samourai.sentinel.core.SentinelState.Companion.getNetworkParam
 import com.samourai.sentinel.core.segwit.bech32.Bech32
-import com.samourai.sentinel.core.segwit.bech32.Bech32Segwit
+import com.samourai.wallet.segwit.bech32.Bech32Segwit
 import com.samourai.sentinel.data.AddressTypes
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.AddressFormatException
