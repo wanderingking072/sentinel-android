@@ -151,9 +151,10 @@ class TransactionsRepository {
             apiScope.launch(Dispatchers.Main) {
                 loading.postValue(false)
             }
+
             withContext(Dispatchers.IO) {
-                utxoDao.delete()
-                txDao.delete()
+                utxoDao.deleteByCollection(collectionId)
+                txDao.deleteByCollectionID(collectionId)
             }
             newTransactions = keepTransactionWihVariousPubkeys(newTransactions)
             saveTx(newTransactions, collectionId)
@@ -219,7 +220,7 @@ class TransactionsRepository {
     suspend fun removeTxsRelatedToPubKey(pubKeyModel: PubKeyModel, collectionId: String) {
         val collection = collectionRepository.findById(collectionId)
         if (collection != null) {
-            txDao.deleteRelatedCollection(collection.id, pubKeyModel.pubKey)
+            txDao.deleteByCollectionAndPubkey(collection.id, pubKeyModel.pubKey)
             utxoDao.deleteByCollection(collection.id)
         }
     }

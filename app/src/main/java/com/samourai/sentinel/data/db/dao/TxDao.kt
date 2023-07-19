@@ -39,7 +39,10 @@ interface TxDao {
     suspend fun delete()
 
     @Query("DELETE FROM transactions WHERE collectionId=:collectionID AND associatedPubKey=:pubKey")
-    fun deleteRelatedCollection(collectionID: String, pubKey: String)
+    fun deleteByCollectionAndPubkey(collectionID: String, pubKey: String)
+
+    @Query("DELETE FROM transactions WHERE collectionId=:collectionID")
+    suspend fun deleteByCollectionID(collectionID: String)
 
     @Query("UPDATE transactions SET confirmations=:confirmations where hash=:txHash")
     fun updateTxConfirmations(txHash: String, confirmations: Long)
