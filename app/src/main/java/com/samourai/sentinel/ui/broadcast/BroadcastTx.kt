@@ -1,5 +1,7 @@
 package com.samourai.sentinel.ui.broadcast
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.View
@@ -9,7 +11,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.material.textfield.TextInputEditText
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
@@ -18,7 +19,11 @@ import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.SuccessfulBottomSheet
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bitcoinj.core.Transaction
 import org.bouncycastle.util.encoders.Hex
 import org.koin.java.KoinJavaComponent.inject
@@ -94,13 +99,10 @@ class BroadcastTx : SentinelActivity() {
             }
         }
         binding.scanHex.setOnClickListener {
-            val camera = CameraFragmentBottomSheet()
-            camera.show(supportFragmentManager, camera.tag)
-            camera.setQrCodeScanLisenter {
-                model.viewModelScope.launch(Dispatchers.Default) {
-                    validate(it)
-                    camera.dismiss()
-                }
+            if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext))
+                this.askCameraPermission()
+            else {
+                scanTx()
             }
         }
 
@@ -126,7 +128,27 @@ class BroadcastTx : SentinelActivity() {
                 }
             }
         }
+    }
 
+    private fun scanTx() {
+        val camera = CameraFragmentBottomSheet()
+        camera.show(supportFragmentManager, camera.tag)
+        camera.setQrCodeScanLisenter {
+            model.viewModelScope.launch(Dispatchers.Default) {
+                validate(it)
+                camera.dismiss()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            scanTx()
+        } else {
+            if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                Toast.makeText(this, "Camera Permission Denied", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private suspend fun validate(hex: String) {
