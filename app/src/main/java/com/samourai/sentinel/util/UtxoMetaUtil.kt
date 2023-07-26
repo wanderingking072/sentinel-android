@@ -82,6 +82,7 @@ object UtxoMetaUtil {
 
     fun clearAll() {
         utxoBlockState.clear()
+        write()
     }
 
     @Synchronized
