@@ -218,7 +218,7 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
 
 class ScanPubKeyFragment : Fragment() {
 
-    private var mCodeScanner: QRScanner? = null
+    private lateinit var  mCodeScanner: QRScanner;
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
     private var onScan: (scanData: String) -> Unit = {}
 
@@ -234,17 +234,18 @@ class ScanPubKeyFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         view.findViewById<Button>(R.id.pastePubKey).text = "Paste Pubkey"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
+        mCodeScanner.setLifeCycleOwner(this)
 
         val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        mCodeScanner?.setQRDecodeListener {
+        mCodeScanner.setQRDecodeListener {
             GlobalScope.launch(Dispatchers.Main) {
-                mCodeScanner?.stopScanner();
+                mCodeScanner.stopScanner();
                 onScan(it)
             }
         }
 
-        mCodeScanner?.setURDecodeListener { result ->
-            mCodeScanner?.stopScanner()
+        mCodeScanner.setURDecodeListener { result ->
+            mCodeScanner.stopScanner()
             result.fold(
                 onSuccess = {
                     val xpub = getXpubFromUR(it)
@@ -257,7 +258,7 @@ class ScanPubKeyFragment : Fragment() {
                             .setPositiveButton("Ok") { dialog, which ->
                                 dialog.dismiss()
                             }.show()
-                        mCodeScanner?.stopScanner()
+                        mCodeScanner.stopScanner()
                     }
                 },
                 onFailure = {
@@ -267,7 +268,7 @@ class ScanPubKeyFragment : Fragment() {
                         .setPositiveButton("Ok") { dialog, which ->
                             dialog.dismiss()
                         }.show()
-                    mCodeScanner?.stopScanner()
+                    mCodeScanner.stopScanner()
                 }
             )
         }
@@ -339,7 +340,6 @@ class ScanPubKeyFragment : Fragment() {
             val xpubsJson = JSONObject(charBuffer.toString())
             if (xpubsJson.has("bip84"))
                 return xpubsJson.getJSONObject("bip84").getString("_pub")
-            println("This are the bytes: " + urBytes)
         }
         return null
     }
