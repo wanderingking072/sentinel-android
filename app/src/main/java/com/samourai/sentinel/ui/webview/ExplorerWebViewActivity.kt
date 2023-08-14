@@ -40,7 +40,6 @@ class ExplorerWebViewActivity : AppCompatActivity() {
     lateinit var client: WebViewClient
     var tx: Tx? = null
     var url = ""
-    var defaultBackTor: Boolean = false
     lateinit var binding: ActivityExplorerWebViewBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,17 +71,7 @@ class ExplorerWebViewActivity : AppCompatActivity() {
             if (SentinelState.isTorStarted()) {
                 setProxy()
             } else {
-                this.confirm(label = "Confirm",
-                        isCancelable = false,
-                        message = "Tor is not enabled, built in web browser supports tor proxy",
-                        negativeText = "Continue without tor", positiveText = "Turn on tor and load") {
-                    if (!it) {
-                        load()
-                    } else {
-                        defaultBackTor = true
-                        TorServiceController.startTor()
-                    }
-                }
+                load()
             }
         } else {
             this.showFloatingSnackBar(binding.webView, text = "Your android does not support proxy enabled WebView", actionText = "Continue", actionClick = {
@@ -169,8 +158,6 @@ class ExplorerWebViewActivity : AppCompatActivity() {
     override fun onDestroy() {
         binding.webView.stopLoading()
         binding.webView.destroy()
-        if (defaultBackTor)
-            TorServiceController.stopTor()
         super.onDestroy()
     }
 
@@ -193,8 +180,6 @@ class ExplorerWebViewActivity : AppCompatActivity() {
         if (binding.webView.canGoBack()) {
             binding.webView.goBack()
         } else {
-            if (defaultBackTor)
-                TorServiceController.stopTor()
             super.onBackPressed()
         }
     }
