@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.transition.TransitionManager
 import com.google.android.material.transition.MaterialSharedAxis
 import com.samourai.sentinel.R
+import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.databinding.ActivityImportBackUpBinding
 import com.samourai.sentinel.ui.SentinelActivity
@@ -121,11 +122,20 @@ class ImportBackUpActivity : SentinelActivity() {
                             payload.second.let { ExportImportUtil().importPrefs(it) }
                         }
                         if (binding.importDojo.isChecked) {
-                            TorServiceController.startTor()
-                            prefsUtil.enableTor = true
-                            payload.third?.let { ExportImportUtil().importDojo(it) }
-                            prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")
-                            prefsUtil.apiEndPoint = payload.second.getString("apiEndPoint")
+                            if ((payload.second.getString("apiEndPointTor").equals(APIConfig.SAMOURAI_API_TOR)
+                                    && payload.second.getString("apiEndPoint").equals(APIConfig.SAMOURAI_API))
+                                ||
+                                (payload.second.getString("apiEndPointTor").equals(APIConfig.SAMOURAI_API_TOR_TESTNET)
+                                        && payload.second.getString("apiEndPoint").equals(APIConfig.SAMOURAI_API_TESTNET))) {
+
+                            }
+                            else {
+                                TorServiceController.startTor()
+                                prefsUtil.enableTor = true
+                                payload.third?.let { ExportImportUtil().importDojo(it) }
+                                prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")
+                                prefsUtil.apiEndPoint = payload.second.getString("apiEndPoint")
+                            }
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
