@@ -132,7 +132,8 @@ class MigrationActivity : AppCompatActivity() {
                         xpubObject.keys().forEach { key ->
                             val type = validate(key)
                             if (type == AddressTypes.BIP44) {
-                                val pubKeyModel = PubKeyModel(pubKey = key,
+                                val pubKeyModel = PubKeyModel(
+                                    pubKey = key,
                                         label = xpubObject.getString(key), type = AddressTypes.BIP44)
                                 publicKeys.add(pubKeyModel)
                             }
@@ -147,7 +148,8 @@ class MigrationActivity : AppCompatActivity() {
                         xpubObject.keys().forEach { key ->
                             val type = validate(key)
                             if (type == AddressTypes.BIP49) {
-                                val pubKeyModel = PubKeyModel(pubKey = key,
+                                val pubKeyModel = PubKeyModel(
+                                    pubKey = key,
                                         label = xpubObject.getString(key), type = AddressTypes.BIP49)
                                 publicKeys.add(pubKeyModel)
                             }
@@ -162,7 +164,8 @@ class MigrationActivity : AppCompatActivity() {
                         xpubObject.keys().forEach { key ->
                             val type = validate(key)
                             if (type == AddressTypes.BIP84) {
-                                val pubKeyModel = PubKeyModel(pubKey = key,
+                                val pubKeyModel = PubKeyModel(
+                                    pubKey = key,
                                         label = xpubObject.getString(key), type = AddressTypes.BIP84)
                                 publicKeys.add(pubKeyModel)
                             }
@@ -177,7 +180,8 @@ class MigrationActivity : AppCompatActivity() {
                         xpubObject.keys().forEach { key ->
                             val type = validate(key)
                             if (type == AddressTypes.ADDRESS) {
-                                val pubKeyModel = PubKeyModel(pubKey = key,
+                                val pubKeyModel = PubKeyModel(
+                                    pubKey = key,
                                         label = xpubObject.getString(key), type = AddressTypes.ADDRESS)
                                 publicKeys.add(pubKeyModel)
                             }
