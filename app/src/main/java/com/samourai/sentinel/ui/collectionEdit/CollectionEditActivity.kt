@@ -6,6 +6,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -13,6 +15,7 @@ import androidx.core.widget.NestedScrollView
 import androidx.core.widget.doOnTextChanged
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.samourai.sentinel.R
@@ -35,7 +38,12 @@ import com.samourai.sentinel.ui.views.alertWithInput
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.apiScope
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
 
 
@@ -207,7 +215,7 @@ class CollectionEditActivity : SentinelActivity() {
 
 
     private fun setUpPubKeyList() {
-
+        var isMoreButton = false
         val linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
 
@@ -215,6 +223,39 @@ class CollectionEditActivity : SentinelActivity() {
             layoutManager = linearLayoutManager
             adapter = pubKeyAdapter
         }
+
+        binding.pubKeyRecyclerView.addOnItemTouchListener(object :
+            RecyclerView.OnItemTouchListener {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                fun  viewPubKey(pubKeyModel: PubKeyModel){
+                    val dialog =  QRBottomSheetDialog(
+                        pubKeyModel.pubKey,
+                        pubKeyModel.label,
+                        pubKeyModel.label,
+                        secure = prefs.displaySecure!!
+                    )
+                    dialog.show(supportFragmentManager, dialog.tag)
+                }
+                apiScope.launch {
+                    withContext(Dispatchers.IO) {
+                        delay(400)
+                        val childView: View? = rv.findChildViewUnder(e.x, e.y)
+                        if (childView != null && e.action == MotionEvent.ACTION_UP) {
+                            val position = rv.getChildAdapterPosition(childView)
+                            if (position != RecyclerView.NO_POSITION && !isMoreButton) {
+                                println("This goes first 1")
+                                viewPubKey(viewModel.getPubKeys().value!!.get(position))
+                            }
+                        }
+                    }
+                }
+                return false
+            }
+
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
+
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
+        })
 
         fun delete(index: Int){
             this.confirm(label = "Confirm",
@@ -259,9 +300,10 @@ class CollectionEditActivity : SentinelActivity() {
             dialog.show(supportFragmentManager, dialog.tag)
         }
 
-        val items = arrayListOf("Edit", "View Public Key", "Delete")
-
+        val items = arrayListOf("Edit", "View Master Fingerprint","Delete")
         pubKeyAdapter.setOnEditClickListener { i, pubKeyModel ->
+            println("This goes first 2")
+            isMoreButton = true
             MaterialAlertDialogBuilder(this)
                 .setItems(
                     items.toTypedArray()
@@ -271,7 +313,7 @@ class CollectionEditActivity : SentinelActivity() {
                             edit(pubKeyModel, i)
                         }
                         1 -> {
-                            viewPubKey(pubKeyModel)
+                            editFingerprint(pubKeyModel, i)
                         }
                         2 -> {
                             delete(i)
@@ -279,6 +321,9 @@ class CollectionEditActivity : SentinelActivity() {
                     }
                 }
                 .setTitle(getString(R.string.options))
+                .setOnDismissListener {
+                    isMoreButton = false
+                }
                 .show()
         }
 
@@ -290,7 +335,7 @@ class CollectionEditActivity : SentinelActivity() {
 
     fun edit(pubKeyModel: PubKeyModel, i: Int){
             this.alertWithInput(
-                label = "Add/edit public key label",
+                label = "Public key label",
                 onConfirm = {
                     pubKeyModel.label = it
                     viewModel.updateKey(i, pubKeyModel)
@@ -302,6 +347,22 @@ class CollectionEditActivity : SentinelActivity() {
                 value = pubKeyModel.label,
                 buttonLabel = "Save"
             )
+    }
+
+    fun editFingerprint(pubKeyModel: PubKeyModel, i: Int){
+        this.alertWithInput(
+            label = "Master Fingerprint",
+            onConfirm = {
+                pubKeyModel.fingerPrint = it
+                viewModel.updateKey(i, pubKeyModel)
+                pubKeyAdapter.notifyItemChanged(i)
+            },
+            isCancelable = true,
+            maxLen = 8,
+            labelEditText = "Fingerprint",
+            value = if (pubKeyModel.fingerPrint == null) "" else pubKeyModel.fingerPrint!!,
+            buttonLabel = "Save"
+        )
     }
 
     override fun onDestroy() {
