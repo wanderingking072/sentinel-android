@@ -41,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.bitcoinj.crypto.ChildNumber
+import org.bouncycastle.util.encoders.Hex
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent
 import java.nio.ByteBuffer
@@ -59,7 +60,6 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
     private val collectionRepository: CollectionRepository by KoinJavaComponent.inject(
         CollectionRepository::class.java
     )
-
     private var _binding: FragmentBottomsheetViewPagerBinding? = null
     private val binding get() = _binding!!
 
@@ -110,13 +110,13 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
     private fun validateXPUB(addressTypes: AddressTypes) {
 
         pubKeyModel = if ((addressTypes == AddressTypes.BIP49 || addressTypes == AddressTypes.BIP84) && (pubKeyString.startsWith("xpub") || pubKeyString.startsWith("tpub"))) {
-            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes)
+            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes, fingerPrint = scanPubKeyFragment.getFingerprint())
         } else if (pubKeyString.startsWith("ypub") || pubKeyString.startsWith("upub")) {
-            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes)
+            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes, fingerPrint = scanPubKeyFragment.getFingerprint())
         } else if (pubKeyString.startsWith("zpub") || pubKeyString.startsWith("vpub")) {
-            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes)
+            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes, fingerPrint = scanPubKeyFragment.getFingerprint())
         } else {
-            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = AddressTypes.BIP44)
+            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = AddressTypes.BIP44, fingerPrint = scanPubKeyFragment.getFingerprint())
         }
 
         if (newPubKeyListener != null) {
@@ -155,12 +155,12 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
         when {
             FormatsUtil.isValidBitcoinAddress(payload.trim()) -> {
                 if (newPubKeyListener != null) {
-                    val pubKey = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled")
+                    val pubKey = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())
                     newPubKeyListener?.let { it(pubKey) }
                     this.dismiss()
                     return
                 } else {
-                    pubKeyModel = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled")
+                    pubKeyModel = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())
                     // Skip type selection screen since payload is an address
                     binding.pager.setCurrentItem(2, true)
                 }
@@ -221,6 +221,7 @@ class ScanPubKeyFragment : Fragment() {
     private lateinit var  mCodeScanner: QRScanner;
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
     private var onScan: (scanData: String) -> Unit = {}
+    private var fingerprintHex: String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.content_scan_layout, container, false)
@@ -230,6 +231,9 @@ class ScanPubKeyFragment : Fragment() {
         this.onScan = callback
     }
 
+    fun getFingerprint(): String? {
+        return fingerprintHex
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         view.findViewById<Button>(R.id.pastePubKey).text = "Paste Pubkey"
@@ -296,6 +300,7 @@ class ScanPubKeyFragment : Fragment() {
         if (it.ur.registryType == RegistryType.CRYPTO_ACCOUNT) {
             val cryptoAccount = it.ur.decodeFromRegistry() as CryptoAccount
             for (outputDescriptor in cryptoAccount.outputDescriptors) {
+                fingerprintHex = Hex.toHexString(cryptoAccount.masterFingerprint)
                 val cryptoHDKey = outputDescriptor.hdKey
                 var lastChild = ChildNumber.ZERO
                 var depth = 1
