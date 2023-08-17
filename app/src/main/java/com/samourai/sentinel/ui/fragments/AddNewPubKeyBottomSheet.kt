@@ -300,7 +300,7 @@ class ScanPubKeyFragment : Fragment() {
         if (it.ur.registryType == RegistryType.CRYPTO_ACCOUNT) {
             val cryptoAccount = it.ur.decodeFromRegistry() as CryptoAccount
             for (outputDescriptor in cryptoAccount.outputDescriptors) {
-                fingerprintHex = Hex.toHexString(cryptoAccount.masterFingerprint)
+                fingerprintHex = Hex.toHexString(cryptoAccount.masterFingerprint).lowercase()
                 val cryptoHDKey = outputDescriptor.hdKey
                 var lastChild = ChildNumber.ZERO
                 var depth = 1
@@ -343,8 +343,12 @@ class ScanPubKeyFragment : Fragment() {
             val buf = ByteBuffer.wrap(urBytes as ByteArray)
             val charBuffer = decoder.decode(buf)
             val xpubsJson = JSONObject(charBuffer.toString())
-            if (xpubsJson.has("bip84"))
+            if (xpubsJson.has("bip84")) {
+                try {
+                    fingerprintHex = xpubsJson.getJSONObject("bip84").getString("xfp").lowercase()
+                } catch (e: Exception) {}
                 return xpubsJson.getJSONObject("bip84").getString("_pub")
+            }
         }
         return null
     }
