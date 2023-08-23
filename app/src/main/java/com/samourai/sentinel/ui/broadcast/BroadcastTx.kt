@@ -26,7 +26,9 @@ import com.samourai.sentinel.databinding.LayoutBroadcastBottomSheetBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.SuccessfulBottomSheet
+import com.samourai.wallet.cahoots.psbt.PSBT
 import com.sparrowwallet.hummingbird.registry.CryptoPSBT
+import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -36,6 +38,8 @@ import kotlinx.coroutines.withContext
 import org.bitcoinj.core.Transaction
 import org.bouncycastle.util.encoders.Hex
 import org.koin.java.KoinJavaComponent.inject
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 class BroadcastTx : SentinelActivity() {
 
@@ -231,8 +235,35 @@ class ScanTxFragment : BottomSheetDialogFragment() {
             mCodeScanner.stopScanner()
             result.fold(
                 onSuccess = {
-                    val cryptoPSBT = it.ur.decodeFromRegistry() as CryptoPSBT
-                    onScan(String(Hex.encode(cryptoPSBT.psbt)))
+                    if (it.ur.registryType == RegistryType.CRYPTO_PSBT) {
+                        val cryptoPSBT = it.ur.decodeFromRegistry() as CryptoPSBT
+                        onScan(String(Hex.encode(cryptoPSBT.psbt)))
+                    }
+                    else {
+                        val urBytes = it.ur.decodeFromRegistry()
+                        try {
+                            val cryptoPSBT = it.ur.decodeFromRegistry() as CryptoPSBT
+                            onScan(String(Hex.encode(cryptoPSBT.psbt)))
+                        } catch (e: java.lang.Exception) {
+                            //ignore, bytes not parsable as PSBT
+                        }
+                        try {
+                            val transaction = Transaction(SentinelState.getNetworkParam(),
+                                urBytes as ByteArray?
+                            )
+                            onScan(String(org.apache.commons.codec.binary.Hex.encodeHex(transaction.bitcoinSerialize())))
+                        } catch (e: java.lang.Exception) {
+                            //ignore, bytes not parsable as tx
+                        }
+
+                        try {
+                            val decoder = StandardCharsets.UTF_8.newDecoder()
+                            val buf = ByteBuffer.wrap(urBytes as ByteArray)
+                            val charBuffer = decoder.decode(buf)
+                        } catch (e: java.lang.Exception) {
+                            //ignore, bytes not parsable as utf-8
+                        }
+                    }
                 },
                 onFailure = {
                     mCodeScanner.stopScanner()
