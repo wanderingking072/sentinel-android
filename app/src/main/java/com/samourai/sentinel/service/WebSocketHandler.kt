@@ -214,7 +214,7 @@ class WebSocketHandler : WebSocketListener() {
                     .setAutoCancel(true)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
             val notifyIntent: Intent = Intent(context, HomeActivity::class.java)
-            val intent = PendingIntent.getActivity(context, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+            val intent = PendingIntent.getActivity(context, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT  or PendingIntent.FLAG_IMMUTABLE)
             mBuilder.setContentIntent(intent)
             notificationManager.notify(tx.locktime, mBuilder.build())
 
