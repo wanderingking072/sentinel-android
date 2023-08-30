@@ -4,7 +4,6 @@ apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
 android {
-
     compileSdkVersion 33
     buildToolsVersion '30.0.1'
     flavorDimensions "versionCode"
@@ -12,8 +11,8 @@ android {
         applicationId "com.samourai.sentinel"
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 49
-        versionName '3.6'
+        versionCode 54
+        versionName '5.0'
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -49,19 +48,19 @@ android {
         production {
             minSdkVersion 21
             applicationId 'com.samourai.sentinel'
-            targetSdkVersion 30
-            versionCode 53
-            versionName '4.0.2'
+            targetSdkVersion 31
+            versionCode 54
+            versionName '5.0'
             resValue "string", "app_name", "Sentinel"
-            resValue "string", "version_name", "4.0.2"
+            resValue "string", "version_name", "5.0"
         }
         staging {
             applicationId 'com.samourai.sentinel.staging'
-            targetSdkVersion 30
-            versionCode 53
-            versionName '3.6'
+            targetSdkVersion 31
+            versionCode 54
+            versionName '5.0'
             resValue "string", "app_name", "Sentinel staging"
-            resValue "string", "version_name", "4.0.2"
+            resValue "string", "version_name", "5.0"
         }
     }
     compileOptions {

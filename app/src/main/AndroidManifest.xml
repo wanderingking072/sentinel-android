@@ -37,20 +37,26 @@
             android:name=".ui.settings.ImportBackUpActivity"
             android:label="Import"
             android:theme="@style/AppThemeV3"
-            android:windowSoftInputMode="adjustPan"></activity>
+            android:windowSoftInputMode="adjustPan"
+            android:exported="false"
+            ></activity>
         <activity
             android:name=".ui.utxos.UtxosActivity"
             android:label=""
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
         <activity
             android:name=".ui.utxos.UtxoDetailsActivity"
             android:label=""
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
         <activity
             android:name=".ui.MigrationActivity"
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
         <activity
             android:name=".ui.webview.ExplorerWebViewActivity"
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
 
         <service
@@ -68,25 +74,31 @@
         <activity
             android:name=".ui.settings.SettingsActivity"
             android:label="@string/action_settings"
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
         <activity
             android:name=".ui.collectionDetails.CollectionDetailsActivity"
             android:label="@string/title_activity_collection_details"
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
         <activity
             android:name=".ui.collectionEdit.CollectionEditActivity"
             android:label=""
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
         <activity
             android:name=".ui.broadcast.BroadcastTx"
             android:label=""
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
         <activity
             android:name=".ui.broadcast.BroadcastFromComposeTx"
             android:label=""
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
         <activity
             android:name=".ui.MainActivity"
+            android:exported="true"
             android:theme="@style/AppTheme.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -97,6 +109,7 @@
         <activity
             android:name=".ui.home.HomeActivity"
             android:label="@string/app_name"
+            android:exported="false"
             android:theme="@style/AppThemeV3" /> <!-- <activity -->
         <!-- android:name=".ui.home.HomeActivity" -->
         <!-- android:configChanges="keyboardHidden|orientation|screenSize" -->
@@ -110,6 +123,7 @@
         <activity
             android:name=".ui.settings.NetworkActivity"
             android:label="Network"
+            android:exported="false"
             android:theme="@style/AppThemeV3" />
 
         <provider
