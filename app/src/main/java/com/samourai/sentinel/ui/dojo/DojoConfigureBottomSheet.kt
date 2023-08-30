@@ -491,6 +491,7 @@ class ScanFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
+        mCodeScanner?.setLifeCycleOwner(this)
         view.findViewById<TextView>(R.id.scanInstructions).text = getString(R.string.dojo_scan_instruction)
         view.findViewById<TextView>(R.id.scanInstructions).textAlignment = TextView.TEXT_ALIGNMENT_CENTER
         mCodeScanner?.setQRDecodeListener {
