@@ -243,7 +243,6 @@ class CollectionEditActivity : SentinelActivity() {
                         if (childView != null && e.action == MotionEvent.ACTION_UP) {
                             val position = rv.getChildAdapterPosition(childView)
                             if (position != RecyclerView.NO_POSITION && !isMoreButton) {
-                                println("This goes first 1")
                                 viewPubKey(viewModel.getPubKeys().value!!.get(position))
                             }
                         }
@@ -302,7 +301,6 @@ class CollectionEditActivity : SentinelActivity() {
 
         val items = arrayListOf("Edit", "View Master Fingerprint","Delete")
         pubKeyAdapter.setOnEditClickListener { i, pubKeyModel ->
-            println("This goes first 2")
             isMoreButton = true
             MaterialAlertDialogBuilder(this)
                 .setItems(
