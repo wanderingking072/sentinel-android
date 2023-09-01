@@ -3,6 +3,7 @@ package com.samourai.sentinel.ui.broadcast
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
@@ -24,9 +25,9 @@ import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.LayoutBroadcastBottomSheetBinding
 import com.samourai.sentinel.ui.SentinelActivity
+import com.samourai.sentinel.ui.settings.ImportBackUpActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.SuccessfulBottomSheet
-import com.samourai.wallet.cahoots.psbt.PSBT
 import com.sparrowwallet.hummingbird.registry.CryptoPSBT
 import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.CancellationException
@@ -38,6 +39,10 @@ import kotlinx.coroutines.withContext
 import org.bitcoinj.core.Transaction
 import org.bouncycastle.util.encoders.Hex
 import org.koin.java.KoinJavaComponent.inject
+import java.io.BufferedReader
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.InputStreamReader
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
@@ -119,6 +124,13 @@ class BroadcastTx : SentinelActivity() {
             }
         }
 
+        binding.fileImportBtn.setOnClickListener {
+            var intent = Intent(Intent.ACTION_GET_CONTENT)
+            intent.type = "*/*"
+            intent = Intent.createChooser(intent, "Choose a file")
+            startActivityForResult(intent, ImportBackUpActivity.REQUEST_FILE_CODE)
+        }
+
         binding.broadCastTransactionBtn.setOnClickListener {
             showLoading(true)
             model.broadCast().invokeOnCompletion {
@@ -175,7 +187,7 @@ class BroadcastTx : SentinelActivity() {
 
         } catch (ex: Exception) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(applicationContext, "Text in clipboard is not a hex transaction", Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, "Payload is not a hex transaction", Toast.LENGTH_LONG).show()
                 disableBtn(binding.broadCastTransactionBtn, false)
             }
         }
@@ -201,6 +213,44 @@ class BroadcastTx : SentinelActivity() {
     private fun disableBtn(button: View, enable: Boolean) {
         button.isEnabled = enable
         button.alpha = if (enable) 1F else 0.5f
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (data != null && data.data != null && data.data!!.path != null && requestCode == ImportBackUpActivity.REQUEST_FILE_CODE) {
+            val job =
+                model.viewModelScope.launch(Dispatchers.Main) {
+                    try {
+                        val inputStream = contentResolver.openInputStream(data.data!!)
+                        val reader = BufferedReader(InputStreamReader(inputStream))
+                        val size = inputStream?.available()
+                        if (size != null) {
+                            if (size > 5e+6) {
+                                throw  IOException("File size is too large to open")
+                            }
+                        }
+                        var string = ""
+                        string = reader.buffered().readText()
+                        withContext(Dispatchers.Main) {
+                            validate(string)
+                        }
+                    } catch (fn: FileNotFoundException) {
+                        fn.printStackTrace()
+                        throw CancellationException((fn.message))
+                    } catch (ioe: IOException) {
+                        ioe.printStackTrace()
+                        throw CancellationException((ioe.message))
+                    } catch (ex: Exception) {
+                        ex.printStackTrace()
+                        throw CancellationException((ex.message))
+                    }
+                }
+            job.invokeOnCompletion {
+                if (it != null) {
+                    Toast.makeText(this, "Error ${it.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 }
 
