@@ -3,6 +3,7 @@ package com.samourai.sentinel
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
@@ -176,6 +177,24 @@ class SentinelApplication : Application() {
     }
 
     private fun getTorNotificationBuilder(): ServiceNotification.Builder {
+
+        var contentIntent: PendingIntent? = null
+
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_IMMUTABLE
+        } else {
+            0
+        }
+        packageManager?.getLaunchIntentForPackage(packageName)?.let { intent ->
+            contentIntent = PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                flags
+            )
+        }
+
+
         return ServiceNotification.Builder(
                 channelName = "Tor Service",
                 channelDescription = "Tor foreground service notifications ",
@@ -191,6 +210,11 @@ class SentinelApplication : Application() {
                 .enableTorRestartButton(enable = true)
                 .enableTorStopButton(enable = true)
                 .showNotification(show = true)
+                .also { builder ->
+                    contentIntent?.let {
+                        builder.setContentIntent(it)
+                    }
+                }
     }
 
 

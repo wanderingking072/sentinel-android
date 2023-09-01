@@ -5,7 +5,6 @@ apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 33
-    buildToolsVersion '30.0.1'
     flavorDimensions "versionCode"
     defaultConfig {
         applicationId "com.samourai.sentinel"
@@ -26,23 +25,10 @@ android {
             variant.buildConfigField "String", "XOR_2", "\"" + getApiKey("XOR_2") + "\""
         }
     }
-    lintOptions {
-        checkReleaseBuilds false
-        // Or, if you prefer, you can continue to check for errors in release builds,
-        // but continue the build even when errors are found:
-        abortOnError false
-    }
     packagingOptions {
-        exclude 'META-INF/DEPENDENCIES.txt'
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/NOTICE.txt'
-        exclude 'META-INF/NOTICE'
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/notice.txt'
-        exclude 'META-INF/license.txt'
-        exclude 'META-INF/dependencies.txt'
-        exclude 'META-INF/LGPL2.1'
+        resources {
+            excludes += ['META-INF/DEPENDENCIES.txt', 'META-INF/LICENSE.txt', 'META-INF/NOTICE.txt', 'META-INF/NOTICE', 'META-INF/LICENSE', 'META-INF/DEPENDENCIES', 'META-INF/notice.txt', 'META-INF/license.txt', 'META-INF/dependencies.txt', 'META-INF/LGPL2.1']
+        }
     }
     productFlavors {
         production {
@@ -73,6 +59,11 @@ android {
     //Migrating from Kotlin synthetics to Jetpack view binding
     buildFeatures {
         viewBinding = true
+    }
+    namespace 'com.samourai.sentinel'
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
     }
 }
 

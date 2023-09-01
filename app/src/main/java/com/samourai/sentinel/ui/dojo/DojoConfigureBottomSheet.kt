@@ -1,8 +1,10 @@
 package com.samourai.sentinel.ui.dojo
 
 import android.Manifest
+import android.app.PendingIntent
 import android.content.Context
 import android.content.DialogInterface
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -282,6 +284,24 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     }
 
     private fun getTorNotificationBuilder(): ServiceNotification.Builder {
+
+        var contentIntent: PendingIntent? = null
+
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_IMMUTABLE
+        } else {
+            0
+        }
+
+        context?.packageManager?.getLaunchIntentForPackage(requireContext().packageName)?.let { intent ->
+            contentIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                flags
+            )
+        }
+
         return ServiceNotification.Builder(
             channelName = "Tor Service",
             channelDescription = "Tor foreground service notifications ",
@@ -297,6 +317,11 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             .enableTorRestartButton(enable = true)
             .enableTorStopButton(enable = true)
             .showNotification(show = true)
+            .also { builder ->
+                contentIntent?.let {
+                    builder.setContentIntent(it)
+                }
+            }
     }
 
 
