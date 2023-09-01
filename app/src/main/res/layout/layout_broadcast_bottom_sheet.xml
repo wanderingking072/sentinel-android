@@ -5,8 +5,8 @@
     android:id="@+id/motionItem"
     android:layout_width="match_parent"
     android:layout_height="420dp"
-    android:minHeight="420dp"
-    >
+    android:minHeight="420dp">
+
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/materialToolbar"
         android:layout_width="match_parent"
@@ -24,6 +24,24 @@
 
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/scanHex"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/spacing_xxlarge"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="80dp"
+        android:text="Scan"
+        android:textColor="@color/white"
+        app:backgroundTint="@color/grey_accent"
+        app:cornerRadius="6dp"
+        app:icon="@drawable/ic_baseline_qr_code_24"
+        app:iconTint="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/broadCastTransactionBtn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@+id/guideline5" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/pasteHex"
         android:layout_width="0dp"
         android:layout_height="@dimen/spacing_xxlarge"
@@ -37,27 +55,25 @@
         app:iconTint="@color/white"
         app:layout_constraintBottom_toBottomOf="@+id/scanHex"
         app:layout_constraintEnd_toStartOf="@+id/guideline5"
-        app:layout_constraintHorizontal_bias="0.80"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/scanHex" />
+        app:layout_constraintTop_toTopOf="@+id/scanHex"
+        app:layout_constraintVertical_bias="0.0" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/scanHex"
-        android:layout_width="0dp"
-        android:layout_height="@dimen/spacing_xxlarge"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="16dp"
-        android:text="Scan"
+        android:id="@+id/fileImportBtn"
+        android:layout_width="165dp"
+        android:layout_height="49dp"
+        android:layout_marginBottom="80dp"
+        android:text="Import"
         android:textColor="@color/white"
         app:backgroundTint="@color/grey_accent"
         app:cornerRadius="6dp"
-        app:icon="@drawable/ic_baseline_qr_code_24"
+        app:icon="@drawable/ic_file_import"
         app:iconTint="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/broadCastTransactionBtn"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.20"
-        app:layout_constraintStart_toStartOf="@+id/guideline5" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/scanHex"
+        app:layout_constraintStart_toStartOf="@+id/pasteHex" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline5"
@@ -109,18 +125,19 @@
 
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/broadcastProgress"
         style="@style/Widget.MaterialComponents.CircularProgressIndicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:indeterminate="true"
-        android:id="@+id/broadcastProgress"
         android:elevation="2dp"
-        app:indicatorSize="24dp"
-        app:dotWidth="2dp"
+        android:indeterminate="true"
         android:visibility="gone"
+        app:dotWidth="2dp"
         app:indicatorColor="@color/white"
+        app:indicatorSize="24dp"
         app:layout_constraintBottom_toBottomOf="@+id/broadCastTransactionBtn"
         app:layout_constraintEnd_toEndOf="@+id/broadCastTransactionBtn"
         app:layout_constraintStart_toStartOf="@+id/broadCastTransactionBtn"
         app:layout_constraintTop_toTopOf="@+id/broadCastTransactionBtn" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

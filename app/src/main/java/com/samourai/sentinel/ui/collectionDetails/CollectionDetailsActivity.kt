@@ -83,8 +83,8 @@ class CollectionDetailsActivity : SentinelActivity() {
                 }
 
                 R.id.bottom_nav_send -> {
-                    Toast.makeText(this, "Send - coming soon", Toast.LENGTH_LONG).show()
-                    /*
+                    //Toast.makeText(this, "Send - coming soon", Toast.LENGTH_LONG).show()
+
                     if (collectionOnlyHasSingleAddresses())
                         this@CollectionDetailsActivity.showFloatingSnackBar(
                             binding.root,
@@ -93,7 +93,6 @@ class CollectionDetailsActivity : SentinelActivity() {
                     else
                         binding.fragmentHostContainerPager.setCurrentItem(2, true)
 
-                     */
                 }
 
                 R.id.bottom_nav_transaction -> {
