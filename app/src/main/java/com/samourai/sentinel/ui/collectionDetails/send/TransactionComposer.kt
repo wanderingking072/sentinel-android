@@ -87,7 +87,7 @@ class TransactionComposer {
 
         val xpub = XPUB(this.selectPubKeyModel!!.pubKey)
         xpub.decode()
-        val accountIdx = (xpub.child + HARDENED)-1
+        val accountIdx = (xpub.child + HARDENED)
 
         val utxos: ArrayList<UTXO> = arrayListOf();
         for (utxoCoin in inputUtxos) {
@@ -233,7 +233,7 @@ class TransactionComposer {
         val type = if (networkParameters is MainNetParams) 0 else 1
 
         val purpose = selectPubKeyModel?.getPurpose();
-        val data : CharArray = Integer.toHexString(xpub.fingerprint).toCharArray()
+        val data = if (selectPubKeyModel?.fingerPrint != null) selectPubKeyModel?.fingerPrint?.toCharArray() else "".toCharArray()
 
         psbt!!.addOutput(
             networkParameters,
@@ -262,8 +262,8 @@ class TransactionComposer {
             PSBT.deserializeXPUB(getAccount()?.xpubstr()),
             Hex.decodeHex(data),
             purpose,
-            1,
-            0
+            type,
+            getAccount()!!.id
         );
         psbt?.addGlobalSeparator();
 
@@ -287,7 +287,7 @@ class TransactionComposer {
                             eckeyInput,
                             outPoint.value.value,
                             purpose,
-                            addressIndex,
+                            type,
                             accountIdx.toInt(),
                             chainIndex,
                             addressIndex
