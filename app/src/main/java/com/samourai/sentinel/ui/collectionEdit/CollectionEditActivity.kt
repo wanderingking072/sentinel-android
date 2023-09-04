@@ -41,7 +41,6 @@ import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
@@ -215,7 +214,7 @@ class CollectionEditActivity : SentinelActivity() {
 
 
     private fun setUpPubKeyList() {
-        var isMoreButton = false
+        var isTap = false
         val linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
 
@@ -224,10 +223,10 @@ class CollectionEditActivity : SentinelActivity() {
             adapter = pubKeyAdapter
         }
 
-        /*
         binding.pubKeyRecyclerView.addOnItemTouchListener(object :
             RecyclerView.OnItemTouchListener {
             override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+
                 fun  viewPubKey(pubKeyModel: PubKeyModel){
                     val dialog =  QRBottomSheetDialog(
                         pubKeyModel.pubKey,
@@ -237,15 +236,15 @@ class CollectionEditActivity : SentinelActivity() {
                     )
                     dialog.show(supportFragmentManager, dialog.tag)
                 }
-                apiScope.launch {
-                    withContext(Dispatchers.IO) {
-                        delay(400)
-                        val childView: View? = rv.findChildViewUnder(e.x, e.y)
-                        if (childView != null && e.action == MotionEvent.ACTION_UP) {
-                            val position = rv.getChildAdapterPosition(childView)
-                            if (position != RecyclerView.NO_POSITION && !isMoreButton) {
-                                viewPubKey(viewModel.getPubKeys().value!!.get(position))
-                            }
+
+                val childView: View? = rv.findChildViewUnder(e.x, e.y)
+                when (e.action) {
+                    MotionEvent.ACTION_DOWN -> isTap = true // User initiated a tap
+                    MotionEvent.ACTION_MOVE -> isTap = false // User is scrolling, not tapping
+                    MotionEvent.ACTION_UP -> if (isTap && childView != null) {
+                        val position = rv.getChildAdapterPosition(childView)
+                        if (position != RecyclerView.NO_POSITION && (e.x < 920)) {
+                            viewPubKey(viewModel.getPubKeys().value!!.get(position))
                         }
                     }
                 }
@@ -257,7 +256,6 @@ class CollectionEditActivity : SentinelActivity() {
             override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
 
-        */
         fun delete(index: Int){
             this.confirm(label = "Confirm",
                 message = "Are you sure want to remove this public key ?",
@@ -303,7 +301,6 @@ class CollectionEditActivity : SentinelActivity() {
 
         val items = arrayListOf("Edit", "View Public Key","View Master Fingerprint","Delete")
         pubKeyAdapter.setOnEditClickListener { i, pubKeyModel ->
-            isMoreButton = true
             MaterialAlertDialogBuilder(this)
                 .setItems(
                     items.toTypedArray()
@@ -325,7 +322,6 @@ class CollectionEditActivity : SentinelActivity() {
                 }
                 .setTitle(getString(R.string.options))
                 .setOnDismissListener {
-                    isMoreButton = false
                 }
                 .show()
         }
