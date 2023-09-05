@@ -241,7 +241,7 @@ open class ApiService {
     suspend fun broadcast(hex: String): String {
         buildClient()
         val formBody: RequestBody = FormBody.Builder()
-            .add("tx", hex)
+            .add("tx", hex.trim())
             .build()
         val request = Request.Builder()
             .url("${getAPIUrl()}/pushtx/")
