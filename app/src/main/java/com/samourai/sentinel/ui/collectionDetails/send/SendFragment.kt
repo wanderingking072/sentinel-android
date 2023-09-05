@@ -594,7 +594,7 @@ class SendFragment : Fragment() {
     private fun generateQRCode(uri: String) {
         viewModel.viewModelScope.launch(Dispatchers.Default) {
             withContext(Dispatchers.Main) {
-                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.maxFragmentLength = 18
+                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.maxFragmentLength = 10
                 fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.fps = 4
                 fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.setContent(UR.fromBytes(RegistryType.CRYPTO_PSBT.type,Hex.decode(uri)));
             }
