@@ -59,6 +59,9 @@ class CollectionEditActivity : SentinelActivity() {
     private var editIndex: Int = -1
     private lateinit var newPubEdit: PubKeyModel
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
+    private var pressStartTime: Long = 0
+    private var pressedX: Float = 0.0F
+    private var pressedY: Float = 0.0F
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -212,9 +215,7 @@ class CollectionEditActivity : SentinelActivity() {
         super.onBackPressed()
     }
 
-
     private fun setUpPubKeyList() {
-        var isTap = false
         val linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
 
@@ -237,14 +238,36 @@ class CollectionEditActivity : SentinelActivity() {
                     dialog.show(supportFragmentManager, dialog.tag)
                 }
 
+                fun pxToDp(px: Float): Float {
+                    return px / resources.displayMetrics.density
+                }
+
+                fun distance(x1: Float, y1: Float, x2: Float, y2: Float): Float {
+                    val dx = x1 - x2
+                    val dy = y1 - y2
+                    val distanceInPx = Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+                    return pxToDp(distanceInPx)
+                }
+
+                //Max allowed duration for a "click", in milliseconds.
+                val MAX_CLICK_DURATION = 4000;
+                //Max allowed distance to move during a "click", in DP.
+                val MAX_CLICK_DISTANCE = 15;
+
                 val childView: View? = rv.findChildViewUnder(e.x, e.y)
                 when (e.action) {
-                    MotionEvent.ACTION_DOWN -> isTap = true // User initiated a tap
-                    MotionEvent.ACTION_MOVE -> isTap = false // User is scrolling, not tapping
-                    MotionEvent.ACTION_UP -> if (isTap && childView != null) {
-                        val position = rv.getChildAdapterPosition(childView)
-                        if (position != RecyclerView.NO_POSITION && (e.x < 920)) {
-                            viewPubKey(viewModel.getPubKeys().value!!.get(position))
+                    MotionEvent.ACTION_DOWN -> {
+                        pressStartTime = System.currentTimeMillis()
+                        pressedX = e.getX()
+                        pressedY = e.getY()
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        val pressDuration = System.currentTimeMillis() - pressStartTime
+                        if (pressDuration < MAX_CLICK_DURATION && distance(pressedX, pressedY, e.getX(), e.getY()) < MAX_CLICK_DISTANCE && childView != null) {
+                            val position = rv.getChildAdapterPosition(childView)
+                            if (position != RecyclerView.NO_POSITION && (e.x < 920)) {
+                                viewPubKey(viewModel.getPubKeys().value!!.get(position))
+                            }
                         }
                     }
                 }
