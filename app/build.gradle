@@ -80,7 +80,7 @@ dependencies {
         exclude group: 'com.google.guava', module: 'listenablefuture'
     }
 
-    implementation ('io.samourai.code.wallet:extlibj:0.0.45') {
+    implementation ('io.samourai.code.wallet:extlibj:0.0.46') {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
         exclude group: 'net.jcip', module: 'jcip-annotations'

@@ -345,7 +345,7 @@ class ScanPubKeyFragment : Fragment() {
             val xpubsJson = JSONObject(charBuffer.toString())
             if (xpubsJson.has("bip84")) {
                 try {
-                    fingerprintHex = xpubsJson.getJSONObject("bip84").getString("xfp").lowercase()
+                    fingerprintHex = xpubsJson.getString("xfp").lowercase()
                 } catch (e: Exception) {}
                 return xpubsJson.getJSONObject("bip84").getString("_pub")
             }

@@ -233,7 +233,7 @@ class TransactionComposer {
         val type = if (networkParameters is MainNetParams) 0 else 1
 
         val purpose = selectPubKeyModel?.getPurpose();
-        val data = if (selectPubKeyModel?.fingerPrint != null) selectPubKeyModel?.fingerPrint?.toCharArray() else "".toCharArray()
+        val data = if (selectPubKeyModel?.fingerPrint != null) selectPubKeyModel?.fingerPrint?.toCharArray() else "00000000".toCharArray()
 
         psbt!!.addOutput(
             networkParameters,
