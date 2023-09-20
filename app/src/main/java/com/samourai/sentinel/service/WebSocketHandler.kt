@@ -205,6 +205,10 @@ class WebSocketHandler : WebSocketListener() {
                 amount += it.value
             }
 
+            //Don't send notification when it's an outgoing tx
+            if (amount <= 0)
+                return
+
             val notificationManager = NotificationManagerCompat.from(context)
             val mBuilder = NotificationCompat.Builder(context, "PAYMENTS_CHANNEL")
                     .setSmallIcon(R.drawable.ic_sentinel)
