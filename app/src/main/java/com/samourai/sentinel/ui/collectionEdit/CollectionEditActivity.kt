@@ -322,7 +322,7 @@ class CollectionEditActivity : SentinelActivity() {
             dialog.show(supportFragmentManager, dialog.tag)
         }
 
-        val items = arrayListOf("Edit", "View Public Key","View Master Fingerprint","Delete")
+        val items = arrayListOf("Edit","View Master Fingerprint","Delete")
         pubKeyAdapter.setOnEditClickListener { i, pubKeyModel ->
             MaterialAlertDialogBuilder(this)
                 .setItems(
@@ -333,12 +333,9 @@ class CollectionEditActivity : SentinelActivity() {
                             edit(pubKeyModel, i)
                         }
                         1 -> {
-                            viewPubKey(pubKeyModel)
-                        }
-                        2 -> {
                             editFingerprint(pubKeyModel, i)
                         }
-                        3 -> {
+                        2 -> {
                             delete(i)
                         }
                     }
