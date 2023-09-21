@@ -1,7 +1,11 @@
 package com.samourai.sentinel.ui.collectionDetails.send
 
-import androidx.lifecycle.*
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.Utxo
 import com.samourai.sentinel.data.db.dao.UtxoDao
@@ -9,13 +13,23 @@ import com.samourai.sentinel.send.FeeUtil
 import com.samourai.sentinel.send.SuggestedFee
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
 import java.math.BigInteger
 import java.text.NumberFormat
-import java.util.*
+import java.util.Locale
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.List
+import kotlin.collections.arrayListOf
+import kotlin.collections.filter
+import kotlin.collections.hashMapOf
+import kotlin.collections.set
 
 class SendViewModel : ViewModel() {
 
@@ -89,14 +103,18 @@ class SendViewModel : ViewModel() {
             try {
                 receivers = HashMap()
                 receivers[address] = BigInteger.valueOf(amount.toLong())
-                val isValid = transactionComposer.compose(
+                try {
+                    val isValid = transactionComposer.compose(
                         inputAddress = address,
                         inputAmount = amount,
                         inputFee = selectedFee,
                         inputUtxos = ArrayList<Utxo>(utxos.filter { utxo ->  !UtxoMetaUtil.has(utxo)})
-                )
-                withContext(Dispatchers.Main) {
-                    _validSpend.postValue(isValid)
+                    )
+                    withContext(Dispatchers.Main) {
+                        _validSpend.postValue(isValid)
+                    }
+                } catch (e: Exception) {
+                    println("Exception: " + e)
                 }
             } catch (ex: TransactionComposer.ComposeException) {
                 throw CancellationException("unable to compose")

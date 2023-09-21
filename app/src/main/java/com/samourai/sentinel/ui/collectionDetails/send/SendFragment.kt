@@ -95,7 +95,7 @@ class SendFragment : Fragment() {
     }
 
     override fun onResume() {
-        if (indexPubSelector != -1)
+        if (indexPubSelector != -1 && indexPubSelector != 0)
             setBalance(mCollection!!.pubs[indexPubSelector-1])
         else
             setBalance(mCollection!!.pubs[findFirstNonAddressPubkey()-1])
