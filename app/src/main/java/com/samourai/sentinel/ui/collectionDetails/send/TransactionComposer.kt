@@ -235,6 +235,7 @@ class TransactionComposer {
         val purpose = selectPubKeyModel?.getPurpose();
         val data = if (selectPubKeyModel?.fingerPrint != null) selectPubKeyModel?.fingerPrint?.toCharArray() else "00000000".toCharArray()
 
+        /*
         psbt!!.addOutput(
             networkParameters,
             Hex.decodeHex(data),
@@ -246,6 +247,30 @@ class TransactionComposer {
             changeIndex!!
         )
 
+         */
+
+        //external receiving address output
+        /*
+        psbt!!.addOutput(
+            PSBT.PSBT_OUT_BIP32_DERIVATION,
+            //org.bouncycastle.util.encoders.Hex.decode("028aeea96b86f67d91af6f3bee75abbd5e85976a4fe489b0d1c4851f744b58e2b5"),
+            changeECKey!!.getPubKey(),
+            PSBT.writeBIP32Derivation(Hex.decodeHex(data), purpose!!, type, getAccount()!!.id, 0, changeIndex!!)
+        )
+
+         */
+        psbt!!.addOutputSeparator()
+
+        //change address output
+        psbt!!.addOutput(
+            PSBT.PSBT_OUT_BIP32_DERIVATION,
+            changeECKey!!.getPubKey(),
+            PSBT.writeBIP32Derivation(Hex.decodeHex(data), purpose!!, type, getAccount()!!.id, 1, changeIndex!!)
+        )
+        psbt!!.addOutputSeparator()
+
+
+        /*
         psbt!!.addOutput(
             networkParameters,
             Hex.decodeHex(data),
@@ -256,6 +281,7 @@ class TransactionComposer {
             0,
             changeIndex!!
         )
+         */
 
         psbt?.addGlobalUnsignedTx(String(Hex.encodeHex(transaction.bitcoinSerialize())));
         psbt?.addGlobalXpubRecord(
@@ -377,7 +403,7 @@ class TransactionComposer {
 
     private fun getNextChangeAddress(accountIdx: Long = 0L, toAddrType: String = ""): String? {
         val pubKey = this.selectPubKeyModel;
-        changeIndex = pubKey?.change_index!! + 1
+        changeIndex = pubKey?.change_index!!
         val account = getAccount()
 
         return when (this.selectPubKeyModel?.type) {
