@@ -259,7 +259,6 @@ class TransactionComposer {
         )
 
          */
-        psbt!!.addOutputSeparator()
 
         //change address output
         psbt!!.addOutput(
@@ -269,6 +268,7 @@ class TransactionComposer {
         )
         psbt!!.addOutputSeparator()
 
+        psbt!!.addOutputSeparator()
 
         /*
         psbt!!.addOutput(
