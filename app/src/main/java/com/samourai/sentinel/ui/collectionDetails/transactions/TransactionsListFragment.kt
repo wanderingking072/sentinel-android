@@ -51,7 +51,7 @@ class TransactionsListFragment(
         ).build()
 
         class TransactionsViewModelFactory(private val pubKeyCollection: PubKeyCollection, private val position: Int) : ViewModelProvider.Factory {
-            override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 if (modelClass.isAssignableFrom(TransactionsViewModel::class.java)) {
                     return TransactionsViewModel(pubKeyCollection, position) as T
                 }

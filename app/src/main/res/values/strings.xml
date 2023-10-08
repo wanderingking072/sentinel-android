@@ -160,6 +160,9 @@
     <string name="permission_alert_dialog_title_camera">Requesting camera permission</string>
     <string name="permission_dialog_message_camera">Sentinel needs access to the camera so it can scan QR codes.</string>
 
+    <string name="permission_alert_dialog_title_notifications">Requesting notification permission</string>
+    <string name="permission_dialog_message_notifications">Sentinel needs access to push notifications to show Tor status and incoming txs.</string>
+
     <string name="is_offline">Samourai is offline</string>
     <string name="history_will_be_updated">Balance and transaction history will not be updated until a working data connection is established</string>
     <string name="you_received_s">You received</string>

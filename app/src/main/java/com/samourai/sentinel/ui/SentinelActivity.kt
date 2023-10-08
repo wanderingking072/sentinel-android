@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.MenuItem
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.samourai.sentinel.R
@@ -81,7 +82,24 @@ open class SentinelActivity : AppCompatActivity(), SwipeBackActivityBase {
             .setPositiveButton(resources.getString(R.string.yes)) { _, _ ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     requestPermissions(arrayOf(Manifest.permission.CAMERA),
-                        Companion.CAMERA_PERMISSION
+                        CAMERA_PERMISSION
+                    )
+                }
+            }
+            .show()
+    }
+
+    protected fun askNotificationPermission() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(resources.getString(R.string.permission_alert_dialog_title_notifications))
+            .setMessage(resources.getString(R.string.permission_dialog_message_notifications))
+            .setNegativeButton(resources.getString(R.string.no)) { _, _ ->
+                Toast.makeText(this, "Notification permissions denied.", Toast.LENGTH_SHORT).show()
+            }
+            .setPositiveButton(resources.getString(R.string.yes)) { _, _ ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                        NOTIF_PERMISSION
                     )
                 }
             }
@@ -120,6 +138,7 @@ open class SentinelActivity : AppCompatActivity(), SwipeBackActivityBase {
 
     companion object {
         const val CAMERA_PERMISSION = 20
+        const val NOTIF_PERMISSION = 33
     }
 
 }

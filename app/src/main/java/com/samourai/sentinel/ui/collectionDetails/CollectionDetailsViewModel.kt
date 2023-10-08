@@ -70,7 +70,7 @@ class CollectionDetailsViewModel(private val pubKeyCollection: PubKeyCollection)
     }
 
     class CollectionDetailsViewModelFactory(private val pubKeyCollection: PubKeyCollection) : ViewModelProvider.Factory {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(CollectionDetailsViewModel::class.java)) {
                 return CollectionDetailsViewModel(pubKeyCollection) as T
             }

@@ -4,7 +4,10 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.*
+import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -12,7 +15,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.core.SentinelState
@@ -27,7 +29,11 @@ import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
 import com.samourai.sentinel.ui.settings.NetworkActivity
 import com.samourai.sentinel.ui.settings.SettingsActivity
-import com.samourai.sentinel.ui.utils.*
+import com.samourai.sentinel.ui.utils.AndroidUtil
+import com.samourai.sentinel.ui.utils.PrefsUtil
+import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
+import com.samourai.sentinel.ui.utils.SlideInItemAnimator
+import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.FormatsUtil
@@ -35,7 +41,11 @@ import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
 import io.matthewnelson.topl_service.TorServiceController
 import io.matthewnelson.topl_service_base.TorServicePrefs
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
 
 
@@ -146,6 +156,9 @@ class HomeActivity : SentinelActivity() {
         }
 
         checkClipBoard()
+
+        if (!AndroidUtil.isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS, applicationContext))
+            this.askNotificationPermission()
     }
 
 
@@ -324,6 +337,7 @@ class HomeActivity : SentinelActivity() {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             if (connectingDojo) {
                 showDojoSetUpBottomSheet()
@@ -331,15 +345,17 @@ class HomeActivity : SentinelActivity() {
             }
             showPubKeyBottomSheet()
 
-        } else {
-            if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                Toast.makeText(this, "Permission denied", Toast.LENGTH_LONG).show()
-                if (connectingDojo) {
-                    showDojoSetUpBottomSheet()
-                    return
-                }
-                showPubKeyBottomSheet()
+        } else if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+            Toast.makeText(this, "Permission denied", Toast.LENGTH_LONG).show()
+            if (connectingDojo) {
+                showDojoSetUpBottomSheet()
+                return
             }
+            showPubKeyBottomSheet()
+        } else if (requestCode == Companion.NOTIF_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Notification permissions granted.", Toast.LENGTH_SHORT).show()
+        } else if (requestCode == Companion.NOTIF_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+            Toast.makeText(this, "Notification permissions denied.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -373,7 +389,7 @@ class HomeActivity : SentinelActivity() {
                 .show()
     }
 
-    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         menu?.let { setNetWorkMenu(it) }
         return super.onPrepareOptionsMenu(menu)
     }
