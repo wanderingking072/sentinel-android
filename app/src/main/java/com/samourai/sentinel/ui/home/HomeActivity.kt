@@ -3,6 +3,7 @@ package com.samourai.sentinel.ui.home
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.Menu
@@ -157,7 +158,8 @@ class HomeActivity : SentinelActivity() {
 
         checkClipBoard()
 
-        if (!AndroidUtil.isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS, applicationContext))
+        if (!AndroidUtil.isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS, applicationContext)
+            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             this.askNotificationPermission()
     }
 
