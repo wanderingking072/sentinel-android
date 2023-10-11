@@ -148,6 +148,7 @@ class SuccessfulBottomSheet(private val label: String, private val txId: String,
 
     override fun onDismiss(dialog: DialogInterface) {
         val intent = Intent(context, HomeActivity::class.java)
+        intent.putExtra("forceRefresh", true)
         startActivity(intent)
         super.onDismiss(dialog)
     }
