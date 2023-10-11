@@ -21,7 +21,8 @@ object ExplorerRepository {
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java);
 
     private val Explorers: ArrayList<Explorer> = arrayListOf(
-        Explorer("https://m.oxt.me/transaction/${TX_KEY}", name = "oxt.me", tor = true),
+        Explorer("https://m.oxt.me/transaction/${TX_KEY}", name = "oxt.me"),
+        Explorer("http://oxtmblv4v7q5rotqtbbmtbcc5aa5vehr72eiebyamclfo3rco5zm3did.onion/transaction/${TX_KEY}", name = "oxt.me", tor = true),
         Explorer("https://blockstream.info/tx/${TX_KEY}", name = "blockstream.info"),
         Explorer("explorerzydxu5ecjrkwceayqybizmpjjznk5izmitf2modhcusuqlid.onion/tx/${TX_KEY}", name = "blockstream.info-tor", tor = true),
         Explorer("https://blockstream.info/testnet/tx/${TX_KEY}", name = "blockstream.info-testnet",testnet = true),
