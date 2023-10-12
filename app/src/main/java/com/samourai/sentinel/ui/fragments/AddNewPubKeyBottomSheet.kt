@@ -110,6 +110,19 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
     private fun validateXPUB(addressTypes: AddressTypes) {
 
         pubKeyModel = if ((addressTypes == AddressTypes.BIP49 || addressTypes == AddressTypes.BIP84) && (pubKeyString.startsWith("xpub") || pubKeyString.startsWith("tpub"))) {
+            val xpub = XPUB(pubKeyString)
+            xpub.decode()
+            pubKeyString =
+                if (addressTypes == AddressTypes.BIP49 && pubKeyString.startsWith("tpub"))
+                    XPUB.makeXPUB(XPUB.MAGIC_UPUB, xpub.depth, xpub.fingerprint, xpub.child, xpub.chain, xpub.getPubkey())
+                else if (addressTypes == AddressTypes.BIP49 && pubKeyString.startsWith("xpub"))
+                    XPUB.makeXPUB(XPUB.MAGIC_YPUB, xpub.depth, xpub.fingerprint, xpub.child, xpub.chain, xpub.getPubkey())
+                else if (addressTypes == AddressTypes.BIP49 && pubKeyString.startsWith("tpub"))
+                    XPUB.makeXPUB(XPUB.MAGIC_UPUB, xpub.depth, xpub.fingerprint, xpub.child, xpub.chain, xpub.getPubkey())
+                else if (addressTypes == AddressTypes.BIP49 && pubKeyString.startsWith("xpub"))
+                    XPUB.makeXPUB(XPUB.MAGIC_ZPUB, xpub.depth, xpub.fingerprint, xpub.child, xpub.chain, xpub.getPubkey())
+                else
+                    pubKeyString
             PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes, fingerPrint = scanPubKeyFragment.getFingerprint())
         } else if (pubKeyString.startsWith("ypub") || pubKeyString.startsWith("upub")) {
             PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes, fingerPrint = scanPubKeyFragment.getFingerprint())
