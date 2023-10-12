@@ -28,6 +28,7 @@ import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.settings.ImportBackUpActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.views.SuccessfulBottomSheet
+import com.samourai.wallet.psbt.PSBT
 import com.sparrowwallet.hummingbird.registry.CryptoPSBT
 import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.CancellationException
@@ -88,7 +89,7 @@ class BroadcastTx : SentinelActivity() {
             val signedTxHex: String = intent.getStringExtra("signedTxHex").toString()
             signedTxHex.let {
                 model.viewModelScope.launch(Dispatchers.Default) {
-                    validate(it)
+                    validate(it, true)
                 }
             }
         }
@@ -160,7 +161,7 @@ class BroadcastTx : SentinelActivity() {
         camera.show(supportFragmentManager, "scanner_tag")
         camera.setOnScanListener {
             model.viewModelScope.launch(Dispatchers.Default) {
-                validate(it)
+                validate(it, true)
                 camera.dismiss()
             }
         }
@@ -176,7 +177,12 @@ class BroadcastTx : SentinelActivity() {
         }
     }
 
-    private suspend fun validate(hex: String) {
+    private suspend fun validate(hex: String, isQRFormat: Boolean = false) {
+        val errorText =
+            if (isQRFormat)
+                "Incompatible QR format. Cannot parse transaction."
+            else
+                "Incompatible format. Cannot parse transaction."
         try {
             val transaction = Transaction(SentinelState.getNetworkParam(), Hex.decode(hex))
             hash = transaction.hashAsString
@@ -184,11 +190,27 @@ class BroadcastTx : SentinelActivity() {
                 disableAllButtons(true)
                 model.setHex(hex)
             }
-
         } catch (ex: Exception) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(applicationContext, "Payload is not a hex transaction", Toast.LENGTH_LONG).show()
-                disableBtn(binding.broadCastTransactionBtn, false)
+            try {
+                val psbt = PSBT.fromBytes(Hex.decode(hex), SentinelState.getNetworkParam())
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        applicationContext,
+                        errorText,
+                        Toast.LENGTH_LONG
+                    ).show()
+                    disableBtn(binding.broadCastTransactionBtn, false)
+                }
+                return
+            } catch (ex: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        applicationContext,
+                        errorText,
+                        Toast.LENGTH_LONG
+                    ).show()
+                    disableBtn(binding.broadCastTransactionBtn, false)
+                }
             }
         }
     }
