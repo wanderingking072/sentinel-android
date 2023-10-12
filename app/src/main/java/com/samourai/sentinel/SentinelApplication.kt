@@ -208,7 +208,7 @@ class SentinelApplication : Application() {
                         intentRequestCode = null
                 )
                 .enableTorRestartButton(enable = true)
-                .enableTorStopButton(enable = true)
+                .enableTorStopButton(enable = false)
                 .showNotification(show = true)
                 .also { builder ->
                     contentIntent?.let {
