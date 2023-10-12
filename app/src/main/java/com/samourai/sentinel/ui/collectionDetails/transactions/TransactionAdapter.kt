@@ -98,11 +98,16 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
             if (isSameDay(datePrev, current) && previous.confirmations >= MAX_CONFIRM_COUNT) {
                 //No-OP
             } else {
-                holder.showDivider()
-                if (DateUtils.isToday(tx.time * 1000)) {
-                    holder.section.text = "Today"
-                } else {
-                    holder.section.text = fmt.format(current)
+                if (getItem(position)!!.confirmations < MAX_CONFIRM_COUNT) {
+                    //NO-OP
+                }
+                else {
+                    holder.showDivider()
+                    if (DateUtils.isToday(tx.time * 1000)) {
+                        holder.section.text = "Today"
+                    } else {
+                        holder.section.text = fmt.format(current)
+                    }
                 }
             }
         } else {
