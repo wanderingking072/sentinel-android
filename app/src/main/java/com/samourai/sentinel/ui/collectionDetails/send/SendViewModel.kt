@@ -152,6 +152,7 @@ class SendViewModel : ViewModel() {
 
     fun setDestinationAddress(enteredAddress: String) {
         this.address = enteredAddress
+        prepareSpend()
     }
 
     fun setFee(fee: Float) {

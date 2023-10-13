@@ -353,7 +353,8 @@ class SendFragment : Fragment() {
                     viewModel.setDestinationAddress(address)
                 } else {
                     Toast.makeText(requireContext(), "Invalid address", Toast.LENGTH_SHORT).show()
-
+                    fragmentSpendBinding.composeBtn.alpha = 0.6f
+                    fragmentSpendBinding.composeBtn.isEnabled = false
                 }
             } else {
                 viewModel.setDestinationAddress("")
