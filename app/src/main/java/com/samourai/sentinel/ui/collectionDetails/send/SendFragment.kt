@@ -606,7 +606,7 @@ class SendFragment : Fragment() {
         fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = ("$feeMed sats/b")
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value = (feeMedSliderValue - multiplier + 1).toFloat()
         setFeeLabels()
-        viewModel.setFee(fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value)
+        viewModel.setFee(((fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value + multiplier) / multiplier)*1000)
         var nbBlocks = 6
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.addOnChangeListener { slider, sliderVal, fromUser ->
             val value = (sliderVal + multiplier) / multiplier
