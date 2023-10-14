@@ -143,7 +143,7 @@ class NetworkActivity : SentinelActivity() {
     fun setDojoStatus() {
         if (dojoUtility.isDojoEnabled()) {
             dojoConnectionStatus?.text = getString(R.string.Enabled)
-            dojoButton?.text = getString(R.string.disable)
+            dojoButton?.text = getString(R.string.disable_dojo)
             dojoConnectionIcon!!.setColorFilter(activeColor)
         } else {
             dojoConnectionStatus?.text = getString(R.string.disabled)

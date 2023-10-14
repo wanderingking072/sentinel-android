@@ -179,6 +179,7 @@
     <string name="dojo_connect_instruction">If you already have a Dojo Full Node or are \nrunning the free and open source Dojo Software\non your own hardware, scan the pairing QR code\nlocated on the Dojo Maintenance control panel</string>
     <string name="powering_sentinel">Powering Sentinel with your own personal node offers the best level of privacy and independence when interacting with the bitcoin network. Dojo makes running a full node easy and simple.</string>
     <string name="disable">Disable</string>
+    <string name="disable_dojo">Change/Disable</string>
     <string name="Enabled">Enabled</string>
     <string name="loading">loading…</string>
     <string name="tor_initializing">Tor initializing</string>
