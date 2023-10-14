@@ -124,9 +124,7 @@ class HomeActivity : SentinelActivity() {
         }
 
         if (intent != null) {
-            // Check if the Intent has extra data
             if (intent.hasExtra("forceRefresh") && intent.getBooleanExtra("forceRefresh", true)) {
-                println("Forcing refresh balance!")
                 model.fetchBalance()
             }
         }

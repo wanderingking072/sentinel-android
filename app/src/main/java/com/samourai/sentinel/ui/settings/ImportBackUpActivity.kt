@@ -11,7 +11,9 @@ import androidx.transition.TransitionManager
 import com.google.android.material.transition.MaterialSharedAxis
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
+import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ActivityImportBackUpBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.home.HomeActivity
@@ -19,6 +21,7 @@ import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.util.ExportImportUtil
+import com.samourai.sentinel.util.apiScope
 import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +51,8 @@ class ImportBackUpActivity : SentinelActivity() {
     private var requireRestart = false
     private val viewModel: ImportBackUpViewModel by viewModels()
     private lateinit var binding: ActivityImportBackUpBinding
+    private val repository: CollectionRepository by inject(CollectionRepository::class.java)
+    private val apiService: ApiService by inject(ApiService::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,11 +87,21 @@ class ImportBackUpActivity : SentinelActivity() {
                 binding.importPasswordInput.error = "Please type payload password"
             } else {
                 decryptPayload()
+
             }
         }
         showImportButton(true)
     }
 
+    private fun importAllXpubs() {
+        apiScope.launch {
+            repository.pubKeyCollections.forEach {
+                it.pubs.forEach {
+                    apiService.importXpub(it.pubKey, "bip${it.getPurpose()}")
+                }
+            }
+        }
+    }
 
     private fun showImportButton(hide: Boolean) {
         val sharedAxis = MaterialSharedAxis(MaterialSharedAxis.Y, !hide)
@@ -136,6 +151,9 @@ class ImportBackUpActivity : SentinelActivity() {
                                 prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")
                                 prefsUtil.apiEndPoint = payload.second.getString("apiEndPoint")
                             }
+                        }
+                        else {
+                            importAllXpubs()
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()

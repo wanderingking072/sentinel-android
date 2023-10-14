@@ -415,6 +415,7 @@ class CollectionEditActivity : SentinelActivity() {
                     pubKeyAdapter.setEditingPubKey(it.pubKey)
                     viewModel.setPubKeys(items)
                     edit(it, items.size-1)
+                    importWalletIfSegwit(items.last())
                 }
 
             }
