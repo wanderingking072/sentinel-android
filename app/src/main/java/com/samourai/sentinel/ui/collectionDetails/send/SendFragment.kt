@@ -371,6 +371,10 @@ class SendFragment : Fragment() {
                 setBtcEdit("")
                 setFiatEdit("")
             }
+            if (btcString.split(".").size > 1 && btcString.split(".")[1].length > 8) {
+                setBtcEdit(btcString.dropLast(btcString.split(".")[1].length-8))
+                return
+            }
             val btc: Double = btcString.toDouble()
             amount = btc
             if (btc > 21000000.0) {
