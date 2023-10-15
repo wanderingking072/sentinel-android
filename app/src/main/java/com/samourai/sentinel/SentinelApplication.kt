@@ -207,6 +207,9 @@ class SentinelApplication : Application() {
                         intentExtras = null,
                         intentRequestCode = null
                 )
+                .setImageTorNetworkingEnabled(R.drawable.sentiel_tor_on_icon)
+                .setImageTorDataTransfer(R.drawable.sentiel_tor_data_icon)
+                .setImageTorNetworkingDisabled(R.drawable.sentiel_tor_idle_icon)
                 .enableTorRestartButton(enable = true)
                 .enableTorStopButton(enable = false)
                 .showNotification(show = true)
