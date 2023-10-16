@@ -46,7 +46,7 @@
         android:id="@+id/startAsFresh"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start as fresh"
+        android:text="Start fresh"
         android:textAllCaps="false"
         android:textColor="@color/md_grey_400"
         style="@style/Widget.MaterialComponents.Button.TextButton"
