@@ -183,7 +183,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                             setDojo()
                     }
                     else {
-                        dismissAllOrToast(false)
+                        dismissAllOrToast(false, true)
                     }
                 }
             })
@@ -196,13 +196,19 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         }
     }
 
-    fun dismissAllOrToast(wasResponseSuccessful: Boolean) {
+    fun dismissAllOrToast(wasResponseSuccessful: Boolean, retry: Boolean = false) {
         if (wasResponseSuccessful) {
             dojoConnectFragment.showDojoProgressSuccess()
             Handler().postDelayed(Runnable {
                 this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
                 this@DojoConfigureBottomSheet.dismiss()
             }, 500)
+        }
+        else if (retry) {
+            Thread.sleep(5000)
+            if (SentinelState.torProxy != null) {
+                setDojo()
+            }
         }
         else {
             Handler(Looper.getMainLooper()).post {
