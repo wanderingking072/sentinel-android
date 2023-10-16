@@ -50,6 +50,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     private val connectManuallyFragment = ConnectManuallyFragment()
     private var dojoConfigurationListener: DojoConfigurationListener? = null
     private val prefsUtil: PrefsUtil by KoinJavaComponent.inject(PrefsUtil::class.java);
+    private var numRetries = 0
 
     private var payload: String = ""
 
@@ -204,7 +205,8 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                 this@DojoConfigureBottomSheet.dismiss()
             }, 500)
         }
-        else if (retry) {
+        else if (retry && numRetries <= 2) {
+            numRetries += 1
             Thread.sleep(5000)
             if (SentinelState.torProxy != null) {
                 setDojo()
@@ -216,7 +218,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                     this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
                     this@DojoConfigureBottomSheet.dismiss()
                 }, 500)
-                Toast.makeText(requireContext(), "Unable to connect to Dojo. Check URL / API key and try again", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Unable to connect to Dojo. Please try again", Toast.LENGTH_LONG).show()
             }
         }
     }
