@@ -97,7 +97,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         payloadPassed?.let {
             if (dojoUtil.validate(it)) {
                 payload = it
-                binding.pager.setCurrentItem(2, true)
+                binding.pager.setCurrentItem(3, true)
             } else {
                 scanFragment.resetCamera()
                 Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
