@@ -13,7 +13,8 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.*
+import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -148,6 +149,8 @@ class SuccessfulBottomSheet(private val label: String, private val txId: String,
 
     override fun onDismiss(dialog: DialogInterface) {
         val intent = Intent(context, HomeActivity::class.java)
+        intent.putExtra("forceRefresh", true)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
         super.onDismiss(dialog)
     }

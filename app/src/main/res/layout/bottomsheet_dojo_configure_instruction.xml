@@ -5,19 +5,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
     android:animateLayoutChanges="true">
-
-
-    <!--    <ImageView-->
-    <!--        android:id="@+id/imageView12"-->
-    <!--        android:layout_width="180dp"-->
-    <!--        android:visibility="gone"-->
-    <!--        android:layout_height="0dp"-->
-    <!--        android:contentDescription="Dojo"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintStart_toStartOf="parent"/>-->
 
     <TextView
         android:id="@+id/textView16"
@@ -36,12 +26,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <View
+        android:id="@+id/view5"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        app:layout_constraintTop_toBottomOf="@+id/textView16"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="8dp"
+        android:background="#4F808080"/>
+
     <TextView
         android:id="@+id/textView42"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="40dp"
         android:layout_marginEnd="16dp"
         android:text="@string/powering_sentinel"
         app:layout_constraintEnd_toEndOf="parent"
@@ -66,19 +65,22 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/connect_dojo"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        app:strokeColor="@color/white"
-        android:text="@string/connect_to_existing_dojo"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:textAllCaps="false"
         android:textColor="@color/white"
-        android:padding="12dp"
-        app:rippleColor="@color/grey_accent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:backgroundTint="@color/grey_accent"
+        app:layout_constraintTop_toBottomOf="@+id/textView43"
         app:layout_constraintEnd_toEndOf="@+id/textView43"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/textView43" />
+        app:layout_constraintStart_toStartOf="@+id/textView43"
+        android:text="@string/connect_to_existing_dojo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

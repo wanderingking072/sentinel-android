@@ -110,7 +110,7 @@ open class ApiService {
         xpub.decode()
         var segwitValue = segwit
 
-        if (segwit == "44")
+        if (segwit == "44" || segwit == "bip44")
             segwitValue = ""
 
         if ((xpub.child + HARDENED).toString().equals("2147483646"))
@@ -241,7 +241,7 @@ open class ApiService {
     suspend fun broadcast(hex: String): String {
         buildClient()
         val formBody: RequestBody = FormBody.Builder()
-            .add("tx", hex)
+            .add("tx", hex.trim())
             .build()
         val request = Request.Builder()
             .url("${getAPIUrl()}/pushtx/")

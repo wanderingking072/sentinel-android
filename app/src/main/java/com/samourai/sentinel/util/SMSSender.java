@@ -39,8 +39,8 @@ public class SMSSender {
         String SENT = "SMS_SENT";
         String DELIVERED = "SMS_DELIVERED";
 
-        sentPI = PendingIntent.getBroadcast(context, 0, new Intent(SENT), 0);
-        deliveredPI = PendingIntent.getBroadcast(context, 0, new Intent(DELIVERED), 0);
+        sentPI = PendingIntent.getBroadcast(context, 0, new Intent(SENT), PendingIntent.FLAG_IMMUTABLE);
+        deliveredPI = PendingIntent.getBroadcast(context, 0, new Intent(DELIVERED), PendingIntent.FLAG_IMMUTABLE);
 
         //---when the SMS has been sent---
         context.registerReceiver(new BroadcastReceiver(){

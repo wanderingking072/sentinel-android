@@ -81,7 +81,7 @@ class PrefsUtil(context: Context) : Preferences(context, "${context.packageName}
         val clazz = this.javaClass.kotlin
         payload.keys().forEach { key ->
             clazz.declaredMemberProperties.forEach {
-                if(it.name == key){
+                if(it.name == key && it.name != "apiEndPoint" && it.name != "apiEndPointTor" && it.name != "authorization"){
                     if (it is KMutableProperty<*>) {
                         try {
                             it.setter.call(this@PrefsUtil,payload[key])

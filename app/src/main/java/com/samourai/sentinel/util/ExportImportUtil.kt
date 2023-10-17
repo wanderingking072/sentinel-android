@@ -2,7 +2,6 @@ package com.samourai.sentinel.util
 
 import com.google.gson.reflect.TypeToken
 import com.samourai.sentinel.BuildConfig
-import com.samourai.sentinel.core.access.AccessFactory
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
@@ -21,7 +20,6 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
-import timber.log.Timber
 
 /**
  * sentinel-android
@@ -81,7 +79,8 @@ class ExportImportUtil {
                     if (jsonObject.has("xpub")) {
                         val xpub = jsonObject.getString("xpub")
                         if (FormatsUtil.isValidXpub(xpub)) {
-                            val pubKeyModel = PubKeyModel(pubKey = xpub,
+                            val pubKeyModel = PubKeyModel(
+                                pubKey = xpub,
                                     label = "BIP44 account ${it}",
                                     AddressTypes.BIP44,
                                     change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
@@ -98,7 +97,8 @@ class ExportImportUtil {
                     if (jsonObject.has("ypub")) {
                         val xpub = jsonObject.getString("ypub")
                         if (FormatsUtil.isValidXpub(xpub)) {
-                            val pubKeyModel = PubKeyModel(pubKey = xpub,
+                            val pubKeyModel = PubKeyModel(
+                                pubKey = xpub,
                                     label = "BIP49 account $it",
                                     AddressTypes.BIP49,
                                     change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
@@ -116,7 +116,8 @@ class ExportImportUtil {
                         val xpub = jsonObject.getString("zpub")
                         if (FormatsUtil.isValidXpub(xpub)) {
                             var label = "BIP84 account ${it}"
-                            val pubKeyModel = PubKeyModel(pubKey = xpub,
+                            val pubKeyModel = PubKeyModel(
+                                pubKey = xpub,
                                     label = label,
                                     AddressTypes.BIP84,
                                     change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
@@ -145,7 +146,8 @@ class ExportImportUtil {
                             }
                         }
                         if (FormatsUtil.isValidXpub(xpub)) {
-                            val pubKeyModel = PubKeyModel(pubKey = xpub,
+                            val pubKeyModel = PubKeyModel(
+                                pubKey = xpub,
                                     label = label,
                                     AddressTypes.BIP84,
                                     change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
@@ -208,7 +210,8 @@ class ExportImportUtil {
                     xpubObject.keys().forEach { key ->
                         val type = validate(key);
                         if (type == AddressTypes.BIP44) {
-                            val pubKeyModel = PubKeyModel(pubKey = key,
+                            val pubKeyModel = PubKeyModel(
+                                pubKey = key,
                                 label = xpubObject.getString(key), type = AddressTypes.BIP44)
                             publicKeys.add(pubKeyModel)
                         }
@@ -223,7 +226,8 @@ class ExportImportUtil {
                     xpubObject.keys().forEach { key ->
                         val type = validate(key);
                         if (type == AddressTypes.BIP49) {
-                            val pubKeyModel = PubKeyModel(pubKey = key,
+                            val pubKeyModel = PubKeyModel(
+                                pubKey = key,
                                 label = xpubObject.getString(key), type = AddressTypes.BIP49)
                             publicKeys.add(pubKeyModel)
                         }
@@ -238,7 +242,8 @@ class ExportImportUtil {
                     xpubObject.keys().forEach { key ->
                         val type = validate(key);
                         if (type == AddressTypes.BIP84) {
-                            val pubKeyModel = PubKeyModel(pubKey = key,
+                            val pubKeyModel = PubKeyModel(
+                                pubKey = key,
                                 label = xpubObject.getString(key), type = AddressTypes.BIP84)
                             publicKeys.add(pubKeyModel)
                         }
@@ -253,7 +258,8 @@ class ExportImportUtil {
                     xpubObject.keys().forEach { key ->
                         val type = validate(key);
                         if (type == AddressTypes.ADDRESS) {
-                            val pubKeyModel = PubKeyModel(pubKey = key,
+                            val pubKeyModel = PubKeyModel(
+                                pubKey = key,
                                 label = xpubObject.getString(key), type = AddressTypes.ADDRESS)
                             publicKeys.add(pubKeyModel)
                         }

@@ -205,6 +205,10 @@ class WebSocketHandler : WebSocketListener() {
                 amount += it.value
             }
 
+            //Don't send notification when it's an outgoing tx
+            if (amount <= 0)
+                return
+
             val notificationManager = NotificationManagerCompat.from(context)
             val mBuilder = NotificationCompat.Builder(context, "PAYMENTS_CHANNEL")
                     .setSmallIcon(R.drawable.ic_sentinel)
@@ -214,7 +218,7 @@ class WebSocketHandler : WebSocketListener() {
                     .setAutoCancel(true)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
             val notifyIntent: Intent = Intent(context, HomeActivity::class.java)
-            val intent = PendingIntent.getActivity(context, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+            val intent = PendingIntent.getActivity(context, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT  or PendingIntent.FLAG_IMMUTABLE)
             mBuilder.setContentIntent(intent)
             notificationManager.notify(tx.locktime, mBuilder.build())
 

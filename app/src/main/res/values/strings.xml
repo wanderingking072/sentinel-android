@@ -160,6 +160,9 @@
     <string name="permission_alert_dialog_title_camera">Requesting camera permission</string>
     <string name="permission_dialog_message_camera">Sentinel needs access to the camera so it can scan QR codes.</string>
 
+    <string name="permission_alert_dialog_title_notifications">Requesting notification permission</string>
+    <string name="permission_dialog_message_notifications">Sentinel needs access to push notifications to show Tor status and incoming txs.</string>
+
     <string name="is_offline">Samourai is offline</string>
     <string name="history_will_be_updated">Balance and transaction history will not be updated until a working data connection is established</string>
     <string name="you_received_s">You received</string>
@@ -168,14 +171,14 @@
     <string name="initializing_tor">initializing Tor…</string>
     <string name="renew">RENEW</string>
     <string name="in_offline_mode">Sentinel is in offline mode.</string>
-    <string name="dojo_headline">Power Sentinel with your own personal DOJO full node</string>
-    <string name="powering_sentine_">Powering Sentinel with your own personal node offers the best level of privacy and independence when interacting with the bitcoin network. Dojo makes running a full node easy and simple.</string>
+    <string name="dojo_headline">Power Sentinel with your Dojo</string>
     <string name="preorder">Preorder</string>
-    <string name="plug_and_play_full_bitcoin_node_automatically">- Plug and Play full bitcoin node\n\n -Automatically configured Tor hidden service\n\n -Independence from default Samourai servers</string>
-    <string name="connect_to_existing_dojo">Connect to existing Dojo</string>
+    <string name="plug_and_play_full_bitcoin_node_automatically">- Plug and Play\n\n -Automatically configured Tor hidden service\n\n -Independence from Samourai servers</string>
+    <string name="connect_to_existing_dojo">Connect to Dojo</string>
     <string name="dojo_connect_instruction">If you already have a Dojo Full Node or are \nrunning the free and open source Dojo Software\non your own hardware, scan the pairing QR code\nlocated on the Dojo Maintenance control panel</string>
-    <string name="powering_sentinel">Powering Sentinel with your own personal node offers the best level of privacy and independence when interacting with the bitcoin network. Dojo makes running a full node easy and simple.</string>
+    <string name="powering_sentinel">Connecting to your own Dojo full node offers the best level of privacy and independence when interfacing with the Bitcoin network.</string>
     <string name="disable">Disable</string>
+    <string name="disable_dojo">Change/Disable</string>
     <string name="Enabled">Enabled</string>
     <string name="loading">loading…</string>
     <string name="tor_initializing">Tor initializing</string>

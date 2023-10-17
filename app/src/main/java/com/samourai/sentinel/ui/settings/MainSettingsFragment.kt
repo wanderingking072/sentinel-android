@@ -204,6 +204,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                                     dojoUtility.clearDojo()
                                     prefsUtil.clearAll()
                                     UtxoMetaUtil.clearAll()
+                                    TorServiceController.stopTor()
                                 }
                                 startActivity(Intent(activity, HomeActivity::class.java).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)

@@ -132,7 +132,7 @@ class ImportSegWitService : Service() {
         val broadcastIntent = Intent(this, ActionReceiverImportSegWitService::class.java)
         broadcastIntent.action = "CLOSE"
         val actionIntent = PendingIntent.getBroadcast(this,
-                0, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+                0, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT  or PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Action(R.drawable.ic_sentinel, "Close", actionIntent)
     }
 

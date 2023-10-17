@@ -1,8 +1,10 @@
 package com.samourai.sentinel.ui.dojo
 
 import android.Manifest
+import android.app.PendingIntent
 import android.content.Context
 import android.content.DialogInterface
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -48,6 +50,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     private val connectManuallyFragment = ConnectManuallyFragment()
     private var dojoConfigurationListener: DojoConfigurationListener? = null
     private val prefsUtil: PrefsUtil by KoinJavaComponent.inject(PrefsUtil::class.java);
+    private var numRetries = 0
 
     private var payload: String = ""
 
@@ -94,7 +97,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         payloadPassed?.let {
             if (dojoUtil.validate(it)) {
                 payload = it
-                binding.pager.setCurrentItem(2, true)
+                binding.pager.setCurrentItem(3, true)
             } else {
                 scanFragment.resetCamera()
                 Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
@@ -181,7 +184,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                             setDojo()
                     }
                     else {
-                        dismissAllOrToast(false)
+                        dismissAllOrToast(false, true)
                     }
                 }
             })
@@ -194,7 +197,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         }
     }
 
-    fun dismissAllOrToast(wasResponseSuccessful: Boolean) {
+    fun dismissAllOrToast(wasResponseSuccessful: Boolean, retry: Boolean = false) {
         if (wasResponseSuccessful) {
             dojoConnectFragment.showDojoProgressSuccess()
             Handler().postDelayed(Runnable {
@@ -202,13 +205,20 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                 this@DojoConfigureBottomSheet.dismiss()
             }, 500)
         }
+        else if (retry && numRetries <= 2) {
+            numRetries += 1
+            Thread.sleep(5000)
+            if (SentinelState.torProxy != null) {
+                setDojo()
+            }
+        }
         else {
             Handler(Looper.getMainLooper()).post {
                 Handler().postDelayed(Runnable {
                     this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
                     this@DojoConfigureBottomSheet.dismiss()
                 }, 500)
-                Toast.makeText(requireContext(), "Unable to connect to Dojo. Check URL / API key and try again", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Unable to connect to Dojo. Please try again", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -282,6 +292,24 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     }
 
     private fun getTorNotificationBuilder(): ServiceNotification.Builder {
+
+        var contentIntent: PendingIntent? = null
+
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_IMMUTABLE
+        } else {
+            0
+        }
+
+        context?.packageManager?.getLaunchIntentForPackage(requireContext().packageName)?.let { intent ->
+            contentIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                flags
+            )
+        }
+
         return ServiceNotification.Builder(
             channelName = "Tor Service",
             channelDescription = "Tor foreground service notifications ",
@@ -297,6 +325,11 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             .enableTorRestartButton(enable = true)
             .enableTorStopButton(enable = true)
             .showNotification(show = true)
+            .also { builder ->
+                contentIntent?.let {
+                    builder.setContentIntent(it)
+                }
+            }
     }
 
 
@@ -491,6 +524,7 @@ class ScanFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
+        mCodeScanner?.setLifeCycleOwner(this)
         view.findViewById<TextView>(R.id.scanInstructions).text = getString(R.string.dojo_scan_instruction)
         view.findViewById<TextView>(R.id.scanInstructions).textAlignment = TextView.TEXT_ALIGNMENT_CENTER
         mCodeScanner?.setQRDecodeListener {

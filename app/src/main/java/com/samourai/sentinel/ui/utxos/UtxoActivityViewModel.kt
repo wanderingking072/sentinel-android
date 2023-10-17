@@ -37,7 +37,7 @@ internal class UtxoActivityViewModel(private val pubKeyCollection: PubKeyCollect
     }
 
     class UtxoViewModelViewModelFactory(private val pubKeyCollection: PubKeyCollection) : ViewModelProvider.Factory {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(UtxoActivityViewModel::class.java)) {
                 return UtxoActivityViewModel(pubKeyCollection) as T
             }

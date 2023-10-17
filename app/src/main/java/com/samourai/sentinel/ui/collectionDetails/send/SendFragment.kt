@@ -1,9 +1,11 @@
 package com.samourai.sentinel.ui.collectionDetails.send
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -25,6 +27,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.viewModelScope
 import androidx.transition.TransitionManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.MaterialContainerTransform
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.AddressTypes
@@ -34,7 +37,9 @@ import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.databinding.FragmentSpendBinding
 import com.samourai.sentinel.send.SuggestedFee
+import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.broadcast.BroadcastTx
+import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.hideKeyboard
 import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
@@ -90,7 +95,7 @@ class SendFragment : Fragment() {
     }
 
     override fun onResume() {
-        if (indexPubSelector != -1)
+        if (indexPubSelector != -1 && indexPubSelector != 0)
             setBalance(mCollection!!.pubs[indexPubSelector-1])
         else
             setBalance(mCollection!!.pubs[findFirstNonAddressPubkey()-1])
@@ -224,6 +229,59 @@ class SendFragment : Fragment() {
 
         fragmentSpendBinding.sendAppBar.setOnMenuItemClickListener { menu ->
             if (menu.itemId == R.id.action_scan_qr) {
+                if (!AndroidUtil.isPermissionGranted(
+                        Manifest.permission.CAMERA,
+                        requireContext()
+                    )
+                ) {
+                    this.askCameraPermission()
+                } else {
+                    val camera = CameraFragmentBottomSheet()
+                    camera.setQrCodeScanLisenter {
+                        if (it.length < 100) {
+                            fragmentSpendBinding.btcAddress.setText(it)
+                        }
+                        camera.dismiss()
+                    }
+                    camera.show(parentFragmentManager, camera.tag)
+                }
+            }
+            true
+        }
+    }
+
+    protected fun askCameraPermission() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(resources.getString(R.string.permission_alert_dialog_title_camera))
+            .setMessage(resources.getString(R.string.permission_dialog_message_camera))
+            .setNegativeButton(resources.getString(R.string.no)) { _, _ ->
+                val bottomSheetFragment = AddNewPubKeyBottomSheet()
+                bottomSheetFragment.show(childFragmentManager, bottomSheetFragment.tag)
+            }
+            .setPositiveButton(resources.getString(R.string.yes)) { _, _ ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(arrayOf(Manifest.permission.CAMERA),
+                        SentinelActivity.CAMERA_PERMISSION
+                    )
+                }
+            }
+            .show()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == SentinelActivity.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            val camera = CameraFragmentBottomSheet()
+            camera.setQrCodeScanLisenter {
+                if (it.length < 100) {
+                    fragmentSpendBinding.btcAddress.setText(it)
+                }
+                camera.dismiss()
+            }
+            camera.show(parentFragmentManager, camera.tag)
+
+        } else {
+            if (requestCode == SentinelActivity.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                Toast.makeText(context, "Permission denied", Toast.LENGTH_LONG).show()
                 val camera = CameraFragmentBottomSheet()
                 camera.setQrCodeScanLisenter {
                     if (it.length < 100) {
@@ -233,9 +291,9 @@ class SendFragment : Fragment() {
                 }
                 camera.show(parentFragmentManager, camera.tag)
             }
-            true
         }
     }
+
 
     fun getPsbtBytes() {
         viewModel.getPsbtBytes()
@@ -295,7 +353,8 @@ class SendFragment : Fragment() {
                     viewModel.setDestinationAddress(address)
                 } else {
                     Toast.makeText(requireContext(), "Invalid address", Toast.LENGTH_SHORT).show()
-
+                    fragmentSpendBinding.composeBtn.alpha = 0.6f
+                    fragmentSpendBinding.composeBtn.isEnabled = false
                 }
             } else {
                 viewModel.setDestinationAddress("")
@@ -311,6 +370,10 @@ class SendFragment : Fragment() {
             if (btcString.isEmpty()) {
                 setBtcEdit("")
                 setFiatEdit("")
+            }
+            if (btcString.split(".").size > 1 && btcString.split(".")[1].length > 8) {
+                setBtcEdit(btcString.dropLast(btcString.split(".")[1].length-8))
+                return
             }
             val btc: Double = btcString.toDouble()
             amount = btc
@@ -548,7 +611,7 @@ class SendFragment : Fragment() {
         fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = ("$feeMed sats/b")
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value = (feeMedSliderValue - multiplier + 1).toFloat()
         setFeeLabels()
-        viewModel.setFee(fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value)
+        viewModel.setFee(((fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value + multiplier) / multiplier)*1000)
         var nbBlocks = 6
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.addOnChangeListener { slider, sliderVal, fromUser ->
             val value = (sliderVal + multiplier) / multiplier
@@ -594,6 +657,8 @@ class SendFragment : Fragment() {
     private fun generateQRCode(uri: String) {
         viewModel.viewModelScope.launch(Dispatchers.Default) {
             withContext(Dispatchers.Main) {
+                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.maxFragmentLength = 40
+                fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.fps = 5
                 fragmentSpendBinding.fragmentBroadcastTx.psbtQRCode.setContent(UR.fromBytes(RegistryType.CRYPTO_PSBT.type,Hex.decode(uri)));
             }
         }

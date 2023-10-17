@@ -86,7 +86,8 @@ class TransactionComposer {
         var fee: BigInteger? = BigInteger.ZERO
 
         val xpub = XPUB(this.selectPubKeyModel!!.pubKey)
-        val accountIdx = (xpub.child + HARDENED)-1
+        xpub.decode()
+        val accountIdx = (xpub.child + HARDENED)
 
         val utxos: ArrayList<UTXO> = arrayListOf();
         for (utxoCoin in inputUtxos) {
@@ -232,8 +233,9 @@ class TransactionComposer {
         val type = if (networkParameters is MainNetParams) 0 else 1
 
         val purpose = selectPubKeyModel?.getPurpose();
-        val data : CharArray = "0d8c85ab".toCharArray()
+        val data = if (selectPubKeyModel?.fingerPrint != null) selectPubKeyModel?.fingerPrint?.toCharArray() else "00000000".toCharArray()
 
+        /*
         psbt!!.addOutput(
             networkParameters,
             Hex.decodeHex(data),
@@ -245,6 +247,30 @@ class TransactionComposer {
             changeIndex!!
         )
 
+         */
+
+        //external receiving address output
+        /*
+        psbt!!.addOutput(
+            PSBT.PSBT_OUT_BIP32_DERIVATION,
+            //org.bouncycastle.util.encoders.Hex.decode("028aeea96b86f67d91af6f3bee75abbd5e85976a4fe489b0d1c4851f744b58e2b5"),
+            changeECKey!!.getPubKey(),
+            PSBT.writeBIP32Derivation(Hex.decodeHex(data), purpose!!, type, getAccount()!!.id, 0, changeIndex!!)
+        )
+
+         */
+
+        //change address output
+        psbt!!.addOutput(
+            PSBT.PSBT_OUT_BIP32_DERIVATION,
+            changeECKey!!.getPubKey(),
+            PSBT.writeBIP32Derivation(Hex.decodeHex(data), purpose!!, type, getAccount()!!.id, 1, changeIndex!!)
+        )
+        psbt!!.addOutputSeparator()
+
+        psbt!!.addOutputSeparator()
+
+        /*
         psbt!!.addOutput(
             networkParameters,
             Hex.decodeHex(data),
@@ -255,22 +281,21 @@ class TransactionComposer {
             0,
             changeIndex!!
         )
+         */
 
         psbt?.addGlobalUnsignedTx(String(Hex.encodeHex(transaction.bitcoinSerialize())));
         psbt?.addGlobalXpubRecord(
             PSBT.deserializeXPUB(getAccount()?.xpubstr()),
             Hex.decodeHex(data),
             purpose,
-            1,
-            0
+            type,
+            getAccount()!!.id
         );
         psbt?.addGlobalSeparator();
 
         for (outPoint in outPoints) {
             for (input in inputUtxos) {
                 if (input.txHash == outPoint.hash.toString() && outPoint.txOutputN == input.txOutputN) {
-                    val xpub = XPUB(this.selectPubKeyModel!!.pubKey)
-                    xpub.decode()
                     val accountIdx = (xpub.child + HARDENED)
                     val path: String = input.path;
                     val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
@@ -288,7 +313,7 @@ class TransactionComposer {
                             eckeyInput,
                             outPoint.value.value,
                             purpose,
-                            addressIndex,
+                            type,
                             accountIdx.toInt(),
                             chainIndex,
                             addressIndex
@@ -378,7 +403,7 @@ class TransactionComposer {
 
     private fun getNextChangeAddress(accountIdx: Long = 0L, toAddrType: String = ""): String? {
         val pubKey = this.selectPubKeyModel;
-        changeIndex = pubKey?.change_index!! + 1
+        changeIndex = pubKey?.change_index!!
         val account = getAccount()
 
         return when (this.selectPubKeyModel?.type) {

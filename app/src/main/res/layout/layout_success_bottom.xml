@@ -28,14 +28,24 @@
             android:layout_width="150dp"
             android:layout_height="150dp"
             app:cardCornerRadius="250dp"
+            app:cardBackgroundColor="@color/green_ui_2"
             android:layout_gravity="center">
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center">
+
             <ImageView
-                android:layout_width="150dp"
-                android:layout_height="150dp"
-                android:src="@drawable/ic_done_white"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@color/green_ui_2"
                 android:scaleType="centerCrop"
-                android:background="@color/green_ui_2" />
+                android:src="@drawable/ic_check_white"
+                android:layout_centerInParent="true" />
+
+            </RelativeLayout>
+
         </androidx.cardview.widget.CardView>
 
         <TextView

@@ -12,7 +12,9 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
+import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.dojo.DojoUtility
@@ -20,7 +22,12 @@ import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
+import com.samourai.sentinel.util.apiScope
 import io.matthewnelson.topl_service.TorServiceController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.inject
 
 class NetworkActivity : SentinelActivity() {
@@ -37,6 +44,8 @@ class NetworkActivity : SentinelActivity() {
     var waiting = 0
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java);
     private val dojoUtility: DojoUtility by inject(DojoUtility::class.java);
+    private val repository: CollectionRepository by inject(CollectionRepository::class.java)
+    private val apiService: ApiService by inject(ApiService::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,6 +133,7 @@ class NetworkActivity : SentinelActivity() {
                                         TorServiceController.startTor()
                                         prefsUtil.enableTor = true
                                     }
+                                    importAllXpubs()
                                 }
                             )
                             if (prefsUtil.testnet!!) {
@@ -135,15 +145,23 @@ class NetworkActivity : SentinelActivity() {
                             }
                         }
                     })
-
         }
+    }
 
+    private fun importAllXpubs() {
+        apiScope.launch {
+            repository.pubKeyCollections.forEach {
+                it.pubs.forEach {
+                    apiService.importXpub(it.pubKey, "bip${it.getPurpose()}")
+                }
+            }
+        }
     }
 
     fun setDojoStatus() {
         if (dojoUtility.isDojoEnabled()) {
             dojoConnectionStatus?.text = getString(R.string.Enabled)
-            dojoButton?.text = getString(R.string.disable)
+            dojoButton?.text = getString(R.string.disable_dojo)
             dojoConnectionIcon!!.setColorFilter(activeColor)
         } else {
             dojoConnectionStatus?.text = getString(R.string.disabled)
@@ -188,9 +206,10 @@ class NetworkActivity : SentinelActivity() {
             override fun onDismiss() {
                 //Update dojo status
                 setDojoStatus()
-                if (!prefsUtil.isAPIEndpointEnabled()) {
+                if (!prefsUtil.isAPIEndpointEnabled())
                     removeDojo()
-                }
+                else
+                    importAllXpubs()
             }
         })
     }

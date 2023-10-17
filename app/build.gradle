@@ -4,16 +4,14 @@ apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
 android {
-
     compileSdkVersion 33
-    buildToolsVersion '30.0.1'
     flavorDimensions "versionCode"
     defaultConfig {
         applicationId "com.samourai.sentinel"
         minSdkVersion 21
-        targetSdkVersion 31
-        versionCode 49
-        versionName '3.6'
+        targetSdkVersion 33
+        versionCode 54
+        versionName '5.0.0'
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -27,41 +25,28 @@ android {
             variant.buildConfigField "String", "XOR_2", "\"" + getApiKey("XOR_2") + "\""
         }
     }
-    lintOptions {
-        checkReleaseBuilds false
-        // Or, if you prefer, you can continue to check for errors in release builds,
-        // but continue the build even when errors are found:
-        abortOnError false
-    }
     packagingOptions {
-        exclude 'META-INF/DEPENDENCIES.txt'
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/NOTICE.txt'
-        exclude 'META-INF/NOTICE'
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/notice.txt'
-        exclude 'META-INF/license.txt'
-        exclude 'META-INF/dependencies.txt'
-        exclude 'META-INF/LGPL2.1'
+        resources {
+            excludes += ['META-INF/DEPENDENCIES.txt', 'META-INF/LICENSE.txt', 'META-INF/NOTICE.txt', 'META-INF/NOTICE', 'META-INF/LICENSE', 'META-INF/DEPENDENCIES', 'META-INF/notice.txt', 'META-INF/license.txt', 'META-INF/dependencies.txt', 'META-INF/LGPL2.1']
+        }
     }
     productFlavors {
         production {
             minSdkVersion 21
             applicationId 'com.samourai.sentinel'
-            targetSdkVersion 30
-            versionCode 53
-            versionName '4.0.2'
+            targetSdkVersion 33
+            versionCode 54
+            versionName '5.0.0'
             resValue "string", "app_name", "Sentinel"
-            resValue "string", "version_name", "4.0.2"
+            resValue "string", "version_name", "5.0.0"
         }
         staging {
             applicationId 'com.samourai.sentinel.staging'
-            targetSdkVersion 30
-            versionCode 53
-            versionName '3.6'
+            targetSdkVersion 33
+            versionCode 54
+            versionName '5.0.0'
             resValue "string", "app_name", "Sentinel staging"
-            resValue "string", "version_name", "4.0.2"
+            resValue "string", "version_name", "5.0.0"
         }
     }
     compileOptions {
@@ -75,6 +60,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    namespace 'com.samourai.sentinel'
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
 }
 
 dependencies {
@@ -82,7 +72,7 @@ dependencies {
     def lifecycle_version = "2.2.0"
     def coroutines_version = '1.5.2'
     def koin_version = '2.1.6'
-    def topl_android_version = "2.1.0"
+    def topl_android_version = "2.1.2"
     def room_version = "2.4.2"
     def paging_version = "2.1.2"
 
@@ -90,7 +80,7 @@ dependencies {
         exclude group: 'com.google.guava', module: 'listenablefuture'
     }
 
-    implementation ('io.samourai.code.wallet:extlibj:0.0.45') {
+    implementation ('io.samourai.code.wallet:extlibj:0.0.46') {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
         exclude group: 'net.jcip', module: 'jcip-annotations'
@@ -117,13 +107,14 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
 
-    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
     implementation 'com.squareup.picasso:picasso:2.8'
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
     // AndroidX libs
     implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.activity:activity-compose:1.5.0'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.preference:preference-ktx:1.1.1'
@@ -156,8 +147,8 @@ dependencies {
 
     implementation "io.matthewnelson.topl-android:topl-core-base:$topl_android_version"
     implementation "io.matthewnelson.topl-android:topl-service:$topl_android_version"
-    implementation 'io.samourai.code.wallet:android-tor-binary:0.4.5.4'
-    implementation 'io.samourai.code.wallet:hummingbird-android:0.7'
+    implementation 'io.samourai.code.wallet:android-tor-binary:0.4.7.12'
+    implementation 'io.samourai.code.wallet:hummingbird-android:0.9'
     implementation ('com.sparrowwallet:hummingbird:1.6.6')
     implementation "com.mikepenz:itemanimators:1.1.0"
 }
