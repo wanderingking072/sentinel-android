@@ -77,6 +77,13 @@ class HomeActivity : SentinelActivity() {
             prefsUtil.enableTor = true
         }
 
+        if (
+            !AndroidUtil.isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS, applicationContext)
+            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            && prefsUtil.firstRun == true
+        )
+            this.askNotificationPermission()
+
         setUp()
 
         setUpCollectionList()
@@ -162,10 +169,6 @@ class HomeActivity : SentinelActivity() {
         }
 
         checkClipBoard()
-
-        if (!AndroidUtil.isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS, applicationContext)
-            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            this.askNotificationPermission()
     }
 
 
