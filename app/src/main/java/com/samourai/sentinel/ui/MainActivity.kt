@@ -44,13 +44,7 @@ class MainActivity : AppCompatActivity() {
             lockScreenDialog.setOnPinEntered {
                 if (AccessFactory.getInstance(this).validateHash(it, pinHash)) {
                     accessFactory.pin = it
-                    //this will re-read config files and update instance
-                    runBlocking {
-                        delay(100)
-                        dojoUtil.read()
-                        navigate()
-                    }
-
+                    navigate()
                 } else {
                     lockScreenDialog.showError()
                 }
