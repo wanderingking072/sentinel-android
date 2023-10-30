@@ -198,9 +198,6 @@ class SendFragment : Fragment() {
                     R.id.menu_save_as_psbt -> {
                         sharePSBTFile()
                     }
-                    R.id.menu_share_as_qr -> {
-
-                    }
                 }
                 true
             }
