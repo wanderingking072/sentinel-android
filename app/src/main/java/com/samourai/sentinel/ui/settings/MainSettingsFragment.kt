@@ -309,7 +309,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        val options = arrayListOf("Export and copy to clipboard", "Export to file")
+        val options = arrayListOf("Copy to clipboard", "Save to file")
         MaterialAlertDialogBuilder(requireContext())
             .setItems(options.toTypedArray()) { _, index ->
                 makeExportPayload(index==0)

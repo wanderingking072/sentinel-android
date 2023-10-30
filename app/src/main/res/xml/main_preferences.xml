@@ -26,12 +26,6 @@
             android:key="haptic"
             android:defaultValue="false" />
 
-        <CheckBoxPreference
-            app:key="fiatDisabled"
-            app:summaryOff="Fiat values showing"
-            app:summaryOn="Fiat values not showing"
-            app:title="Hide fiat values" />
-
 
 
     </PreferenceCategory>
@@ -40,36 +34,26 @@
         app:allowDividerAbove="true"
         app:allowDividerBelow="true"
         app:title="Exchange Settings">
+
+        <!-- Comment out until more exchanges are available for selection
         <ListPreference
             app:key="exchangeSelection"
             app:title="Exchange"
             app:useSimpleSummaryProvider="true" />
+         -->
 
         <ListPreference
             app:key="selectedCurrency"
             app:title="Currency"
             app:useSimpleSummaryProvider="true" />
 
-    </PreferenceCategory>
-
-
-    <PreferenceCategory
-        app:allowDividerAbove="true"
-        app:allowDividerBelow="true"
-        app:title="Backup options">
-        <Preference
-            app:icon="@drawable/ic_file_export"
-            app:key="export"
-            app:title="Export Sentinel Backup" />
-
-        <Preference
-            app:icon="@drawable/ic_file_import"
-            app:key="import"
-            app:title="Import Sentinel Backup" />
-
+        <CheckBoxPreference
+            app:key="fiatDisabled"
+            app:summaryOff="Fiat values showing"
+            app:summaryOn="Fiat values not showing"
+            app:title="Hide fiat values" />
 
     </PreferenceCategory>
-
 
     <PreferenceCategory
         app:allowDividerAbove="true"
@@ -84,6 +68,24 @@
             app:title="Disable Screenshots" />
 
     </PreferenceCategory>
+
+    <PreferenceCategory
+        app:allowDividerAbove="true"
+        app:allowDividerBelow="true"
+        app:title="Backup Options">
+        <Preference
+            app:icon="@drawable/ic_file_export"
+            app:key="export"
+            app:title="Export Sentinel Backup" />
+
+        <Preference
+            app:icon="@drawable/ic_file_import"
+            app:key="import"
+            app:title="Import Sentinel Backup" />
+
+
+    </PreferenceCategory>
+
     <PreferenceCategory
         app:allowDividerAbove="true"
         app:allowDividerBelow="true"
