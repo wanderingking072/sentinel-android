@@ -21,6 +21,7 @@ import com.samourai.sentinel.data.db.dao.TxDao
 import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.home.HomeActivity
@@ -32,7 +33,6 @@ import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.*
 import com.samourai.wallet.crypto.AESUtil
 import com.samourai.wallet.util.CharSequenceX
-import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.*
 import org.koin.java.KoinJavaComponent.inject
 import java.io.*
@@ -196,7 +196,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                     if (confirmed) {
                         settingsScope.launch {
                             try {
-                                TorServiceController.stopTor()
+                                SentinelTorManager.stop()
                                 withContext(Dispatchers.IO) {
                                     utxoDao.delete()
                                     txDao.delete()
@@ -204,7 +204,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                                     dojoUtility.clearDojo()
                                     prefsUtil.clearAll()
                                     UtxoMetaUtil.clearAll()
-                                    TorServiceController.stopTor()
+                                    SentinelTorManager.stop()
                                 }
                                 startActivity(Intent(activity, HomeActivity::class.java).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)

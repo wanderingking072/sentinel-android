@@ -48,7 +48,6 @@ import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
 import com.sparrowwallet.hummingbird.UR
 import com.sparrowwallet.hummingbird.registry.RegistryType
-import kotlinx.android.synthetic.main.fragment_compose_tx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

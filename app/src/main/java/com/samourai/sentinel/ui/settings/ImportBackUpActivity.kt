@@ -15,6 +15,7 @@ import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ActivityImportBackUpBinding
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
@@ -22,7 +23,6 @@ import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.util.ExportImportUtil
 import com.samourai.sentinel.util.apiScope
-import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -145,7 +145,7 @@ class ImportBackUpActivity : SentinelActivity() {
 
                             }
                             else {
-                                TorServiceController.startTor()
+                                SentinelTorManager.start()
                                 prefsUtil.enableTor = true
                                 payload.third?.let { ExportImportUtil().importDojo(it) }
                                 prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")

@@ -5,6 +5,8 @@ package com.samourai.sentinel.api
 import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.api.okHttp.await
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.apiScope
@@ -223,7 +225,7 @@ open class ApiService {
             }
             prefsUtil.apiEndPointTor
         } else {
-            if (SentinelState.isTorStarted()) {
+            if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 return prefsUtil.apiEndPointTor
             }
             if (prefsUtil.apiEndPoint == null) {
@@ -287,13 +289,13 @@ open class ApiService {
                 if (!excludeAuthenticator)
                     builder.authenticator(TokenAuthenticator(apiService))
             }
-            if (SentinelState.isTorStarted()) {
+            if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 builder.callTimeout(90, TimeUnit.SECONDS)
                 builder.readTimeout(90, TimeUnit.SECONDS)
                 builder.readTimeout(90, TimeUnit.SECONDS)
                 builder.connectTimeout(120, TimeUnit.SECONDS)
                 getHostNameVerifier(builder)
-                builder.proxy(SentinelState.torProxy)
+                builder.proxy(SentinelTorManager.getProxy())
             }
 
             /**

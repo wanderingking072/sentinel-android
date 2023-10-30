@@ -8,6 +8,8 @@ import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.Preferences
 import com.samourai.sentinel.ui.utils.PrefsUtil
@@ -28,13 +30,6 @@ import kotlin.reflect.KProperty
  */
 class SentinelState {
 
-
-    enum class TorState {
-        WAITING,
-        ON,
-        OFF
-    }
-
     companion object {
 
         private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
@@ -49,7 +44,6 @@ class SentinelState {
 
         var blockHeight: LatestBlock? = null
         private var isOffline = false
-        private var torStateLiveData: MutableLiveData<TorState> = MutableLiveData(TorState.OFF)
 
         private var countDownTimer: CountDownTimer? = null
         var torProxy: Proxy? = null
@@ -59,21 +53,6 @@ class SentinelState {
 
         val bDust: BigInteger = BigInteger.valueOf(Coin.parseCoin("0.00000546").longValue())
 
-        var torState: TorState = TorState.OFF
-            set(value) {
-                field = value
-                torStateLiveData.postValue(value)
-            }
-
-
-        fun isTorStarted(): Boolean {
-            return torState == TorState.ON
-        }
-
-
-        fun isConnected(): Boolean {
-            return true
-        }
 
         fun getNetworkParam(): NetworkParameters? {
             return this.networkParams
@@ -81,10 +60,6 @@ class SentinelState {
 
         fun isTestNet(): Boolean {
             return getNetworkParam() is TestNet3Params
-        }
-
-        public fun torStateLiveData(): LiveData<TorState> {
-            return torStateLiveData
         }
 
         init {
@@ -104,7 +79,7 @@ class SentinelState {
                 // This is called after every 3.5 min interval.
                 override fun onTick(millisUntilFinished: Long) {
 
-                    if (isTorRequired() && isTorStarted()) {
+                    if (isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.ON) {
                         refreshCollection()
                     } else {
                         if (!isTorRequired()) {
@@ -153,10 +128,6 @@ class SentinelState {
 
         fun isTorRequired(): Boolean {
             return dojoUtility.isDojoEnabled() || prefsUtil.enableTor!!
-        }
-
-        fun isTorRequiredAndStarted(): Boolean {
-            return isTorRequired() && isTorStarted()
         }
 
         fun isDojoEnabled(): Boolean {
