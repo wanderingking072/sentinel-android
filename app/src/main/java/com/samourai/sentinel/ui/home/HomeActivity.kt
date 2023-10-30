@@ -414,10 +414,10 @@ class HomeActivity : SentinelActivity() {
         statusCircle.visibility = View.VISIBLE
         SentinelState.torStateLiveData().observe(this, Observer {
             if (it == SentinelState.TorState.ON) {
-                shape?.setTint(ContextCompat.getColor(applicationContext, R.color.green_ui_2))
+                shape?.setTint(0)
             }
             if (it == SentinelState.TorState.OFF) {
-                shape?.setTint(ContextCompat.getColor(applicationContext, R.color.red))
+                shape?.setTint(0)
             }
             if (it == SentinelState.TorState.WAITING) {
                 shape?.setTint(ContextCompat.getColor(applicationContext, R.color.warning_yellow))
