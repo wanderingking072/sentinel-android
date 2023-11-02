@@ -83,7 +83,11 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
             if (tx.result > 0) {
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_baseline_incoming_arrow));
                 holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.md_green_A400))
-            } else {
+            } else if (tx.result == 0L) {
+                holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_repeat_24dp));
+                holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.md_green_A400))
+            }
+            else {
                 holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.gray_400))
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_baseline_outgoing_arrow));
             }
