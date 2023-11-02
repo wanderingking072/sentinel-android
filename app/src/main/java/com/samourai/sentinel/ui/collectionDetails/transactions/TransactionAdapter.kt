@@ -1,6 +1,7 @@
 package com.samourai.sentinel.ui.collectionDetails.transactions
 
 import android.content.Context
+import android.graphics.Color
 import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -82,13 +84,17 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
         if (tx.result != null) {
             if (tx.result > 0) {
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_baseline_incoming_arrow));
+                holder.txAmount.typeface = ResourcesCompat.getFont(appContext, R.font.roboto_mono_regular)
                 holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.md_green_A400))
             } else if (tx.result == 0L) {
+                holder.txAmount.text = "Whirlpool remix"
+                holder.txAmount.typeface = ResourcesCompat.getFont(appContext, R.font.roboto_regular)
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_repeat_24dp));
-                holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.md_green_A400))
+                holder.txAmount.setTextColor(Color.parseColor("#94c6ff"))
             }
             else {
                 holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.gray_400))
+                holder.txAmount.typeface = ResourcesCompat.getFont(appContext, R.font.roboto_mono_regular)
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_baseline_outgoing_arrow));
             }
         }
