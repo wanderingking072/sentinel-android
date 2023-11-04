@@ -88,9 +88,9 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
                 holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.md_green_A400))
             } else if (tx.result == 0L) {
                 holder.txAmount.text = "Whirlpool remix"
-                holder.txAmount.typeface = ResourcesCompat.getFont(appContext, R.font.roboto_regular)
+                holder.txAmount.typeface = ResourcesCompat.getFont(appContext, R.font.roboto_medium)
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_repeat_24dp));
-                holder.txAmount.setTextColor(Color.parseColor("#94c6ff"))
+                holder.txAmount.setTextColor(Color.parseColor("#69dee3"))
             }
             else {
                 holder.txAmount.setTextColor(ContextCompat.getColor(appContext, R.color.gray_400))
