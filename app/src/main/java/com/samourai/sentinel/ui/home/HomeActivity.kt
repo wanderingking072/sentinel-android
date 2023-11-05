@@ -169,11 +169,6 @@ class HomeActivity : SentinelActivity() {
         checkClipBoard()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        SentinelTorManager.stop()
-    }
-
     private fun fetch(model: HomeViewModel) {
         if (!SentinelState.isRecentlySynced()) {
             if (SentinelState.isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.ON) {
