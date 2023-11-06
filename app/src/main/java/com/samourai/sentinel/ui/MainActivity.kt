@@ -44,7 +44,12 @@ class MainActivity : AppCompatActivity() {
             lockScreenDialog.setOnPinEntered {
                 if (AccessFactory.getInstance(this).validateHash(it, pinHash)) {
                     accessFactory.pin = it
-                    navigate()
+                    runBlocking {
+                        delay(100)
+                        dojoUtil.read()
+                        navigate()
+                    }
+
                 } else {
                     lockScreenDialog.showError()
                 }

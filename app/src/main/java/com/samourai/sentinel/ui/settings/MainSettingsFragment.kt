@@ -21,7 +21,9 @@ import com.samourai.sentinel.data.db.dao.TxDao
 import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
+import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.ui.SentinelActivity
+import com.samourai.sentinel.ui.dojo.DojoPairing
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.PrefsUtil
@@ -34,6 +36,7 @@ import com.samourai.wallet.crypto.AESUtil
 import com.samourai.wallet.util.CharSequenceX
 import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.*
+import org.koin.java.KoinJavaComponent
 import org.koin.java.KoinJavaComponent.inject
 import java.io.*
 import java.security.MessageDigest
@@ -51,6 +54,8 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
     private val dojoUtility: DojoUtility by inject(DojoUtility::class.java);
     private val settingsScope = CoroutineScope(context = Dispatchers.Main)
     private var exportedBackUp: String? = null
+    private val dojoUtil: DojoUtility by KoinJavaComponent.inject(DojoUtility::class.java);
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.main_preferences, rootKey)
     }
@@ -264,6 +269,9 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                 prefsUtil.pinHash = hash.toString()
                 accessFactory.setIsLoggedIn(true)
                 accessFactory.pin = pin
+                val pairing = fromJSON<DojoPairing>(dojoUtil.exportDojoPayload().toString())
+                    ?: throw  Exception("Invalid payload")
+                dojoUtil.writePayload(pairing)
                 collectionRepository.sync()
             }
             withContext(Dispatchers.Main) {
