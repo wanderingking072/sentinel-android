@@ -77,6 +77,13 @@ class HomeActivity : SentinelActivity() {
             prefsUtil.enableTor = true
         }
 
+        if (
+            !AndroidUtil.isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS, applicationContext)
+            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            && prefsUtil.firstRun == true
+        )
+            this.askNotificationPermission()
+
         setUp()
 
         setUpCollectionList()
@@ -162,10 +169,6 @@ class HomeActivity : SentinelActivity() {
         }
 
         checkClipBoard()
-
-        if (!AndroidUtil.isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS, applicationContext)
-            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            this.askNotificationPermission()
     }
 
 
@@ -411,10 +414,10 @@ class HomeActivity : SentinelActivity() {
         statusCircle.visibility = View.VISIBLE
         SentinelState.torStateLiveData().observe(this, Observer {
             if (it == SentinelState.TorState.ON) {
-                shape?.setTint(ContextCompat.getColor(applicationContext, R.color.green_ui_2))
+                shape?.setTint(0)
             }
             if (it == SentinelState.TorState.OFF) {
-                shape?.setTint(ContextCompat.getColor(applicationContext, R.color.red))
+                shape?.setTint(0)
             }
             if (it == SentinelState.TorState.WAITING) {
                 shape?.setTint(ContextCompat.getColor(applicationContext, R.color.warning_yellow))

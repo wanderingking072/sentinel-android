@@ -69,7 +69,7 @@
         android:textColor="@color/white"
         app:backgroundTint="@color/grey_accent"
         app:cornerRadius="6dp"
-        app:icon="@drawable/ic_file_import"
+        app:icon="@drawable/import_icon"
         app:iconTint="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/scanHex"
