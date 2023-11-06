@@ -54,7 +54,6 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
     private val dojoUtility: DojoUtility by inject(DojoUtility::class.java);
     private val settingsScope = CoroutineScope(context = Dispatchers.Main)
     private var exportedBackUp: String? = null
-    private val dojoUtil: DojoUtility by KoinJavaComponent.inject(DojoUtility::class.java);
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.main_preferences, rootKey)
@@ -269,9 +268,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                 prefsUtil.pinHash = hash.toString()
                 accessFactory.setIsLoggedIn(true)
                 accessFactory.pin = pin
-                val pairing = fromJSON<DojoPairing>(dojoUtil.exportDojoPayload().toString())
-                    ?: throw  Exception("Invalid payload")
-                dojoUtil.writePayload(pairing)
+                dojoUtility.store()
                 collectionRepository.sync()
             }
             withContext(Dispatchers.Main) {
