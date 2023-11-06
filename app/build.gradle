@@ -11,7 +11,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 33
         versionCode 54
-        versionName '5.0.0'
+        versionName '5.0.1'
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,17 +36,17 @@ android {
             applicationId 'com.samourai.sentinel'
             targetSdkVersion 33
             versionCode 54
-            versionName '5.0.0'
+            versionName '5.0.1'
             resValue "string", "app_name", "Sentinel"
-            resValue "string", "version_name", "5.0.0"
+            resValue "string", "version_name", "5.0.1"
         }
         staging {
             applicationId 'com.samourai.sentinel.staging'
             targetSdkVersion 33
             versionCode 54
-            versionName '5.0.0'
+            versionName '5.0.1'
             resValue "string", "app_name", "Sentinel staging"
-            resValue "string", "version_name", "5.0.0"
+            resValue "string", "version_name", "5.0.1"
         }
     }
     compileOptions {
