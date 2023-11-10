@@ -15,24 +15,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.webkit.*
-import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.SentinelState
-import com.samourai.sentinel.core.SentinelState.Companion.torState
-import com.samourai.sentinel.core.SentinelState.TorState.*
 import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.databinding.ActivityExplorerWebViewBinding
-import com.samourai.sentinel.tor.TorEventsReceiver
-import com.samourai.sentinel.tor.prefs.SentinelTorSettings
-import com.samourai.sentinel.ui.home.HomeActivity
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
-import com.samourai.sentinel.ui.views.confirm
-import io.matthewnelson.topl_service.TorServiceController
-import io.matthewnelson.topl_service.lifecycle.BackgroundManager
-import io.matthewnelson.topl_service.notification.ServiceNotification
 import timber.log.Timber
-import java.net.InetSocketAddress
-import java.net.Proxy
 
 
 class ExplorerWebViewActivity : AppCompatActivity() {
@@ -68,7 +58,7 @@ class ExplorerWebViewActivity : AppCompatActivity() {
         }
         //Check webkit supports proxy
         if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
-            if (SentinelState.isTorStarted()) {
+            if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 setProxy()
             } else {
                 load()
@@ -83,18 +73,16 @@ class ExplorerWebViewActivity : AppCompatActivity() {
 
     private fun setProxy() {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
-
-            if (SentinelState.torProxy != null) {
-                val proxyConfig = ProxyConfig.Builder()
-                    .addProxyRule("SOCKS:/${SentinelState.torProxy?.address().toString()}")
-                    .build()
-
-                Timber.i("Proxy: SOCKS:/${SentinelState.torProxy?.address().toString()}")
-                ProxyController.getInstance().setProxyOverride(proxyConfig, {}, {})
+            val proxyConfig = ProxyConfig.Builder()
+                .addProxyRule("SOCKS:/${SentinelTorManager.getProxy()?.address().toString()}")
+                .build()
+            ProxyController.getInstance().setProxyOverride(proxyConfig, {
                 load()
-            }
+            }, {
+            })
         }
     }
+
 
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -125,19 +113,19 @@ class ExplorerWebViewActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.web_explorer, menu)
-        SentinelState.torStateLiveData().observe(this) {
+        SentinelTorManager.getTorStateLiveData().observe(this) {
             menu.findItem(R.id.menu_web_tor).icon =
                 ContextCompat.getDrawable(applicationContext, R.drawable.ic_tor_on)
             val icon = menu.findItem(R.id.menu_web_tor).icon
-            when (it) {
-                WAITING -> {
+            when (it.state) {
+                EnumTorState.STARTING -> {
                     icon?.setTint(ContextCompat.getColor(applicationContext, R.color.md_amber_300))
                 }
-                ON -> {
+                EnumTorState.ON -> {
                     icon?.setTint(ContextCompat.getColor(applicationContext, R.color.md_green_600))
                     load()
                 }
-                OFF -> {
+                EnumTorState.OFF -> {
                     menu.findItem(R.id.menu_web_tor).icon =
                         ContextCompat.getDrawable(applicationContext, R.drawable.ic_tor_disabled)
                     menu.findItem(R.id.menu_web_tor).icon?.setTint(

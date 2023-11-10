@@ -34,12 +34,12 @@ import com.samourai.sentinel.core.hd.HD_Account
 import com.samourai.sentinel.core.segwit.P2SH_P2WPKH
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.databinding.AdvancedReceiveFragmentBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.wallet.segwit.SegwitAddress
 import com.samourai.wallet.util.XPUB
-import kotlinx.android.synthetic.main.advanced_receive_fragment.view.*
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.Coin
 import org.bitcoinj.core.NetworkParameters
@@ -55,6 +55,7 @@ import java.util.*
 
 
 class ReceiveFragment : Fragment() {
+    private lateinit var binding: AdvancedReceiveFragmentBinding
 
     private lateinit var collection: PubKeyCollection;
     private lateinit var toolbar: Toolbar
@@ -78,7 +79,7 @@ class ReceiveFragment : Fragment() {
             container: ViewGroup?,
             savedInstanceState: Bundle?
     ): View? {
-
+        binding = AdvancedReceiveFragmentBinding.inflate(inflater, container, false)
         val root = inflater.inflate(R.layout.fragment_receive, container, false)
 
         val df = DecimalFormat("#")
@@ -91,10 +92,10 @@ class ReceiveFragment : Fragment() {
         receiveAddressText = root.findViewById(R.id.receiveAddressText)
         pubKeyDropDown = root.findViewById(R.id.pubKeySelector)
         advancedButton = root.findViewById(R.id.advance_button)
-        advancedContainer = root.container_advance_options
+        advancedContainer = root.findViewById(R.id.container_advance_options)
         btcEditText = root.findViewById(R.id.amountBTC)
         satEditText = root.findViewById(R.id.amountSAT)
-        tvPath = root.path
+        tvPath = root.findViewById(R.id.path)
 
         qrFile = "${requireContext().cacheDir.path}${File.separator}qr.png";
 

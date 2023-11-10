@@ -27,6 +27,8 @@ import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
 import com.samourai.sentinel.databinding.ActivityCollectionEditBinding
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
 import com.samourai.sentinel.ui.fragments.QRBottomSheetDialog
@@ -104,7 +106,7 @@ class CollectionEditActivity : SentinelActivity() {
                 this.askCameraPermission()
             } else {
                 if (AppUtil.getInstance(applicationContext).isOfflineMode
-                    ||  SentinelState.torState ==SentinelState.TorState.WAITING)
+                    ||  SentinelTorManager.getTorState().state == EnumTorState.STARTING)
                     Toast.makeText(this, "No data connection. Please wait, then try again", Toast.LENGTH_LONG).show()
                 else
                     showPubKeyBottomSheet()

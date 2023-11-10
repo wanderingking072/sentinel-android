@@ -14,6 +14,8 @@ import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
 import com.samourai.sentinel.helpers.fromJSON
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.MonetaryUtil
@@ -52,8 +54,8 @@ class WebSocketHandler : WebSocketListener() {
 
     init {
         webSocketScope.launch(Dispatchers.Main) {
-            SentinelState.torStateLiveData().observeForever {
-                if (it == SentinelState.TorState.OFF || it == SentinelState.TorState.ON)
+            SentinelTorManager.getTorStateLiveData().observeForever {
+                if (it.state == EnumTorState.OFF || it.state == EnumTorState.ON)
                     closeSocket()
             }
         }
@@ -68,7 +70,7 @@ class WebSocketHandler : WebSocketListener() {
             return null
         }
         if (SentinelState.isTorRequired()) {
-            if (!SentinelState.isTorStarted()) {
+            if (SentinelTorManager.getTorState().state != EnumTorState.ON) {
                 return null
             }
         }

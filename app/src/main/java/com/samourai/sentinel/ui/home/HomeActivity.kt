@@ -22,6 +22,8 @@ import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.ActivityHomeBinding
 import com.samourai.sentinel.service.WebSocketHandler
 import com.samourai.sentinel.service.WebSocketService
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.broadcast.BroadcastTx
@@ -40,8 +42,6 @@ import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
-import io.matthewnelson.topl_service.TorServiceController
-import io.matthewnelson.topl_service_base.TorServicePrefs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -57,7 +57,6 @@ class HomeActivity : SentinelActivity() {
     private val webSocketHandler: WebSocketHandler by inject(WebSocketHandler::class.java)
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
     private var connectingDojo = false
-    private lateinit var torServicePrefs: TorServicePrefs
     private lateinit var binding: ActivityHomeBinding
     private val model: HomeViewModel by viewModels()
     private var balance = -1L
@@ -69,11 +68,10 @@ class HomeActivity : SentinelActivity() {
         setContentView(view)
         setSwipeBackEnable(false)
         setSupportActionBar(binding.toolbarHome)
-        torServicePrefs = TorServicePrefs(this)
 
         val model: HomeViewModel by viewModels()
-        if (SentinelState.isTorRequired() && SentinelState.torState == SentinelState.TorState.OFF) {
-            TorServiceController.startTor()
+        if (SentinelState.isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.OFF) {
+            SentinelTorManager.start()
             prefsUtil.enableTor = true
         }
 
@@ -112,7 +110,7 @@ class HomeActivity : SentinelActivity() {
                 this.askCameraPermission()
             } else {
                 if (AppUtil.getInstance(applicationContext).isOfflineMode
-                    ||  SentinelState.torState ==SentinelState.TorState.WAITING)
+                    ||  SentinelTorManager.getTorState().state == EnumTorState.STARTING)
                     Toast.makeText(this, "No data connection. Please wait, then try again", Toast.LENGTH_LONG).show()
                 else
                     showPubKeyBottomSheet()
@@ -123,7 +121,7 @@ class HomeActivity : SentinelActivity() {
             binding.swipeRefreshCollection.isRefreshing = it
         })
         model.getErrorMessage().observe(this) {
-            if (it != "null" &&  SentinelState.torState != SentinelState.TorState.WAITING)
+            if (it != "null" &&  SentinelTorManager.getTorState().state != EnumTorState.STARTING)
                 this@HomeActivity.showFloatingSnackBar(
                     binding.fab,
                     text = "No data connection available. Please enable data"
@@ -139,17 +137,17 @@ class HomeActivity : SentinelActivity() {
         binding.swipeRefreshCollection.setOnRefreshListener {
             binding.swipeRefreshCollection.isRefreshing = false
             if (SentinelState.isTorRequired()) {
-                if (SentinelState.torState == SentinelState.TorState.WAITING) {
+                if (SentinelTorManager.getTorState().state == EnumTorState.STARTING) {
                     this.showFloatingSnackBar(binding.fab, anchorView = binding.fab.id,
                             text = "Tor is bootstrapping! please wait and try again")
                 }
-                if (SentinelState.torState == SentinelState.TorState.OFF) {
+                if (SentinelTorManager.getTorState().state == EnumTorState.OFF) {
                     this.showFloatingSnackBar(binding.fab,
                             text="Please wait while Tor is turning on")
-                    TorServiceController.startTor()
+                    SentinelTorManager.start()
                     prefsUtil.enableTor = true
                 }
-                if (SentinelState.torState == SentinelState.TorState.ON) {
+                if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                     model.fetchBalance()
                 }
             } else {
@@ -160,8 +158,8 @@ class HomeActivity : SentinelActivity() {
         fetch(model)
 
         if (SentinelState.isTorRequired()) {
-            SentinelState.torStateLiveData().observe(this, {
-                if (it == SentinelState.TorState.ON)
+            SentinelTorManager.getTorStateLiveData().observe(this, {
+                if (it.state == EnumTorState.ON)
                     WebSocketService.start(applicationContext)
             })
         } else {
@@ -171,14 +169,13 @@ class HomeActivity : SentinelActivity() {
         checkClipBoard()
     }
 
-
     private fun fetch(model: HomeViewModel) {
         if (!SentinelState.isRecentlySynced()) {
-            if (SentinelState.isTorRequired() && SentinelState.isTorStarted()) {
+            if (SentinelState.isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 model.fetchBalance()
             } else {
-                SentinelState.torStateLiveData().observe(this, {
-                    if (it == SentinelState.TorState.ON) {
+                SentinelTorManager.getTorStateLiveData().observe(this, {
+                    if (it.state == EnumTorState.ON) {
                         GlobalScope.launch {
                             delay(250L)
                             withContext(Dispatchers.Main) {
@@ -243,7 +240,7 @@ class HomeActivity : SentinelActivity() {
                                 negativeText = "No",
                                 onConfirm = { confirmed ->
                                     if (confirmed) {
-                                        TorServiceController.startTor()
+                                        SentinelTorManager.start()
                                         prefsUtil.enableTor = true
                                     }
                                 }
@@ -393,7 +390,7 @@ class HomeActivity : SentinelActivity() {
                 .setNegativeButton(resources.getString(R.string.no)) { _, _ ->
                 }
                 .setPositiveButton(resources.getString(R.string.yes)) { _, _ ->
-                    TorServiceController.stopTor()
+                    SentinelTorManager.stop()
                     super.onBackPressed()
                 }
                 .show()
@@ -412,14 +409,15 @@ class HomeActivity : SentinelActivity() {
         shape?.setTint(ContextCompat.getColor(applicationContext, R.color.red))
         statusCircle.background = shape
         statusCircle.visibility = View.VISIBLE
-        SentinelState.torStateLiveData().observe(this, Observer {
-            if (it == SentinelState.TorState.ON) {
+<<<<<<< app/src/main/java/com/samourai/sentinel/ui/home/HomeActivity.kt
+        SentinelTorManager.getTorStateLiveData().observe(this, Observer {
+            if (it.state == EnumTorState.ON) {
                 shape?.setTint(0)
             }
-            if (it == SentinelState.TorState.OFF) {
+            if (it.state == EnumTorState.OFF) {
                 shape?.setTint(0)
             }
-            if (it == SentinelState.TorState.WAITING) {
+            if (it.state == EnumTorState.STARTING) {
                 shape?.setTint(ContextCompat.getColor(applicationContext, R.color.warning_yellow))
             }
             statusCircle.background = shape

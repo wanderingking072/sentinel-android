@@ -15,6 +15,8 @@ import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.repository.CollectionRepository
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.dojo.DojoUtility
@@ -23,7 +25,6 @@ import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.apiScope
-import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -65,11 +66,11 @@ class NetworkActivity : SentinelActivity() {
         dojoConnectionIcon = findViewById(R.id.network_dojo_status_icon)
         dojoConnectionStatus = findViewById(R.id.network_dojo_status)
         torRenewBtn?.setOnClickListener {
-            TorServiceController.newIdentity()
+            SentinelTorManager.newIdentity()
             this.showFloatingSnackBar(findViewById(R.id.toolbarCollectionDetails), text = "Tor identity has been renewed")
         }
-        SentinelState.torStateLiveData().observe(this, {
-            setTorConnectionState(it)
+        SentinelTorManager.getTorStateLiveData().observe(this, {
+            setTorConnectionState(it.state)
         })
         dojoButton?.setOnClickListener {
             if (dojoUtility.isDojoEnabled()) {
@@ -85,15 +86,15 @@ class NetworkActivity : SentinelActivity() {
             }
         }
         torButton!!.setOnClickListener {
-            if (SentinelState.isTorStarted()) {
+            if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 if (!dojoUtility.isDojoEnabled()) {
-                    TorServiceController.stopTor()
+                    SentinelTorManager.stop()
                     prefsUtil.enableTor = false
                 }
                 else
                     this.showFloatingSnackBar(torButton!!.rootView, text = "You wont be able to disable tor if dojo is enabled")
             } else {
-                TorServiceController.startTor()
+                SentinelTorManager.start()
                 prefsUtil.enableTor = true
             }
 
@@ -102,6 +103,7 @@ class NetworkActivity : SentinelActivity() {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             showDojoSetUpBottomSheet()
         } else {
@@ -130,7 +132,7 @@ class NetworkActivity : SentinelActivity() {
                                 negativeText = "No",
                                 onConfirm = { confirmed ->
                                     if (confirmed) {
-                                        TorServiceController.startTor()
+                                        SentinelTorManager.start()
                                         prefsUtil.enableTor = true
                                     }
                                     importAllXpubs()
@@ -170,18 +172,18 @@ class NetworkActivity : SentinelActivity() {
         }
     }
 
-    private fun setTorConnectionState(torState: SentinelState.TorState) {
+    private fun setTorConnectionState(torState: EnumTorState) {
         runOnUiThread {
             when (torState) {
 
-                SentinelState.TorState.ON -> {
+                EnumTorState.ON -> {
                     torButton!!.text = getString(R.string.disable)
                     torButton!!.isEnabled = true
                     torConnectionIcon!!.setColorFilter(activeColor)
                     torConnectionStatus!!.text = getString(R.string.Enabled)
                     torRenewBtn!!.visibility = View.VISIBLE
                 }
-                SentinelState.TorState.WAITING -> {
+                EnumTorState.STARTING -> {
                     torRenewBtn!!.visibility = View.INVISIBLE
                     torButton!!.text = getString(R.string.loading)
                     torButton!!.isEnabled = false
