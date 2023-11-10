@@ -8,9 +8,4 @@
         android:icon="@drawable/ic_file_export"
         android:title="Save as psbt file" />
 
-
-    <item android:id="@+id/menu_share_as_qr"
-        android:icon="@drawable/ic_baseline_qr_code_24"
-        android:title="Share as QR" />
-
 </menu>

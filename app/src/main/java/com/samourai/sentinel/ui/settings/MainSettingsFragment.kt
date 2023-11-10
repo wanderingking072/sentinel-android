@@ -22,7 +22,9 @@ import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.tor.SentinelTorManager
+import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.ui.SentinelActivity
+import com.samourai.sentinel.ui.dojo.DojoPairing
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.PrefsUtil
@@ -34,6 +36,7 @@ import com.samourai.sentinel.util.*
 import com.samourai.wallet.crypto.AESUtil
 import com.samourai.wallet.util.CharSequenceX
 import kotlinx.coroutines.*
+import org.koin.java.KoinJavaComponent
 import org.koin.java.KoinJavaComponent.inject
 import java.io.*
 import java.security.MessageDigest
@@ -51,6 +54,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
     private val dojoUtility: DojoUtility by inject(DojoUtility::class.java);
     private val settingsScope = CoroutineScope(context = Dispatchers.Main)
     private var exportedBackUp: String? = null
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.main_preferences, rootKey)
     }
@@ -264,6 +268,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                 prefsUtil.pinHash = hash.toString()
                 accessFactory.setIsLoggedIn(true)
                 accessFactory.pin = pin
+                dojoUtility.store()
                 collectionRepository.sync()
             }
             withContext(Dispatchers.Main) {
@@ -309,7 +314,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        val options = arrayListOf("Export and copy to clipboard", "Export to file")
+        val options = arrayListOf("Copy to clipboard", "Save to file")
         MaterialAlertDialogBuilder(requireContext())
             .setItems(options.toTypedArray()) { _, index ->
                 makeExportPayload(index==0)
