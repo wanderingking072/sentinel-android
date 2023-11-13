@@ -409,7 +409,6 @@ class HomeActivity : SentinelActivity() {
         shape?.setTint(ContextCompat.getColor(applicationContext, R.color.red))
         statusCircle.background = shape
         statusCircle.visibility = View.VISIBLE
-<<<<<<< app/src/main/java/com/samourai/sentinel/ui/home/HomeActivity.kt
         SentinelTorManager.getTorStateLiveData().observe(this, Observer {
             if (it.state == EnumTorState.ON) {
                 shape?.setTint(0)
