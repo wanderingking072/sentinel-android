@@ -9,17 +9,36 @@
 
     <com.google.android.material.appbar.AppBarLayout
         style="@style/ToolbarV3"
+        android:backgroundTint="#262626"
         android:layout_width="match_parent"
         android:layout_height="200dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbarHome"
+            android:backgroundTint="#262626"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:elevation="0dp"
             app:elevation="0dp"
             app:layout_scrollFlags="scroll">
 
+            <com.samourai.sentinel.widgets.CircleImageView
+                android:layout_width="34dp"
+                android:src="@mipmap/ic_launcher"
+                android:id="@+id/toolbarIcon"
+                android:background="?selectableItemBackground"
+                android:layout_height="34dp"/>
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sentinel"
+                android:textColor="#fff"
+                android:textSize="20sp"
+                android:layout_gravity="start"
+                android:paddingStart="16dp"
+                style="@style/MaterialAlertDialog.Material3"/>
 
         </com.google.android.material.appbar.MaterialToolbar>
 

@@ -1,6 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <declare-styleable name="CircleImageView">
+        <attr name="civ_border_width" format="dimension" />
+        <attr name="civ_border_color" format="color" />
+        <attr name="civ_border_overlay" format="boolean" />
+        <attr name="civ_fill_color" format="color" />
+        <attr name="civ_circle_background_color" format="color" />
+    </declare-styleable>
+
+    <attr name="mpm_primaryTextColor" format="color|reference" />
+
+    <attr name="mpm_secondaryTextColor" format="color|reference" />
+
+    <attr name="mpm_activeIconColor" format="color|reference" />
+
+    <attr name="mpm_separatorColor" format="color|reference" />
+
+    <attr name="mpm_paddingBottom" format="dimension" />
+
+    <attr name="mpm_paddingStart" format="dimension" />
+
+    <attr name="mpm_paddingEnd" format="dimension" />
+
+    <attr name="mpm_paddingTop" format="dimension" />
+
+    <attr name="materialPopupMenuStyle" format="reference" />
+
     <declare-styleable name="CodeScannerView">
         <attr format="color" name="maskColor"/>
         <attr format="color" name="frameColor"/>
@@ -82,4 +108,14 @@
 
     <attr name="SwipeBackLayoutStyle" format="reference"/>
 
+    <declare-styleable name="MaterialRecyclerViewPopupWindow">
+        <attr name="android:dropDownHorizontalOffset" />
+        <attr name="android:dropDownVerticalOffset" />
+        <attr name="android:backgroundDimEnabled" />
+        <attr name="android:backgroundDimAmount" />
+        <attr name="mpm_paddingBottom" />
+        <attr name="mpm_paddingStart" />
+        <attr name="mpm_paddingEnd" />
+        <attr name="mpm_paddingTop" />
+    </declare-styleable>
 </resources>

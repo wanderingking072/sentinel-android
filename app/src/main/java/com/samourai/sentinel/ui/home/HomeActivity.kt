@@ -3,6 +3,7 @@ package com.samourai.sentinel.ui.home
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
@@ -16,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.core.SentinelState
@@ -32,6 +34,7 @@ import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
 import com.samourai.sentinel.ui.settings.NetworkActivity
 import com.samourai.sentinel.ui.settings.SettingsActivity
+import com.samourai.sentinel.ui.tools.ToolsActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
@@ -41,7 +44,9 @@ import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.TimeOutUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
+import com.samourai.sentinel.widgets.popUpMenu.popupMenu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -68,6 +73,12 @@ class HomeActivity : SentinelActivity() {
         setContentView(view)
         setSwipeBackEnable(false)
         setSupportActionBar(binding.toolbarHome)
+
+        title = ""
+
+        binding.toolbarIcon.setOnClickListener {
+            showToolOptions(it)
+        }
 
         val model: HomeViewModel by viewModels()
         if (SentinelState.isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.OFF) {
@@ -169,6 +180,48 @@ class HomeActivity : SentinelActivity() {
         checkClipBoard()
     }
 
+    private fun showToolOptions(it: View) {
+        val toolWindowSize = applicationContext.resources.displayMetrics.density * 220;
+        val popupMenu = popupMenu {
+            fixedContentWidthInPx = toolWindowSize.toInt()
+            style = R.style.Theme_Samourai_Widget_MPM_Menu_Dark
+            section {
+                item {
+                    label = "Tools"
+                    icon = R.drawable.ic_tools
+                    iconSize = 18
+                    hasNestedItems
+                    callback = {
+                        val intent = Intent(this@HomeActivity, ToolsActivity::class.java)
+                        startActivity(intent)                    }
+                }
+
+            }
+            section {
+                item {
+                    label = getString(R.string.action_settings)
+                    icon = R.drawable.ic_cog
+                    iconSize = 18
+                    callback = {
+                        TimeOutUtil.getInstance().updatePin()
+                        val intent = Intent(this@HomeActivity, SettingsActivity::class.java)
+                        startActivity(intent)
+                    }
+                }
+                item {
+                    label = "Exit Wallet"
+                    iconSize = 18
+                    iconColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)
+                    labelColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)
+                    icon = R.drawable.ic_baseline_power_settings_new_24
+                    callback = {
+                        this@HomeActivity.onBackPressed()
+                    }
+                }
+            }
+        }
+        popupMenu.show(this@HomeActivity, it)
+    }
     private fun fetch(model: HomeViewModel) {
         if (!SentinelState.isRecentlySynced()) {
             if (SentinelState.isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.ON) {
@@ -190,9 +243,6 @@ class HomeActivity : SentinelActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (SentinelState.isTestNet() && !title.contains("TestNet")) {
-            title = "$title | TestNet"
-        }
         if (balance != -1L)
             updateBalance(balance)
 
@@ -208,9 +258,6 @@ class HomeActivity : SentinelActivity() {
                         prefsUtil.firstRun = false
                         if (!confirm) {
                             prefsUtil.testnet = true
-                        }
-                        if (!SentinelState.isTestNet()) {
-                            title = "$title".removeSuffix("| TestNet")
                         }
                         showServerConfig()
                     })
