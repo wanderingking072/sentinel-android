@@ -148,6 +148,6 @@
     Not Required
     Default: false
     -->
-    <bool name="tor_service_notification_action_enable_stop">true</bool>
+    <bool name="tor_service_notification_action_enable_stop">false</bool>
 
 </resources>
