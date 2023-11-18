@@ -171,6 +171,7 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
                     val pubKey = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())
                     newPubKeyListener?.let { it(pubKey) }
                     this.dismiss()
+                    newPubKeyListener = null
                     return
                 } else {
                     pubKeyModel = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())
@@ -256,7 +257,7 @@ class ScanPubKeyFragment : Fragment() {
         val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         mCodeScanner.setQRDecodeListener {
             GlobalScope.launch(Dispatchers.Main) {
-                mCodeScanner.stopScanner();
+                mCodeScanner.stopScanner()
                 onScan(it)
             }
         }
