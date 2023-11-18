@@ -1,6 +1,5 @@
-package com.samourai.sentinel.ui.settings
+package com.samourai.sentinel.ui.tools
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
 import androidx.preference.Preference
@@ -10,69 +9,39 @@ import androidx.transition.Slide
 import androidx.transition.TransitionSet
 import com.samourai.sentinel.R
 import com.samourai.sentinel.databinding.SettingsActivityBinding
+import com.samourai.sentinel.databinding.ToolsActivityLayoutBinding
 import com.samourai.sentinel.ui.SentinelActivity
-import com.samourai.sentinel.ui.home.HomeActivity
+import com.samourai.sentinel.ui.settings.MainSettingsFragment
 
+class ToolsActivity : SentinelActivity(), PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
-class SettingsActivity : SentinelActivity(),
-        PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
-
-
-    private var requireRestart: Boolean = false
-    private lateinit var binding: SettingsActivityBinding
-
-
+    private lateinit var binding: ToolsActivityLayoutBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = SettingsActivityBinding.inflate(layoutInflater)
+        binding = ToolsActivityLayoutBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-        setSupportActionBar(binding.toolbarSettings)
+        setSupportActionBar(binding.toolbarToolsScreen)
         if (savedInstanceState == null) {
-            showFragment(MainSettingsFragment())
+            showFragment(ToolsFragment())
         }
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     private fun showFragment(fragment: PreferenceFragmentCompat) {
         supportFragmentManager
-                .beginTransaction()
-                .replace(R.id.settings, fragment)
-                .commit()
+            .beginTransaction()
+            .replace(R.id.tools, fragment)
+            .commit()
     }
-
-    override fun onBackPressed() {
-        if (requireRestart) {
-            startActivity(Intent(this, HomeActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            })
-            overridePendingTransition(R.anim.fade_in, R.anim.bottom_sheet_slide_out)
-            finish()
-        } else
-            super.onBackPressed()
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        if (supportFragmentManager.popBackStackImmediate()) {
-            return true
-        }
-        return super.onSupportNavigateUp()
-    }
-
-
-    fun setRequireRestart(enable: Boolean) {
-        requireRestart = enable
-    }
-
     override fun onPreferenceStartFragment(
-            caller: PreferenceFragmentCompat,
-            pref: Preference
+        caller: PreferenceFragmentCompat,
+        pref: Preference
     ): Boolean {
         val args = pref.extras
         val fragment = supportFragmentManager.fragmentFactory.instantiate(
-                classLoader,
-                pref.fragment!!
+            classLoader,
+            pref.fragment!!
         ).apply {
             arguments = args
             setTargetFragment(caller, 0)
@@ -87,8 +56,8 @@ class SettingsActivity : SentinelActivity(),
         fragment.enterTransition = transitionEnter
         fragment.exitTransition = transitionExit
         supportFragmentManager.beginTransaction()
-                .replace(R.id.settings, fragment)
-                .commit()
+            .replace(R.id.settings, fragment)
+            .commit()
         title = pref.title
         return true
     }

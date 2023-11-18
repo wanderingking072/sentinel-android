@@ -193,7 +193,9 @@ class HomeActivity : SentinelActivity() {
                     hasNestedItems
                     callback = {
                         val intent = Intent(this@HomeActivity, ToolsActivity::class.java)
-                        startActivity(intent)                    }
+                        startActivity(intent)
+                        println("Yehe!")
+                    }
                 }
 
             }

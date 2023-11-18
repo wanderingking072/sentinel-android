@@ -9,8 +9,7 @@ import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.samourai.sentinel.R
-import com.samourai.sentinel.data.PubKeyCollection
-import com.samourai.sentinel.ui.adapters.CollectionsAdapter.CollectionHolder
+import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
 import org.bitcoinj.core.Coin
@@ -23,19 +22,19 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 
-class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
+class PubkeysAdapter : RecyclerView.Adapter<PubkeysAdapter.CollectionHolder>() {
 
-    private var onClickListener: (PubKeyCollection) -> Unit = {};
+    private var onClickListener: (PubKeyModel) -> Unit = {};
     private val monetaryUtil: MonetaryUtil by KoinJavaComponent.inject(MonetaryUtil::class.java)
     private var layoutType: LayoutType = LayoutType.ROW;
 
-    private val diffCallBack = object : DiffUtil.ItemCallback<PubKeyCollection>() {
+    private val diffCallBack = object : DiffUtil.ItemCallback<PubKeyModel>() {
 
-        override fun areItemsTheSame(oldItem: PubKeyCollection, newItem: PubKeyCollection): Boolean {
-            return oldItem.id == newItem.id
+        override fun areItemsTheSame(oldItem: PubKeyModel, newItem: PubKeyModel): Boolean {
+            return oldItem.pubKey == newItem.pubKey
         }
 
-        override fun areContentsTheSame(oldItem: PubKeyCollection, newItem: PubKeyCollection): Boolean {
+        override fun areContentsTheSame(oldItem: PubKeyModel, newItem: PubKeyModel): Boolean {
             return oldItem == newItem
         }
 
@@ -46,7 +45,7 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
 //    }
 
 
-    private val mDiffer: AsyncListDiffer<PubKeyCollection> = AsyncListDiffer(this, diffCallBack)
+    private val mDiffer: AsyncListDiffer<PubKeyModel> = AsyncListDiffer(this, diffCallBack)
 
     class CollectionHolder(var view: View) : RecyclerView.ViewHolder(view) {
         var title: TextView = view.findViewById(R.id.rvItemCollectionTitle)
@@ -54,7 +53,7 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
         var icon: ImageView = view.findViewById(R.id.rvItemCollectionIcon)
     }
 
-    fun setOnClickListener(callback: (PubKeyCollection) -> Unit) {
+    fun setOnClickListener(callback: (PubKeyModel) -> Unit) {
         this.onClickListener = callback
     }
 
@@ -65,12 +64,12 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CollectionHolder {
         return if (layoutType == LayoutType.ROW) {
             val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.collection_item_row_layout, parent, false);
+                    .inflate(R.layout.collection_item_row_layout, parent, false);
             CollectionHolder(view)
 
         } else {
             val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.collection_item_stacked_layout, parent, false);
+                    .inflate(R.layout.collection_item_stacked_layout, parent, false);
             CollectionHolder(view)
         }
     }
@@ -79,7 +78,7 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
         return mDiffer.currentList.size
     }
 
-    fun getCollectionList(): MutableList<PubKeyCollection> {
+    fun getPubkeyList(): MutableList<PubKeyModel> {
         return mDiffer.currentList
     }
 //
@@ -94,7 +93,7 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
         df.maximumFractionDigits = 8
 
         val collection = mDiffer.currentList[position];
-        holder.title.text = collection.collectionLabel;
+        holder.title.text = collection.label
         holder.balance.text = "${df.format(setBalance(position).div(1e8))} BTC"
         holder.view.setOnClickListener {
             onClickListener(collection)
@@ -108,19 +107,16 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
         df.maximumFractionDigits = 8
 
         var blockedUtxosBalanceSum = 0L
-        mDiffer.currentList[position].pubs.forEach { pubKeyModel ->
-            val blockedUtxos1 =
-                UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
-            blockedUtxos1.forEach { blockedUtxo ->
-                blockedUtxosBalanceSum += blockedUtxo.amount
-            }
+        val blockedUtxos1 = UtxoMetaUtil.getBlockedAssociatedWithPubKey(mDiffer.currentList.get(position).pubKey)
+        blockedUtxos1.forEach { blockedUtxo ->
+            blockedUtxosBalanceSum += blockedUtxo.amount
         }
         return mDiffer.currentList[position].balance - blockedUtxosBalanceSum
     }
 
-    fun update(newItems: ArrayList<PubKeyCollection>) {
+    fun update(newItems: ArrayList<PubKeyModel>) {
         try {
-            val list: ArrayList<PubKeyCollection> = arrayListOf<PubKeyCollection>()
+            val list: ArrayList<PubKeyModel> = arrayListOf<PubKeyModel>()
             // Diff util will perform a shallow compare with updated list,
             // since we're using same list with updated items. we need to make a new copy
             // this will make shallow compare false

@@ -1,4 +1,4 @@
-package com.samourai.sentinel.ui.fragments
+package com.samourai.sentinel.ui.tools
 
 import android.Manifest
 import android.content.ClipboardManager
@@ -25,10 +25,12 @@ import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ContentChooseAddressTypeBinding
 import com.samourai.sentinel.databinding.ContentCollectionSelectBinding
+import com.samourai.sentinel.databinding.ContentPubkeySelectBinding
+import com.samourai.sentinel.databinding.ContentSweepPreviewBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
+import com.samourai.sentinel.ui.adapters.PubkeysAdapter
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
-import com.samourai.sentinel.ui.tools.SweepPrivKeyFragment
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
@@ -50,12 +52,13 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
 
-class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
+class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
 
     private val scanPubKeyFragment = ScanPubKeyFragment()
     private var newPubKeyListener: ((pubKey: PubKeyModel?) -> Unit)? = null
-    private val selectAddressTypeFragment = SelectAddressTypeFragment()
     private val chooseCollectionFragment = ChooseCollectionFragment()
+    private val choosePubkeyFragment = ChoosePubkeyFragment()
+    private val previewSweep = PreviewFragment()
     private var pubKeyString = ""
     private var pubKeyModel: PubKeyModel? = null
     private var selectedPubKeyCollection: PubKeyCollection? = null
@@ -88,19 +91,14 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
             pubKeyString = it
         }
 
-        selectAddressTypeFragment.setOnSelectListener {
-            validateXPUB(it)
-        }
 
         chooseCollectionFragment.setOnSelectListener {
-            startActivity(Intent(context, CollectionEditActivity::class.java).apply {
-                this.putExtra("pubKey", pubKeyModel)
-                if (it != null) {
-                    this.putExtra("editIndex", collectionRepository.findById(it.id)?.pubs?.size!!)
-                    this.putExtra("collection", it.id)
-                }
-            })
-            this.dismiss()
+            choosePubkeyFragment.setSelectedCollection(it!!)
+            binding.pager.setCurrentItem(2, true)
+        }
+
+        choosePubkeyFragment.setOnSelectListener {
+            binding.pager.setCurrentItem(3)
         }
 
         if (pubKey.isNotEmpty()) {
@@ -168,41 +166,11 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
             }
         }
         when {
-            /*
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
-                this.dismiss()
-                val bottomSheetFragment = SweepPrivKeyFragment(payload.trim())
-                bottomSheetFragment.show(parentFragmentManager, bottomSheetFragment.tag)
-            }
-
-             */
-            FormatsUtil.isValidBitcoinAddress(payload.trim()) -> {
-                if (newPubKeyListener != null) {
-                    val pubKey = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())
-                    newPubKeyListener?.let { it(pubKey) }
-                    this.dismiss()
-                    return
-                } else {
-                    pubKeyModel = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())
-                    // Skip type selection screen since payload is an address
-                    binding.pager.setCurrentItem(2, true)
-                }
-            }
-            FormatsUtil.isValidXpub(code) -> {
-                //show option to choose xpub type
-                if (type == AddressTypes.BIP84 || type == AddressTypes.BIP49) {
-                    pubKeyString = code
-                    validateXPUB(type)
-                }
-                else {
-                    binding.pager.setCurrentItem(1, true)
-                    binding.pager.post {
-                        selectAddressTypeFragment.setType(type)
-                    }
-                }
+                binding.pager.setCurrentItem(1, true)
             }
             else -> {
-                Toast.makeText(context, "Invalid public key or payload", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Invalid private key", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -216,10 +184,14 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
     }
 
     private fun setUpViewPager() {
+
         val item = arrayListOf<Fragment>()
         item.add(scanPubKeyFragment)
-        item.add(selectAddressTypeFragment)
         item.add(chooseCollectionFragment)
+        item.add(choosePubkeyFragment)
+        item.add(previewSweep)
+        //item.add(choosePubKey)
+        //item.previewSweep
         binding.pager.adapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int {
                 return item.size
@@ -259,7 +231,7 @@ class ScanPubKeyFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.findViewById<Button>(R.id.pastePubKey).text = "Paste Pubkey"
+        view.findViewById<Button>(R.id.pastePubKey).text = "Paste Private Key"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
         mCodeScanner.setLifeCycleOwner(this)
 
@@ -390,83 +362,6 @@ class ScanPubKeyFragment : Fragment() {
 
 }
 
-class SelectAddressTypeFragment : Fragment() {
-    private var onSelect: (type: AddressTypes) -> Unit = {}
-    var addressType: AddressTypes = AddressTypes.BIP44
-
-    private var _binding: ContentChooseAddressTypeBinding? = null
-    private val binding get() = _binding!!
-
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        _binding = ContentChooseAddressTypeBinding.inflate(inflater, container, false)
-        val view = binding.root
-        return view
-    }
-
-    fun setOnSelectListener(callback: (type: AddressTypes) -> Unit = {}) {
-        this.onSelect = callback
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-
-        binding.radioGroup.setOnCheckedChangeListener { radioGroup, i ->
-            when (i) {
-                0 -> {
-                    addressType = AddressTypes.BIP44
-                }
-                1 -> {
-                    addressType = AddressTypes.BIP49
-                }
-                2 -> {
-                    addressType = AddressTypes.BIP84
-                }
-            }
-        }
-        binding.nextBtn.setOnClickListener {
-            onSelect(addressType)
-        }
-
-        binding.buttonBIP84.setOnClickListener(View.OnClickListener {
-            addressType = AddressTypes.BIP84
-        })
-        binding.buttonBIP49.setOnClickListener(View.OnClickListener {
-            addressType = AddressTypes.BIP49
-        })
-        binding.buttonBIP44.setOnClickListener(View.OnClickListener {
-            addressType = AddressTypes.BIP44
-        })
-
-        when (addressType) {
-            AddressTypes.BIP44 -> {
-                binding.buttonBIP44.isChecked = true
-            }
-            AddressTypes.BIP49 -> {
-                binding.buttonBIP49.isChecked = true
-            }
-            AddressTypes.BIP84 -> {
-                binding.buttonBIP84.isChecked = true
-            }
-            AddressTypes.ADDRESS -> {
-                //No-op
-            }
-        }
-    }
-
-    fun setType(type: AddressTypes?) {
-        if (type != null) {
-            addressType = type
-
-        }
-    }
-
-}
-
 class ChooseCollectionFragment : Fragment() {
 
     private val repository: CollectionRepository by KoinJavaComponent.inject(CollectionRepository::class.java)
@@ -494,6 +389,7 @@ class ChooseCollectionFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+        binding.createNewCollection.visibility = View.INVISIBLE
         setUpCollectionSelectList()
         binding.createNewCollection.setOnClickListener {
             this.onSelect(null)
@@ -522,4 +418,89 @@ class ChooseCollectionFragment : Fragment() {
     }
 
 
+}
+
+class ChoosePubkeyFragment : Fragment() {
+
+    private val repository: CollectionRepository by KoinJavaComponent.inject(CollectionRepository::class.java)
+    private val pubkeysAdapter = PubkeysAdapter()
+    private var onSelect: (PubKeyModel?) -> Unit = {}
+
+    private var _binding: ContentPubkeySelectBinding? = null
+    private val binding get() = _binding!!
+    private lateinit var selectedCollection: PubKeyCollection
+
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        _binding = ContentPubkeySelectBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
+    }
+
+    fun setOnSelectListener(callback: (PubKeyModel?) -> Unit = {}) {
+        this.onSelect = callback
+    }
+
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        binding.createNewCollection.visibility = View.INVISIBLE
+        binding.createNewCollection.setOnClickListener {
+            this.onSelect(null)
+        }
+    }
+
+    public fun setSelectedCollection(collection: PubKeyCollection) {
+        this.selectedCollection = collection
+        setUpCollectionSelectList()
+    }
+
+    private fun setUpCollectionSelectList() {
+
+        repository.findById(selectedCollection.id)
+        repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
+            pubkeysAdapter.update(repository.findById(selectedCollection.id)!!.pubs)
+        })
+
+        println("These are the pubkeys; " + pubkeysAdapter.getPubkeyList())
+        pubkeysAdapter.setLayoutType(PubkeysAdapter.Companion.LayoutType.STACKED)
+        val linearLayoutManager = LinearLayoutManager(context)
+        linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
+        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(requireContext(), R.drawable.divider_grey)!!)
+        binding.collectionSelectRecyclerView.apply {
+            adapter = pubkeysAdapter
+            layoutManager = linearLayoutManager
+            setHasFixedSize(true)
+            addItemDecoration(decorator)
+        }
+
+        pubkeysAdapter.setOnClickListener {
+            this.onSelect(it)
+        }
+    }
+
+
+}
+
+class PreviewFragment : Fragment() {
+    private var onSelect: (PubKeyModel?) -> Unit = {}
+
+    private var _binding: ContentSweepPreviewBinding? = null
+    private val binding get() = _binding!!
+    private lateinit var selectedCollection: PubKeyCollection
+
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        _binding = ContentSweepPreviewBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
+    }
 }
