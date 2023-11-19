@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:fitsSystemWindows="false"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#2d2d2d">
 
 
     <com.google.android.material.appbar.AppBarLayout
@@ -23,22 +24,11 @@
             app:layout_scrollFlags="scroll">
 
             <com.samourai.sentinel.widgets.CircleImageView
-                android:layout_width="34dp"
-                android:src="@mipmap/ic_launcher"
+                android:layout_width="43dp"
+                android:src="@drawable/icon_innergradient"
                 android:id="@+id/toolbarIcon"
                 android:background="?selectableItemBackground"
-                android:layout_height="34dp"/>
-
-            <TextView
-                android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sentinel"
-                android:textColor="#fff"
-                android:textSize="20sp"
-                android:layout_gravity="start"
-                android:paddingStart="16dp"
-                style="@style/MaterialAlertDialog.Material3"/>
+                android:layout_height="43dp"/>
 
         </com.google.android.material.appbar.MaterialToolbar>
 

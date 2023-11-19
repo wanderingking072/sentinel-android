@@ -187,6 +187,16 @@ class HomeActivity : SentinelActivity() {
             style = R.style.Theme_Samourai_Widget_MPM_Menu_Dark
             section {
                 item {
+                    label = "Sentinel"
+                    iconDrawable = ContextCompat.getDrawable(applicationContext, R.drawable.icon_innergradient)
+                    iconSize = 34
+                    labelColor = ContextCompat.getColor(applicationContext, R.color.white)
+                    disableTint = true
+                    iconShapeAppearanceModel = ShapeAppearanceModel().toBuilder()
+                        .setAllCornerSizes(resources.getDimension(R.dimen.qr_image_corner_radius))
+                        .build()
+                }
+                item {
                     label = "Tools"
                     icon = R.drawable.ic_tools
                     iconSize = 18
@@ -194,7 +204,6 @@ class HomeActivity : SentinelActivity() {
                     callback = {
                         val intent = Intent(this@HomeActivity, ToolsActivity::class.java)
                         startActivity(intent)
-                        println("Yehe!")
                     }
                 }
 

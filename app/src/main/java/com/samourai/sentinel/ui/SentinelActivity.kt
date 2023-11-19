@@ -11,6 +11,7 @@ import android.view.MenuItem
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.samourai.sentinel.R
 import com.samourai.sentinel.core.access.AccessFactory
@@ -31,6 +32,7 @@ open class SentinelActivity : AppCompatActivity(), SwipeBackActivityBase {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.status_bar_color)
         mHelper = SwipeBackActivityHelper(this)
         mHelper.onActivityCreate();
         overridePendingTransition(R.anim.slide_in, R.anim.no_anim)

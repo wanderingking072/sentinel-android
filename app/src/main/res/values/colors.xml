@@ -22,6 +22,9 @@
 
     <color name="disabled_white">#41FFFFFF</color>
 
+    <color name="status_bar_color">#262626</color>
+
+
     <color name="cyan_ui_2">#58b9b8</color>
 
     <color name="white">#FAFAFA</color>
