@@ -6,12 +6,14 @@
         app:allowDividerBelow="true"
         app:title="">
         <Preference
-            app:icon="@drawable/ic_file_export"
+            app:icon="@drawable/ic_broom"
+            android:summary="Enter a private key and sweep any funds to\nyour next bitcoin address"
             app:key="sweep"
             app:title="Sweep Private Key" />
 
         <Preference
-            app:icon="@drawable/ic_file_import"
+            app:icon="@drawable/ic_broadcast_transaction"
+            android:summary="Broadcast any signed transaction supplied in hex format"
             app:key="broadcastTx"
             app:title="Broadcast Signed Transaction" />
 
