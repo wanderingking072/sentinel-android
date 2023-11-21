@@ -25,6 +25,7 @@ class ToolsActivity : SentinelActivity(), PreferenceFragmentCompat.OnPreferenceS
         if (savedInstanceState == null) {
             showFragment(ToolsFragment())
         }
+        title = "Tools"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
