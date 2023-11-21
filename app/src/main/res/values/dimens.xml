@@ -4,6 +4,7 @@
     <!-- Per the design guidelines, navigation drawers should be between 240dp and 320dp:
          https://developer.android.com/design/patterns/navigation-drawer.html -->
 
+    <dimen name="qr_image_corner_radius">16dp</dimen>
 
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="list_item_spacing">16dp</dimen>
@@ -29,4 +30,18 @@
     <dimen name="spacing_xxxlarge">55dp</dimen>
 
 
+    <dimen name="mpm_popup_menu_vertical_padding">8dp</dimen>
+    <dimen name="mpm_popup_menu_max_width">280dp</dimen>
+    <dimen name="mpm_popup_menu_min_width">112dp</dimen>
+    <dimen name="mpm_popup_menu_width_unit">56dp</dimen>
+
+    <dimen name="mpm_popup_menu_item_height">48dp</dimen>
+    <dimen name="mpm_popup_menu_item_padding_horizontal">16dp</dimen>
+    <dimen name="mpm_popup_menu_item_label_text_size">13sp</dimen>
+    <dimen name="mpm_popup_menu_item_icon_margin_end">16dp</dimen>
+
+    <dimen name="mpm_popup_menu_item_section_label_text_size">14sp</dimen>
+    <dimen name="mpm_popup_menu_item_section_label_margin_bottom">8dp</dimen>
+    <dimen name="mpm_popup_menu_item_section_separator_height">0.5dp</dimen>
+    <dimen name="mpm_popup_menu_item_section_separator_margin_vertical">8dp</dimen>
 </resources>

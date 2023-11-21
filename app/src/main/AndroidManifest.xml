@@ -57,6 +57,12 @@
             android:screenOrientation="portrait"
             android:theme="@style/AppThemeV3" />
         <activity
+            android:name=".ui.tools.ToolsActivity"
+            android:label=""
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppThemeV3" />
+        <activity
             android:name=".ui.MigrationActivity"
             android:exported="false"
             android:screenOrientation="portrait"

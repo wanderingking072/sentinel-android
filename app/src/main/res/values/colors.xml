@@ -22,6 +22,9 @@
 
     <color name="disabled_white">#41FFFFFF</color>
 
+    <color name="status_bar_color">#262626</color>
+
+
     <color name="cyan_ui_2">#58b9b8</color>
 
     <color name="white">#FAFAFA</color>
@@ -164,5 +167,20 @@
     <color name="md_black_1000">#000000</color>
     <color name="md_white_1000">#ffffff</color>
 
+    <color name="mpm_material_grey_850">#303030</color>
+    <color name="mpm_material_grey_50">#fafafa</color>
+
+    <color name="mpm_black_12_opacity">#1F000000</color>
+    <color name="mpm_black_54_opacity">#8A000000</color>
+    <color name="mpm_black_87_opacity">#DE000000</color>
+
+    <color name="mpm_white_12_opacity">#1FFFFFFF</color>
+    <color name="mpm_white_70_opacity">#B3FFFFFF</color>
+    <color name="mpm_white">#FFFFFFFF</color>
+    <color name="mpm_red">#D05756</color>
+    <color name="mpm_black">#202020</color>
+
+    <color name="off_black">#181818</color>
+    <color name="text_ui2_grey">#96979a</color>
 
 </resources>

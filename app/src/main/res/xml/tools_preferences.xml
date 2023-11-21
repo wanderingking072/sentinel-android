@@ -1,0 +1,23 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:allowDividerAbove="true"
+        app:allowDividerBelow="true"
+        app:title="">
+        <Preference
+            app:icon="@drawable/ic_broom"
+            android:summary="Enter a private key and sweep any funds to\nyour next bitcoin address"
+            app:key="sweep"
+            app:title="Sweep Private Key" />
+
+        <Preference
+            app:icon="@drawable/ic_broadcast_transaction"
+            android:summary="Broadcast any signed transaction supplied in hex format"
+            app:key="broadcastTx"
+            app:title="Broadcast Signed Transaction" />
+
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
