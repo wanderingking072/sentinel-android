@@ -3,7 +3,6 @@ package com.samourai.sentinel.ui.tools
 import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,41 +14,46 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
+import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.core.hd.HD_Account
+import com.samourai.sentinel.core.segwit.P2SH_P2WPKH
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
-import com.samourai.sentinel.databinding.ContentChooseAddressTypeBinding
+import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.databinding.ContentCollectionSelectBinding
 import com.samourai.sentinel.databinding.ContentPubkeySelectBinding
 import com.samourai.sentinel.databinding.ContentSweepPreviewBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
+import com.samourai.sentinel.send.SuggestedFee
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.adapters.PubkeysAdapter
-import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
-import com.samourai.sentinel.util.FormatsUtil
+import com.samourai.sentinel.util.apiScope
+import com.samourai.wallet.api.backend.beans.UnspentOutput
+import com.samourai.wallet.bipFormat.BIP_FORMAT
+import com.samourai.wallet.bipFormat.BipFormat
+import com.samourai.wallet.segwit.SegwitAddress
+import com.samourai.wallet.util.FeeUtil
 import com.samourai.wallet.util.PrivKeyReader
-import com.samourai.wallet.util.XPUB
-import com.sparrowwallet.hummingbird.URDecoder
-import com.sparrowwallet.hummingbird.registry.CryptoAccount
-import com.sparrowwallet.hummingbird.registry.PathComponent
-import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.bitcoinj.crypto.ChildNumber
-import org.bouncycastle.util.encoders.Hex
-import org.json.JSONObject
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
+import java.math.BigInteger
+import java.text.DecimalFormat
+import kotlin.math.ceil
 
 
 class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
@@ -60,11 +64,7 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
     private val choosePubkeyFragment = ChoosePubkeyFragment()
     private val previewSweep = PreviewFragment()
     private var pubKeyString = ""
-    private var pubKeyModel: PubKeyModel? = null
-    private var selectedPubKeyCollection: PubKeyCollection? = null
-    private val collectionRepository: CollectionRepository by KoinJavaComponent.inject(
-        CollectionRepository::class.java
-    )
+    var privKeyReader: PrivKeyReader? = null
     private var _binding: FragmentBottomsheetViewPagerBinding? = null
     private val binding get() = _binding!!
 
@@ -76,10 +76,6 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
         _binding = FragmentBottomsheetViewPagerBinding.inflate(inflater, container, false)
         val view = binding.root
         return view
-    }
-
-    fun setSelectedCollection(pubKeyCollection: PubKeyCollection) {
-        selectedPubKeyCollection = pubKeyCollection
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -98,6 +94,7 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
         }
 
         choosePubkeyFragment.setOnSelectListener {
+            previewSweep.setSelectedPubkey(it!!)
             binding.pager.setCurrentItem(3)
         }
 
@@ -107,67 +104,16 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
         }
     }
 
-    private fun validateXPUB(addressTypes: AddressTypes) {
 
-        pubKeyModel = if ((addressTypes == AddressTypes.BIP49 || addressTypes == AddressTypes.BIP84) && (pubKeyString.startsWith("xpub") || pubKeyString.startsWith("tpub"))) {
-            val xpub = XPUB(pubKeyString)
-            xpub.decode()
-            pubKeyString =
-                if (addressTypes == AddressTypes.BIP49 && pubKeyString.startsWith("tpub"))
-                    XPUB.makeXPUB(XPUB.MAGIC_UPUB, xpub.depth, xpub.fingerprint, xpub.child, xpub.chain, xpub.getPubkey())
-                else if (addressTypes == AddressTypes.BIP49 && pubKeyString.startsWith("xpub"))
-                    XPUB.makeXPUB(XPUB.MAGIC_YPUB, xpub.depth, xpub.fingerprint, xpub.child, xpub.chain, xpub.getPubkey())
-                else if (addressTypes == AddressTypes.BIP84 && pubKeyString.startsWith("tpub"))
-                    XPUB.makeXPUB(XPUB.MAGIC_VPUB, xpub.depth, xpub.fingerprint, xpub.child, xpub.chain, xpub.getPubkey())
-                else if (addressTypes == AddressTypes.BIP84 && pubKeyString.startsWith("xpub"))
-                    XPUB.makeXPUB(XPUB.MAGIC_ZPUB, xpub.depth, xpub.fingerprint, xpub.child, xpub.chain, xpub.getPubkey())
-                else
-                    pubKeyString
-            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes, fingerPrint = scanPubKeyFragment.getFingerprint())
-        } else if (pubKeyString.startsWith("ypub") || pubKeyString.startsWith("upub")) {
-            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes, fingerPrint = scanPubKeyFragment.getFingerprint())
-        } else if (pubKeyString.startsWith("zpub") || pubKeyString.startsWith("vpub")) {
-            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = addressTypes, fingerPrint = scanPubKeyFragment.getFingerprint())
-        } else {
-            PubKeyModel(pubKey = pubKeyString, balance = 0, account_index = 0, change_index = 1, label = "Untitled", type = AddressTypes.BIP44, fingerPrint = scanPubKeyFragment.getFingerprint())
-        }
-
-        if (newPubKeyListener != null) {
-            this.newPubKeyListener?.let { it(pubKeyModel) }
-            this.dismiss()
-            newPubKeyListener = null
-            return
-        }
-        if (selectedPubKeyCollection != null) {
-            startActivity(Intent(context, CollectionEditActivity::class.java).apply {
-                this.putExtra("pubKey", pubKeyModel)
-                this.putExtra("collection", selectedPubKeyCollection?.id)
-            })
-            this.dismiss()
-        } else {
-            binding.pager.setCurrentItem(2, true)
-        }
-
-    }
-
-    private fun validate(code: String) {
-        val payload = FormatsUtil.extractPublicKey(code)
-        val type = FormatsUtil.getPubKeyType(payload)
-        if (FormatsUtil.isValidBitcoinAddress(payload.trim()) || FormatsUtil.isValidXpub(payload)) {
-            if (isPublicKeyTesnet(payload) && !SentinelState.isTestNet()) {
-                Toast.makeText(context, "Can't track Testnet public keys in Mainnet", Toast.LENGTH_LONG).show()
-                this.dismiss()
-                return
-            }
-            if (!isPublicKeyTesnet(payload) && SentinelState.isTestNet()) {
-                Toast.makeText(context, "Can't track Mainnet public keys in Testnet", Toast.LENGTH_LONG).show()
-                this.dismiss()
-                return
-            }
-        }
+    private fun validate(payload: String) {
         when {
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
-                binding.pager.setCurrentItem(1, true)
+                privKeyReader = PrivKeyReader(payload.trim(), SentinelState.getNetworkParam())
+                apiScope.launch {
+                    withContext(Dispatchers.Default) {
+                        findUTXOs(requireContext())
+                    }
+                }
             }
             else -> {
                 Toast.makeText(context, "Invalid private key", Toast.LENGTH_LONG).show()
@@ -175,12 +121,41 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
         }
     }
 
-    private fun isPublicKeyTesnet(payload: String): Boolean {
-        if (payload.lowercase().startsWith("tb") || payload.lowercase().startsWith("2") || payload.lowercase().startsWith("m") || payload.lowercase().startsWith("n"))
-            return true
-        if (payload.lowercase().startsWith("tpub") || payload.lowercase().startsWith("upub") || payload.lowercase().startsWith("vpub"))
-            return true
-        return false
+    private suspend fun findUTXOs(context: Context, timelockDerivationIndex: Int = -1) {
+        val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
+        withContext(Dispatchers.IO) {
+            val bipFormats: Collection<BipFormat> = getBipFormats(timelockDerivationIndex)
+            bipFormats.forEach {
+                val address = it.getToAddress(privKeyReader!!.key, privKeyReader!!.params)
+                runBlocking {
+                    val apiCall = async(Dispatchers.IO) {
+                        apiService.fetchAddressForSweep(address)
+                    }
+
+                    val items = apiCall.await()
+                    if (items.isNotEmpty()) {
+                        previewSweep.setUTXOList(items)
+                        previewSweep.setBipFormat(it)
+                        binding.pager.setCurrentItem(1, true)
+                        return@runBlocking
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getBipFormats(timelockDerivationIndex: Int = -1) : List<BipFormat> {
+        if (timelockDerivationIndex >= 0) {
+            return emptyList()
+            //return listOf(FidelityBondsTimelockedBipFormat.create(timelockDerivationIndex))
+        } else {
+            return listOf(
+                BIP_FORMAT.LEGACY,
+                BIP_FORMAT.SEGWIT_COMPAT,
+                BIP_FORMAT.SEGWIT_NATIVE,
+                BIP_FORMAT.TAPROOT
+            )
+        }
     }
 
     private fun setUpViewPager() {
@@ -216,7 +191,6 @@ class ScanPubKeyFragment : Fragment() {
     private lateinit var  mCodeScanner: QRScanner;
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
     private var onScan: (scanData: String) -> Unit = {}
-    private var fingerprintHex: String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.content_scan_layout, container, false)
@@ -226,10 +200,9 @@ class ScanPubKeyFragment : Fragment() {
         this.onScan = callback
     }
 
-    fun getFingerprint(): String? {
-        return fingerprintHex
+    fun showLoading(show: Boolean) {
+        view?.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = if (show) View.VISIBLE else View.GONE
     }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         view.findViewById<Button>(R.id.pastePubKey).text = "Paste Private Key"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
@@ -243,109 +216,23 @@ class ScanPubKeyFragment : Fragment() {
             }
         }
 
-        mCodeScanner.setURDecodeListener { result ->
-            mCodeScanner.stopScanner()
-            result.fold(
-                onSuccess = {
-                    val xpub = getXpubFromUR(it)
-                    if (xpub != null) {
-                        onScan(xpub)
-                    }
-                    else {
-                        MaterialAlertDialogBuilder(requireContext())
-                            .setTitle("Error decoding public key")
-                            .setPositiveButton("Ok") { dialog, which ->
-                                dialog.dismiss()
-                            }.show()
-                        mCodeScanner.stopScanner()
-                    }
-                },
-                onFailure = {
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Error decoding UR")
-                        .setMessage("Exception: ${it.message}")
-                        .setPositiveButton("Ok") { dialog, which ->
-                            dialog.dismiss()
-                        }.show()
-                    mCodeScanner.stopScanner()
-                }
-            )
-        }
-
         view.findViewById<Button>(R.id.pastePubKey).setOnClickListener {
             when {
                 !clipboard.hasPrimaryClip() -> {
-                    Toast.makeText(context, "PubKey not found in clipboard", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Private key not found in clipboard", Toast.LENGTH_SHORT).show()
                 }
                 else -> {
                     try {
                         val item = clipboard.primaryClip?.getItemAt(0)
                         onScan(item?.text.toString())
                     } catch (e: Exception) {
-                        Toast.makeText(context, "PubKey not found in clipboard", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Error parsing private key", Toast.LENGTH_SHORT).show()
                     }
 
                 }
             }
         }
 
-    }
-
-    private fun getXpubFromUR(it: URDecoder.Result): String? {
-        if (it.ur.registryType == RegistryType.CRYPTO_ACCOUNT) {
-            val cryptoAccount = it.ur.decodeFromRegistry() as CryptoAccount
-            for (outputDescriptor in cryptoAccount.outputDescriptors) {
-                fingerprintHex = Hex.toHexString(cryptoAccount.masterFingerprint).lowercase()
-                val cryptoHDKey = outputDescriptor.hdKey
-                var lastChild = ChildNumber.ZERO
-                var depth = 1
-                var parentFingerprint = ByteArray(4)
-                var version: Int
-                if (cryptoHDKey.origin != null) {
-                    if (cryptoHDKey.origin.components.isNotEmpty()) {
-                        val lastComponent: PathComponent =
-                            cryptoHDKey.origin.components[cryptoHDKey.origin.components.size - 1]
-                        lastChild = ChildNumber(lastComponent.index, lastComponent.isHardened)
-                        depth = cryptoHDKey.origin.depth
-                    }
-                    if (cryptoHDKey.origin.sourceFingerprint != null) {
-                        parentFingerprint = cryptoHDKey.parentFingerprint
-                    }
-                }
-                val parentFingerprintInt = ByteBuffer.wrap(parentFingerprint).int
-
-                if (cryptoHDKey.origin.path.substring(0..1) == "44")
-                    version = if (SentinelState.isTestNet())  XPUB.MAGIC_TPUB else XPUB.MAGIC_XPUB
-                else if (cryptoHDKey.origin.path.substring(0..1) == "49")
-                    version = if (SentinelState.isTestNet())  XPUB.MAGIC_UPUB else XPUB.MAGIC_YPUB
-                else
-                    version = if (SentinelState.isTestNet())  XPUB.MAGIC_VPUB else XPUB.MAGIC_ZPUB
-
-                val xpub = XPUB.makeXPUB(
-                    version,
-                    depth.toByte(),
-                    parentFingerprintInt,
-                    lastChild.i,
-                    cryptoHDKey.chainCode,
-                    cryptoHDKey.key
-                )
-                return xpub
-            }
-        }
-        else if (it.ur.registryType == RegistryType.BYTES) {
-            val urBytes = it.ur.decodeFromRegistry()
-            val decoder = StandardCharsets.UTF_8.newDecoder()
-            val buf = ByteBuffer.wrap(urBytes as ByteArray)
-            val charBuffer = decoder.decode(buf)
-            val xpubsJson = JSONObject(charBuffer.toString())
-            if (xpubsJson.has("bip84")) {
-                try {
-                    fingerprintHex = xpubsJson.getString("xfp").lowercase()
-                } catch (e: Exception) {}
-                return xpubsJson.getJSONObject("bip84").getString("_pub")
-            }
-        }
-        return null
     }
 
     override fun onResume() {
@@ -466,7 +353,6 @@ class ChoosePubkeyFragment : Fragment() {
             pubkeysAdapter.update(repository.findById(selectedCollection.id)!!.pubs)
         })
 
-        println("These are the pubkeys; " + pubkeysAdapter.getPubkeyList())
         pubkeysAdapter.setLayoutType(PubkeysAdapter.Companion.LayoutType.STACKED)
         val linearLayoutManager = LinearLayoutManager(context)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
@@ -487,11 +373,18 @@ class ChoosePubkeyFragment : Fragment() {
 }
 
 class PreviewFragment : Fragment() {
-    private var onSelect: (PubKeyModel?) -> Unit = {}
-
     private var _binding: ContentSweepPreviewBinding? = null
     private val binding get() = _binding!!
-    private lateinit var selectedCollection: PubKeyCollection
+
+    private lateinit var selectedPubkey: PubKeyModel
+    private lateinit var utxoList: MutableList<UnspentOutput>
+    private lateinit var bipFormat: BipFormat
+
+    private var feeLow: Long = 0L
+    private var feeMed: Long = 0L
+    private var feeHigh: Long = 0L
+
+    private var selectedFee: Long = 1000L
 
 
     override fun onCreateView(
@@ -501,6 +394,198 @@ class PreviewFragment : Fragment() {
     ): View? {
         _binding = ContentSweepPreviewBinding.inflate(inflater, container, false)
         val view = binding.root
+
+        preparePreview()
+
+        setUpFee()
+
+        binding.sweepBtn.setOnClickListener {
+            prepareSweep()
+        }
+
         return view
     }
+
+    private fun prepareSweep() {
+        Toast.makeText(context, "This is the address ${getAddress(selectedPubkey)}", Toast.LENGTH_SHORT).show()
+    }
+
+    fun getAddress(pubKey: PubKeyModel): String {
+        val accountIndex = pubKey.account_index
+
+        return when (pubKey.type) {
+            AddressTypes.BIP44 -> {
+                val account = HD_Account(SentinelState.getNetworkParam(), pubKey.pubKey, "", 0)
+                account.getChain(0).addrIdx = accountIndex
+                val hdAddress = account.getChain(0).getAddressAt(accountIndex)
+                hdAddress.addressString
+            }
+            AddressTypes.BIP49 -> {
+                val account = HD_Account(SentinelState.getNetworkParam(), pubKey.pubKey, "", 0)
+                account.getChain(0).addrIdx = accountIndex
+                val address = account.getChain(0).getAddressAt(accountIndex)
+                val ecKey = address.ecKey
+                val p2shP2wpkH = P2SH_P2WPKH(ecKey.pubKey, SentinelState.getNetworkParam())
+                p2shP2wpkH.addressAsString
+            }
+            AddressTypes.BIP84 -> {
+                val account = HD_Account(SentinelState.getNetworkParam(), pubKey.pubKey, "", 0)
+                account.getChain(0).addrIdx = accountIndex
+                val address = account.getChain(0).getAddressAt(accountIndex)
+                val ecKey = address.ecKey
+                val segwitAddress = SegwitAddress(ecKey.pubKey, SentinelState.getNetworkParam())
+                segwitAddress.bech32AsString
+            }
+            AddressTypes.ADDRESS -> {
+                pubKey.pubKey
+            }
+            else -> ""
+        }
+
+    }
+
+    fun setSelectedPubkey(pubkey: PubKeyModel) {
+        this.selectedPubkey = pubkey
+    }
+
+    fun setUTXOList(utxoList: MutableList<UnspentOutput>) {
+        this.utxoList = utxoList
+    }
+
+    fun setBipFormat(bipFormat: BipFormat) {
+        this.bipFormat = bipFormat
+    }
+
+    private fun preparePreview() {
+        //TODO: figure out the amount of the UTXO
+        //when scanning / pasting it should set the amount of the UTXO in this fragment.
+        //findUTXOs(context: Context, timelockDerivationIndex: Int = -1)
+        binding.receiveAddress.text = getAddress(selectedPubkey)
+        binding.fromAddress.text = this.utxoList.get(0).addr
+        binding.amount.text = "${this.utxoList.get(0).value.div(1e8)} BTC"
+    }
+
+    private fun setUpFee() {
+        val feeRepository: FeeRepository by KoinJavaComponent.inject(FeeRepository::class.java)
+        val decimalFormat = DecimalFormat("##.00")
+        val multiplier = 10000
+//        FEE_TYPE = PrefsUtil.getInstance(this).getValue(PrefsUtil.CURRENT_FEE_TYPE, SendActivity.FEE_NORMAL)
+        feeLow = feeRepository.getLowFee().defaultPerKB.toLong() / 1000L
+        feeMed = feeRepository.getNormalFee().defaultPerKB.toLong() / 1000L
+        feeHigh = feeRepository.getHighFee().defaultPerKB.toLong() / 1000L
+
+        val high = feeHigh / 2 + feeHigh
+        val feeHighSliderValue = (high * multiplier)
+        val feeMedSliderValue = (feeMed * multiplier)
+        val valueTo = (feeHighSliderValue - multiplier).toFloat()
+        binding.feeSelector.feeSlider.stepSize = 1F
+        binding.feeSelector.feeSlider.valueTo = if (valueTo <= 0) feeHighSliderValue.toFloat() else valueTo
+        binding.feeSelector.feeSlider.valueTo = if (valueTo <= 0) feeHighSliderValue.toFloat() else valueTo
+        binding.feeSelector.feeSlider.valueFrom = 1F
+        binding.feeSelector.feeSlider.setLabelFormatter { i: Float ->
+            val value = (i + multiplier) / multiplier
+            val formatted = "${decimalFormat.format(value)} sats/b"
+            binding.feeSelector.selectedFeeRate.text = formatted
+            formatted
+        }
+        if (feeLow == feeMed && feeMed == feeHigh) {
+            feeLow = (feeMed.toDouble() * 0.85).toLong()
+            feeHigh = (feeMed.toDouble() * 1.15).toLong()
+            val loSf = SuggestedFee()
+            loSf.defaultPerKB = BigInteger.valueOf(feeLow * 1000L)
+            feeRepository.setLowFee(loSf)
+            val hiSf = SuggestedFee()
+            hiSf.defaultPerKB = BigInteger.valueOf(feeHigh * 1000L)
+            feeRepository.setHighFee(hiSf)
+        } else if (feeLow == feeMed || feeMed == feeMed) {
+            feeMed = (feeLow + feeHigh) / 2L
+            val miSf = SuggestedFee()
+            miSf.defaultPerKB = BigInteger.valueOf(feeHigh * 1000L)
+            feeRepository.setNormalFee(miSf)
+        }
+        if (feeLow < 1L) {
+            feeLow = 1L
+            val loSf = SuggestedFee()
+            loSf.defaultPerKB = BigInteger.valueOf(feeLow * 1000L)
+            feeRepository.setLowFee(loSf)
+        }
+        if (feeMed < 1L) {
+            feeMed = 1L
+            val miSf = SuggestedFee()
+            miSf.defaultPerKB = BigInteger.valueOf(feeMed * 1000L)
+            feeRepository.setNormalFee(miSf)
+        }
+        if (feeHigh < 1L) {
+            feeHigh = 1L
+            val hiSf = SuggestedFee()
+            hiSf.defaultPerKB = BigInteger.valueOf(feeHigh * 1000L)
+            feeRepository.setHighFee(hiSf)
+        }
+        binding.feeSelector.selectedFeeRateLayman.text = getString(R.string.normal)
+        feeRepository.sanitizeFee()
+        binding.feeSelector.selectedFeeRate.text = ("$feeMed sats/b")
+        binding.feeSelector.feeSlider.value = (feeMedSliderValue - multiplier + 1).toFloat()
+        setFeeLabels()
+        selectedFee =
+            (((binding.feeSelector.feeSlider.value + multiplier) / multiplier)*1000).toLong()
+        var nbBlocks = 6
+        binding.feeSelector.feeSlider.addOnChangeListener { slider, sliderVal, fromUser ->
+            val value = (sliderVal + multiplier) / multiplier
+            var pct = 0F
+            if (value <= feeLow) {
+                pct = feeLow / value
+                nbBlocks = ceil(pct * 24.0).toInt()
+            } else if (value >= feeHigh.toFloat()) {
+                pct = feeHigh / value
+                nbBlocks = ceil(pct * 2.0).toInt()
+                if (nbBlocks < 1) {
+                    nbBlocks = 1
+                }
+            } else {
+                pct = feeMed / value
+                nbBlocks = ceil(pct * 6.0).toInt()
+            }
+            binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
+            if (nbBlocks > 50) {
+                binding.feeSelector.estBlockTime.text = "50+ blocks"
+            }
+            setFeeLabels()
+            selectedFee = (value * 1000).toLong()
+            binding.feeSelector.totalMinerFee.text =
+                computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong()).toString()
+        }
+        binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
+        binding.feeSelector.totalMinerFee.text =
+            computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong()).toString()
+    }
+
+    private fun setFeeLabels() {
+        if (binding.feeSelector.feeSlider.valueTo <= 0) {
+            return
+        }
+        val sliderValue: Float = binding.feeSelector.feeSlider.value / binding.feeSelector.feeSlider.valueTo
+        val sliderInPercentage = sliderValue * 100
+        if (sliderInPercentage < 33) {
+            binding.feeSelector.selectedFeeRateLayman.setText(R.string.low)
+        } else if (sliderInPercentage > 33 && sliderInPercentage < 66) {
+            binding.feeSelector.selectedFeeRateLayman.setText(R.string.normal)
+        } else if (sliderInPercentage > 66) {
+            binding.feeSelector.selectedFeeRateLayman.setText(R.string.urgent)
+        }
+    }
+
+    private fun computeFee(bipFormat: BipFormat, unspentOutputs: Collection<UnspentOutput?>, feePerB: Long): Long {
+        var inputsP2PKH = 0
+        var inputsP2WPKH = 0
+        var inputsP2SH_P2WPKH = 0
+        if (bipFormat === BIP_FORMAT.SEGWIT_COMPAT) {
+            inputsP2SH_P2WPKH = unspentOutputs.size
+        } else if (bipFormat === BIP_FORMAT.SEGWIT_NATIVE) {
+            inputsP2WPKH = unspentOutputs.size
+        } else {
+            inputsP2PKH = unspentOutputs.size
+        }
+        return FeeUtil.getInstance().estimatedFeeSegwit(inputsP2PKH, inputsP2SH_P2WPKH, inputsP2WPKH, 1, 0, feePerB)
+    }
+
 }
