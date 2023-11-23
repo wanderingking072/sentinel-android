@@ -55,7 +55,7 @@ import java.text.DecimalFormat
 import kotlin.math.ceil
 
 
-class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
+class SweepPrivKeyFragment(private val privKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
 
     private val scanPubKeyFragment = ScanPubKeyFragment()
     private var newPubKeyListener: ((pubKey: PubKeyModel?) -> Unit)? = null
@@ -97,9 +97,9 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
             binding.pager.setCurrentItem(3)
         }
 
-        if (pubKey.isNotEmpty()) {
-            validate(pubKey)
-            pubKeyString = pubKey
+        if (privKey.isNotEmpty()) {
+            validate(privKey)
+            pubKeyString = privKey
         }
     }
 
