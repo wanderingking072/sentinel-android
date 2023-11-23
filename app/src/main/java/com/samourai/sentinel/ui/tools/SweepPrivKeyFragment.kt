@@ -46,7 +46,6 @@ import com.samourai.wallet.util.PrivKeyReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -111,7 +110,7 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
                 privKeyReader = PrivKeyReader(payload.trim(), SentinelState.getNetworkParam())
                 apiScope.launch {
                     withContext(Dispatchers.Default) {
-                        findUTXOs(requireContext())
+                        findUTXOs()
                     }
                 }
             }
@@ -121,7 +120,7 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
         }
     }
 
-    private suspend fun findUTXOs(context: Context, timelockDerivationIndex: Int = -1) {
+    private suspend fun findUTXOs(timelockDerivationIndex: Int = -1) {
         val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
         withContext(Dispatchers.IO) {
             val bipFormats: Collection<BipFormat> = getBipFormats(timelockDerivationIndex)
@@ -141,6 +140,11 @@ class SweepPrivKeyFragment(private val pubKey: String = "", private val secure: 
                     }
                 }
             }
+            requireActivity().runOnUiThread(Runnable {
+                Toast.makeText(context, "This private key doesn't have any UTXOs", Toast.LENGTH_SHORT).show()
+            })
+
+            dismiss()
         }
     }
 
