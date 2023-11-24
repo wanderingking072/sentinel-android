@@ -122,6 +122,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
     private suspend fun findUTXOs(timelockDerivationIndex: Int = -1) {
         val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
+        var foundUTXO = false
         withContext(Dispatchers.IO) {
             val bipFormats: Collection<BipFormat> = getBipFormats(timelockDerivationIndex)
             bipFormats.forEach {
@@ -136,15 +137,16 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                         previewSweep.setUTXOList(items)
                         previewSweep.setBipFormat(it)
                         binding.pager.setCurrentItem(1, true)
-                        return@runBlocking
+                        foundUTXO = true
                     }
                 }
             }
-            requireActivity().runOnUiThread(Runnable {
-                Toast.makeText(context, "This private key doesn't have any UTXOs", Toast.LENGTH_SHORT).show()
-            })
-
-            dismiss()
+            if (!foundUTXO) {
+                requireActivity().runOnUiThread({
+                    Toast.makeText(context, "This private key doesn't have any UTXOs", Toast.LENGTH_SHORT).show()
+                })
+                dismiss()
+            }
         }
     }
 
@@ -461,9 +463,6 @@ class PreviewFragment : Fragment() {
     }
 
     private fun preparePreview() {
-        //TODO: figure out the amount of the UTXO
-        //when scanning / pasting it should set the amount of the UTXO in this fragment.
-        //findUTXOs(context: Context, timelockDerivationIndex: Int = -1)
         binding.receiveAddress.text = getAddress(selectedPubkey)
         binding.fromAddress.text = this.utxoList.get(0).addr
         binding.amount.text = "${this.utxoList.get(0).value.div(1e8)} BTC"
