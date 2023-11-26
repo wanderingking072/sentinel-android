@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,8 +13,10 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.google.android.material.math.MathUtils
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
@@ -31,24 +34,35 @@ import com.samourai.sentinel.databinding.ContentPubkeySelectBinding
 import com.samourai.sentinel.databinding.ContentSweepPreviewBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.send.SuggestedFee
+import com.samourai.sentinel.sweep.PushTx
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.adapters.PubkeysAdapter
+import com.samourai.sentinel.ui.tools.sweep.TransactionForSweepHelper
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.apiScope
+import com.samourai.wallet.SamouraiWalletConst
 import com.samourai.wallet.api.backend.beans.UnspentOutput
 import com.samourai.wallet.bipFormat.BIP_FORMAT
 import com.samourai.wallet.bipFormat.BipFormat
+import com.samourai.wallet.bipFormat.BipFormatSupplier
 import com.samourai.wallet.segwit.SegwitAddress
+import com.samourai.wallet.send.MyTransactionOutPoint
+import com.samourai.wallet.send.SendFactoryGeneric
+import com.samourai.wallet.send.beans.SweepPreview
 import com.samourai.wallet.util.FeeUtil
 import com.samourai.wallet.util.PrivKeyReader
+import com.samourai.wallet.util.TxUtil
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.bitcoinj.core.Transaction
 import org.koin.java.KoinJavaComponent
 import java.math.BigInteger
 import java.text.DecimalFormat
@@ -111,6 +125,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                 apiScope.launch {
                     withContext(Dispatchers.Default) {
                         findUTXOs()
+                        previewSweep.setPrivKeyReader(privKeyReader!!)
                     }
                 }
             }
@@ -385,6 +400,9 @@ class PreviewFragment : Fragment() {
     private lateinit var selectedPubkey: PubKeyModel
     private lateinit var utxoList: MutableList<UnspentOutput>
     private lateinit var bipFormat: BipFormat
+    private lateinit var sweepPreview: SweepPreview
+    private lateinit var privKeyReader: PrivKeyReader
+    private var feeRange: Float? = null
 
     private var feeLow: Long = 0L
     private var feeMed: Long = 0L
@@ -406,14 +424,92 @@ class PreviewFragment : Fragment() {
         setUpFee()
 
         binding.sweepBtn.setOnClickListener {
-            prepareSweep()
+            broadcastTx(requireContext())
         }
 
         return view
     }
 
-    private fun prepareSweep() {
-        Toast.makeText(context, "This is the address ${getAddress(selectedPubkey)}", Toast.LENGTH_SHORT).show()
+    private fun broadcastTx(context: Context) {
+        val feeRepository: FeeRepository by KoinJavaComponent.inject(FeeRepository::class.java)
+        val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
+
+        feeLow = 1000L
+        feeMed = feeRepository.getNormalFee().defaultPerKB.toLong()
+        feeHigh = feeRepository.getHighFee().defaultPerKB.toLong()
+        if (feeHigh == 1000L && feeLow == 1000L) {
+            feeHigh = 3000L
+        }
+        var transaction: Transaction? = null
+        apiScope.launch {
+            try {
+                withContext(Dispatchers.Default) {
+                    val receiveAddress = getAddress(selectedPubkey)
+                    val rbfOptin = false //PrefsUtil.getInstance(context).getValue(PrefsUtil.RBF_OPT_IN, false)
+                    val blockHeight = SentinelState.blockHeight?.height ?: -1L
+                    val totalValue = UnspentOutput.sumValue(utxoList)
+                    val address: String? = bipFormat.getToAddress(privKeyReader.key, privKeyReader.params)
+                    var feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), feeRange ?: 0f).coerceAtLeast(1f)
+                    var fee: Long = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
+                    var amount = totalValue - fee
+                    //Check if the amount too low for a tx or miner fee is high
+                    if (amount == 0L || fee > totalValue || amount <= SamouraiWalletConst.bDust.toLong()) {
+                        //check if the tx is possible with 1sat/b rate
+                        withContext(Dispatchers.Main) {
+                            feeRange = 0.1f
+                        }
+                        feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), 0.0f).coerceAtLeast(1f)
+                        fee = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
+                        amount = totalValue - fee
+                    }
+                    sweepPreview = SweepPreview(amount, address, bipFormat, fee, utxoList, privKeyReader.key, privKeyReader.params)
+                    val params = sweepPreview.params
+                    val receivers: MutableMap<String, Long> = LinkedHashMap()
+                    receivers[receiveAddress] = sweepPreview.amount
+                    val outpoints: MutableCollection<MyTransactionOutPoint> = mutableListOf()
+                    sweepPreview.utxos
+                        .map { unspentOutput: UnspentOutput -> unspentOutput.computeOutpoint(params) }.toCollection(outpoints);
+                    val bipFormatSupplier: BipFormatSupplier = getBipFormatSupplier(bipFormat);
+                    val tr = createTransaction(receivers, outpoints, bipFormatSupplier, rbfOptin, blockHeight)
+                    transaction = TransactionForSweepHelper.signTransactionForSweep(tr, sweepPreview.privKey, params, bipFormatSupplier)
+                    try {
+                        if (transaction != null) {
+                            val hexTx = TxUtil.getInstance().getTxHex(transaction)
+                            apiService.broadcast(hexTx)
+                        }
+                    } catch (e: Exception) {
+                        throw  CancellationException("pushTx : ${e.message}")
+                    }
+                }
+
+                /**
+                 * creation of a new context to allow the update of the model (postValue execution)
+                 * before consuming it to calculate the number of estimated waiting blocks
+                 */
+            } catch (e: Exception) {
+                println( "issue on making transaction : " + e.message + ":: " + e)
+            }
+        }
+
+    }
+    private fun createTransaction(
+        receivers: MutableMap<String, Long>,
+        outpoints: MutableCollection<MyTransactionOutPoint>,
+        bipFormatSupplier: BipFormatSupplier,
+        rbfOptin: Boolean,
+        blockHeight: Long
+    ): Transaction? {
+        return SendFactoryGeneric.getInstance()
+            .makeTransaction(receivers, outpoints, bipFormatSupplier, rbfOptin, SentinelState.getNetworkParam(), blockHeight)
+        /*
+        if (FidelityBondsTimelockedBipFormat.ID.equals(bipFormat?.value?.id)) {
+            return TransactionForSweepHelper.makeTimelockTransaction(receivers, outpoints,
+                bipFormat!!.value as FidelityBondsTimelockedBipFormat?, params)
+        } else {
+            return SendFactoryGeneric.getInstance()
+                .makeTransaction(receivers, outpoints, bipFormatSupplier, rbfOptin, SentinelState.getNetworkParam(), blockHeight)
+        }
+         */
     }
 
     fun getAddress(pubKey: PubKeyModel): String {
@@ -454,6 +550,10 @@ class PreviewFragment : Fragment() {
         this.selectedPubkey = pubkey
     }
 
+    fun setPrivKeyReader(privKeyReader: PrivKeyReader) {
+        this.privKeyReader = privKeyReader
+    }
+
     fun setUTXOList(utxoList: MutableList<UnspentOutput>) {
         this.utxoList = utxoList
     }
@@ -465,7 +565,7 @@ class PreviewFragment : Fragment() {
     private fun preparePreview() {
         binding.receiveAddress.text = getAddress(selectedPubkey)
         binding.fromAddress.text = this.utxoList.get(0).addr
-        binding.amount.text = "${this.utxoList.get(0).value.div(1e8)} BTC"
+        binding.amount.text = "${UnspentOutput.sumValue(utxoList).div(1e8)} BTC"
     }
 
     private fun setUpFee() {
@@ -556,6 +656,7 @@ class PreviewFragment : Fragment() {
             selectedFee = (value * 1000).toLong()
             binding.feeSelector.totalMinerFee.text =
                 computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong()).toString()
+            feeRange = sliderVal
         }
         binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
         binding.feeSelector.totalMinerFee.text =
@@ -591,4 +692,12 @@ class PreviewFragment : Fragment() {
         return FeeUtil.getInstance().estimatedFeeSegwit(inputsP2PKH, inputsP2SH_P2WPKH, inputsP2WPKH, 1, 0, feePerB)
     }
 
+    private fun getBipFormatSupplier(bipFormat: BipFormat?): BipFormatSupplier {
+        /*
+        if (FidelityBondsTimelockedBipFormat.ID.equals(bipFormat?.id)) {
+            return FidelityBondsTimelockedBipFormatSupplier.create(bipFormat as FidelityBondsTimelockedBipFormat?);
+        }
+         */
+        return BIP_FORMAT.PROVIDER;
+    }
 }
