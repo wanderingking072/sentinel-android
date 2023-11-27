@@ -452,7 +452,7 @@ class HomeActivity : SentinelActivity() {
         val rootView = alertMenuItem.actionView
         val statusCircle = rootView?.findViewById<View>(R.id.home_menu_network_shape) as FrameLayout
         val shape = ContextCompat.getDrawable(applicationContext, R.drawable.circle_shape)
-        shape?.setTint(ContextCompat.getColor(applicationContext, R.color.red))
+        shape?.setTint(0)
         statusCircle.background = shape
         statusCircle.visibility = View.VISIBLE
         SentinelTorManager.getTorStateLiveData().observe(this, Observer {
