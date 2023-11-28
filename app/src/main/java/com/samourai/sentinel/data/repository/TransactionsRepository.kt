@@ -97,6 +97,7 @@ class TransactionsRepository {
                         if (SentinelState.blockHeight != null)
                             latestBlockHeight = SentinelState.blockHeight?.height!!
                         val items = response.txs.map { tx ->
+                            tx.hash = tx.hash + "-" + collectionId
                             tx.associatedPubKey = pubKeyAssociated.pubKey
                             val txBlockHeight = tx.block_height ?: 0
                             if (tx.block_height != null)
