@@ -443,7 +443,7 @@ class HomeActivity : SentinelActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        menu?.let { setNetWorkMenu(it) }
+        menu.let { setNetWorkMenu(it) }
         return super.onPrepareOptionsMenu(menu)
     }
 
