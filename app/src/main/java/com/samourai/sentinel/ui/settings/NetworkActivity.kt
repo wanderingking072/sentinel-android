@@ -69,6 +69,7 @@ class NetworkActivity : SentinelActivity() {
             SentinelTorManager.newIdentity()
             this.showFloatingSnackBar(findViewById(R.id.toolbarCollectionDetails), text = "Tor identity has been renewed")
         }
+        setTorConnectionState(SentinelTorManager.getTorState().state)
         SentinelTorManager.getTorStateLiveData().observe(this, {
             setTorConnectionState(it.state)
         })
