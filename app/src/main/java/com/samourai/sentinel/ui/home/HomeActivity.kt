@@ -132,11 +132,15 @@ class HomeActivity : SentinelActivity() {
             binding.swipeRefreshCollection.isRefreshing = it
         })
         model.getErrorMessage().observe(this) {
-            if (it != "null" &&  SentinelTorManager.getTorState().state != EnumTorState.STARTING)
-                this@HomeActivity.showFloatingSnackBar(
-                    binding.fab,
-                    text = "No data connection available. Please enable data"
-                )
+            if (it != "null" &&  SentinelTorManager.getTorState().state != EnumTorState.STARTING) {
+                if (!it.lowercase().contains("Unable to resolve host")) {
+                    println("Error message: " + it)
+                    this@HomeActivity.showFloatingSnackBar(
+                        binding.fab,
+                        text = "No data connection available. Please enable data"
+                    )
+                }
+            }
         }
 
         if (intent != null) {
@@ -241,7 +245,6 @@ class HomeActivity : SentinelActivity() {
                 SentinelTorManager.getTorStateLiveData().observe(this, {
                     if (it.state == EnumTorState.ON) {
                         GlobalScope.launch {
-                            delay(250L)
                             withContext(Dispatchers.Main) {
                                 model.fetchBalance()
                             }
