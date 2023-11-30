@@ -168,14 +168,12 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
             }
         }
         when {
-            /*
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
                 this.dismiss()
-                val bottomSheetFragment = SweepPrivKeyFragment(payload.trim())
+                val bottomSheetFragment = SweepPrivKeyFragment(payload.trim(), )
                 bottomSheetFragment.show(parentFragmentManager, bottomSheetFragment.tag)
             }
 
-             */
             FormatsUtil.isValidBitcoinAddress(payload.trim()) -> {
                 if (newPubKeyListener != null) {
                     val pubKey = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())

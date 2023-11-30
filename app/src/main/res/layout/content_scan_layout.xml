@@ -72,6 +72,22 @@
             app:layout_constraintStart_toStartOf="@+id/frameLayout"
             app:layout_constraintTop_toBottomOf="@+id/frameLayout"
             app:strokeColor="@color/white" />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/sweepProgress"
+            style="@style/Widget.MaterialComponents.CircularProgressIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:elevation="2dp"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:dotWidth="2dp"
+            app:indicatorColor="@color/white"
+            app:indicatorSize="24dp"
+            app:layout_constraintBottom_toBottomOf="@+id/pastePubKey"
+            app:layout_constraintEnd_toEndOf="@+id/pastePubKey"
+            app:layout_constraintStart_toStartOf="@+id/pastePubKey"
+            app:layout_constraintTop_toTopOf="@+id/pastePubKey" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </LinearLayout>
 

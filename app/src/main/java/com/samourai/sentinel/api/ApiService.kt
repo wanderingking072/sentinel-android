@@ -5,11 +5,14 @@ package com.samourai.sentinel.api
 import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.api.okHttp.await
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.tor.EnumTorState
 import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.apiScope
+import com.samourai.wallet.api.backend.beans.UnspentOutput
+import com.samourai.wallet.api.backend.beans.WalletResponse
 import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,6 +24,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
+import java.util.Arrays
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
@@ -135,6 +139,12 @@ open class ApiService {
             .build()
 
         return client.newCall(request).await()
+    }
+
+    suspend fun fetchAddressForSweep(address: String): MutableList<UnspentOutput> {
+        val response = getWallet(address)
+        val items: WalletResponse = fromJSON<WalletResponse>(response.body!!.string())!!
+        return Arrays.asList(*items.unspent_outputs)
     }
 
     suspend fun importAddress(pubKey: String): Response {
