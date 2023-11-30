@@ -9,11 +9,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.math.MathUtils
@@ -34,7 +34,6 @@ import com.samourai.sentinel.databinding.ContentPubkeySelectBinding
 import com.samourai.sentinel.databinding.ContentSweepPreviewBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.send.SuggestedFee
-import com.samourai.sentinel.sweep.PushTx
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.adapters.PubkeysAdapter
 import com.samourai.sentinel.ui.tools.sweep.TransactionForSweepHelper
@@ -58,7 +57,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -76,6 +74,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
     private val chooseCollectionFragment = ChooseCollectionFragment()
     private val choosePubkeyFragment = ChoosePubkeyFragment()
     private val previewSweep = PreviewFragment()
+    private val finishFragment = FinishFragment()
     private var pubKeyString = ""
     var privKeyReader: PrivKeyReader? = null
     private var _binding: FragmentBottomsheetViewPagerBinding? = null
@@ -92,12 +91,41 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
+
 
         setUpViewPager()
 
         scanPubKeyFragment.setOnScanListener {
             validate(it)
             pubKeyString = it
+        }
+
+        previewSweep.setOnScanListener {
+            val hexTx = previewSweep.broadcastTx()
+            var response: String? = null
+            apiScope.launch {
+                runBlocking {
+                    try {
+                        response = apiService.broadcast(hexTx!!)
+                    } catch (e: Exception) {
+                        Log.d("SweepPrivateKey", "Error broadcasting tx: " + e)
+                    }
+                }
+                requireActivity().runOnUiThread {
+                    if (response != "TX_ID_NOT_FOUND") {
+                        finishFragment.setHash(response!!)
+                        finishFragment.setIsSuccess(true)
+                        binding.pager.currentItem = 4
+                    }
+                    else
+                        Toast.makeText(
+                            context,
+                            "Error broadcasting transaction",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                }
+            }
         }
 
 
@@ -186,8 +214,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
         item.add(chooseCollectionFragment)
         item.add(choosePubkeyFragment)
         item.add(previewSweep)
-        //item.add(choosePubKey)
-        //item.previewSweep
+        item.add(finishFragment)
         binding.pager.adapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int {
                 return item.size
@@ -410,6 +437,8 @@ class PreviewFragment : Fragment() {
 
     private var selectedFee: Long = 1000L
 
+    private var onSweepButton: () -> Unit = {}
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -424,15 +453,19 @@ class PreviewFragment : Fragment() {
         setUpFee()
 
         binding.sweepBtn.setOnClickListener {
-            broadcastTx(requireContext())
+            onSweepButton()
         }
 
         return view
     }
 
-    private fun broadcastTx(context: Context) {
+    fun setOnScanListener(callback: () -> Unit) {
+        this.onSweepButton = callback
+    }
+
+    fun broadcastTx(): String? {
         val feeRepository: FeeRepository by KoinJavaComponent.inject(FeeRepository::class.java)
-        val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
+        var hexTx: String? = null
 
         feeLow = 1000L
         feeMed = feeRepository.getNormalFee().defaultPerKB.toLong()
@@ -441,9 +474,7 @@ class PreviewFragment : Fragment() {
             feeHigh = 3000L
         }
         var transaction: Transaction? = null
-        apiScope.launch {
             try {
-                withContext(Dispatchers.Default) {
                     val receiveAddress = getAddress(selectedPubkey)
                     val rbfOptin = false //PrefsUtil.getInstance(context).getValue(PrefsUtil.RBF_OPT_IN, false)
                     val blockHeight = SentinelState.blockHeight?.height ?: -1L
@@ -455,9 +486,7 @@ class PreviewFragment : Fragment() {
                     //Check if the amount too low for a tx or miner fee is high
                     if (amount == 0L || fee > totalValue || amount <= SamouraiWalletConst.bDust.toLong()) {
                         //check if the tx is possible with 1sat/b rate
-                        withContext(Dispatchers.Main) {
-                            feeRange = 0.1f
-                        }
+                        feeRange = 0.1f
                         feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), 0.0f).coerceAtLeast(1f)
                         fee = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
                         amount = totalValue - fee
@@ -474,23 +503,16 @@ class PreviewFragment : Fragment() {
                     transaction = TransactionForSweepHelper.signTransactionForSweep(tr, sweepPreview.privKey, params, bipFormatSupplier)
                     try {
                         if (transaction != null) {
-                            val hexTx = TxUtil.getInstance().getTxHex(transaction)
-                            apiService.broadcast(hexTx)
+                            hexTx = TxUtil.getInstance().getTxHex(transaction)
                         }
                     } catch (e: Exception) {
                         throw  CancellationException("pushTx : ${e.message}")
                     }
-                }
 
-                /**
-                 * creation of a new context to allow the update of the model (postValue execution)
-                 * before consuming it to calculate the number of estimated waiting blocks
-                 */
             } catch (e: Exception) {
                 println( "issue on making transaction : " + e.message + ":: " + e)
             }
-        }
-
+        return hexTx
     }
     private fun createTransaction(
         receivers: MutableMap<String, Long>,
@@ -699,5 +721,29 @@ class PreviewFragment : Fragment() {
         }
          */
         return BIP_FORMAT.PROVIDER;
+    }
+}
+
+class FinishFragment : Fragment() {
+    private var isSuccess = false
+    private var hash = ""
+
+    fun setIsSuccess (isSuccess: Boolean) {
+        this.isSuccess = isSuccess
+    }
+
+    fun setHash(hash: String) {
+        this.hash = hash
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+         val view = inflater.inflate(R.layout.layout_success_bottom, container)
+            view.findViewById<TextView>(R.id.dialogTitle).text = "Sweep Success!"
+            view.findViewById<TextView>(R.id.transactionID).text = hash
+            return view
     }
 }
