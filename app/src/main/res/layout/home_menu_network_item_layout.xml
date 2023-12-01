@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="32dp"
+    android:layout_width="50dp"
     android:layout_height="32dp"
     android:layout_gravity="center"
     android:clickable="false"
@@ -10,7 +10,7 @@
     <ImageView
         android:layout_width="22dp"
         android:layout_height="22dp"
-        android:layout_marginEnd="7dp"
+        android:layout_marginEnd="10dp"
         android:layout_gravity="center"
         android:clickable="false"
         android:background="?attr/selectableItemBackgroundBorderless"
@@ -21,6 +21,7 @@
         android:id="@+id/home_menu_network_shape"
         android:layout_width="14dp"
         android:layout_height="14dp"
+        android:layout_marginEnd="17dp"
         android:clickable="false"
         android:layout_gravity="top|end"
         android:background="@drawable/circle_shape"
