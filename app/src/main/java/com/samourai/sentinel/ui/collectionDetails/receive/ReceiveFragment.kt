@@ -13,15 +13,26 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
-import android.view.*
-import android.widget.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import com.google.zxing.BarcodeFormat
@@ -34,6 +45,7 @@ import com.samourai.sentinel.core.hd.HD_Account
 import com.samourai.sentinel.core.segwit.P2SH_P2WPKH
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.databinding.AdvancedReceiveFragmentBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.views.confirm
@@ -51,7 +63,7 @@ import java.io.IOException
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.text.ParseException
-import java.util.*
+import java.util.Locale
 
 
 class ReceiveFragment : Fragment() {
@@ -70,6 +82,9 @@ class ReceiveFragment : Fragment() {
     private val receiveViewModel: ReceiveViewModel by viewModels()
     private lateinit var advancedContainer: ConstraintLayout
     private val HARDENED = 2147483648
+    private val POSTMIX_ACC = 2147483646L
+    private val PREMIX_ACC = 2147483645L
+    private val BADBANK_ACC = 2147483644L
 
 
     private lateinit var qrFile: String
@@ -350,9 +365,19 @@ class ReceiveFragment : Fragment() {
         }
     }
 
+    private fun isPubDifferentThanWhirlpool(pubkey: PubKeyModel): Boolean {
+        return if (pubkey.type != AddressTypes.ADDRESS) {
+            val xpub = XPUB(pubkey.pubKey)
+            xpub.decode()
+            val account = xpub.child + HARDENED
+            (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+        } else
+            true
+    }
 
     private fun setUpSpinner() {
-        val items = collection.pubs.map { it.label }.toMutableList()
+        val items = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it.label }.toMutableList()
+
         if (items.size != 0) {
             val adapter: ArrayAdapter<String> = ArrayAdapter(requireContext(),
                     R.layout.dropdown_menu_popup_item, items)
@@ -499,18 +524,41 @@ class ReceiveFragment : Fragment() {
     }
 
     fun setDropDownPub(index: Int) {
-        val items = collection.pubs.map { it.label }.toMutableList()
+        if (index <= 0 || !isAdded) {
+            //indexPubSelector = index
+            return
+        }
+        val items = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it.label }.toMutableList()
 
-        if (items.size != 0 && index > 0) {
+        val newIndex =
+            if (isPubDifferentThanWhirlpool(collection.pubs[index-1])) index-collection.pubs.count{!isPubDifferentThanWhirlpool(it)}
+        else findFirstNonWhirlpoolPub()
+
+        if (items.size != 0 && newIndex > 0) {
             val adapter: ArrayAdapter<String> = ArrayAdapter(requireContext(),
                 R.layout.dropdown_menu_popup_item, items)
             pubKeyDropDown.inputType = InputType.TYPE_NULL
             pubKeyDropDown.setAdapter(adapter)
-            pubKeyDropDown.setText(items.get(index-1), false)
-            pubKeyIndex = index-1
+            pubKeyDropDown.setText(items[newIndex-1], false)
+            pubKeyIndex = newIndex-1
             generateQR()
             tvPath.text = getPath()
         }
+    }
+
+    private fun findFirstNonWhirlpoolPub(): Int {
+        collection.pubs.forEach {
+            if (it.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(it.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+                    return collection.pubs.indexOf(it)+1
+            } else
+                return collection.pubs.indexOf(it)+1
+        }
+
+        return 1
     }
 
 

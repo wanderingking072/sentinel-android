@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -21,6 +20,7 @@ import com.samourai.sentinel.ui.collectionDetails.receive.ReceiveFragment
 import com.samourai.sentinel.ui.collectionDetails.send.SendFragment
 import com.samourai.sentinel.ui.collectionDetails.transactions.TransactionsFragment
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
+import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -38,6 +38,11 @@ class CollectionDetailsActivity : SentinelActivity() {
     private var collection: PubKeyCollection? = null
     private val repository: CollectionRepository by inject(CollectionRepository::class.java)
     private lateinit var binding: ActivityCollectionDetailsBinding
+    private val HARDENED = 2147483648
+    private val POSTMIX_ACC = 2147483646L
+    private val PREMIX_ACC = 2147483645L
+    private val BADBANK_ACC = 2147483644L
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,7 +84,13 @@ class CollectionDetailsActivity : SentinelActivity() {
         binding.bottomNav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.bottom_nav_receive -> {
-                    binding.fragmentHostContainerPager.setCurrentItem(0, true)
+                    if (collectionOnlyHasWhirlpoolPubs())
+                        this@CollectionDetailsActivity.showFloatingSnackBar(
+                            binding.root,
+                            text = "Receiving is not available for postmix, premix and badbank"
+                        )
+                    else
+                        binding.fragmentHostContainerPager.setCurrentItem(0, true)
                 }
 
                 R.id.bottom_nav_send -> {
@@ -170,6 +181,22 @@ class CollectionDetailsActivity : SentinelActivity() {
     private fun collectionOnlyHasSingleAddresses(): Boolean {
         collection?.pubs?.forEach {
             if (it.type  != AddressTypes.ADDRESS)
+                return false
+        }
+
+        return true
+    }
+
+    private fun collectionOnlyHasWhirlpoolPubs(): Boolean {
+        collection?.pubs?.forEach {
+            if (it.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(it.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+                    return false
+            }
+            else
                 return false
         }
 
