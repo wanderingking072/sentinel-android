@@ -69,7 +69,7 @@ class PubkeysAdapter : RecyclerView.Adapter<PubkeysAdapter.CollectionHolder>() {
 
         } else {
             val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.collection_item_stacked_layout, parent, false);
+                    .inflate(R.layout.pubkeys_item_stacked, parent, false);
             CollectionHolder(view)
         }
     }

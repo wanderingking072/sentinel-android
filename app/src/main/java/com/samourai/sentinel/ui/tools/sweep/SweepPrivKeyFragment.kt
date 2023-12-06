@@ -311,8 +311,9 @@ class ChooseCollectionFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = ContentCollectionSelectBinding.inflate(inflater, container, false)
+        binding.textView15.text = "Choose which Collection to receive the sweep to"
         val view = binding.root
         return view
     }
@@ -396,10 +397,9 @@ class ChoosePubkeyFragment : Fragment() {
 
     private fun setUpCollectionSelectList() {
 
-        repository.findById(selectedCollection.id)
-        repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
+        repository.collectionsLiveData.observe(viewLifecycleOwner) {
             pubkeysAdapter.update(repository.findById(selectedCollection.id)!!.pubs)
-        })
+        }
 
         pubkeysAdapter.setLayoutType(PubkeysAdapter.Companion.LayoutType.STACKED)
         val linearLayoutManager = LinearLayoutManager(context)

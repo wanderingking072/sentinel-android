@@ -258,7 +258,7 @@ class ScanPubKeyFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.findViewById<Button>(R.id.pastePubKey).text = "Paste Pubkey"
+        view.findViewById<Button>(R.id.pastePubKey).text = "Paste"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
         mCodeScanner.setLifeCycleOwner(this)
 
