@@ -131,6 +131,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
         chooseCollectionFragment.setOnSelectListener {
             choosePubkeyFragment.setSelectedCollection(it!!)
+            previewSweep.setSelectedCollection(it)
             binding.pager.setCurrentItem(2, true)
         }
 
@@ -390,7 +391,7 @@ class ChoosePubkeyFragment : Fragment() {
         }
     }
 
-    public fun setSelectedCollection(collection: PubKeyCollection) {
+    fun setSelectedCollection(collection: PubKeyCollection) {
         this.selectedCollection = collection
         setUpCollectionSelectList()
     }
@@ -423,8 +424,9 @@ class ChoosePubkeyFragment : Fragment() {
 class PreviewFragment : Fragment() {
     private var _binding: ContentSweepPreviewBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var selectedPubkey: PubKeyModel
+    private lateinit var selectCollection: PubKeyCollection
+
     private lateinit var utxoList: MutableList<UnspentOutput>
     private lateinit var bipFormat: BipFormat
     private lateinit var sweepPreview: SweepPreview
@@ -474,44 +476,43 @@ class PreviewFragment : Fragment() {
             feeHigh = 3000L
         }
         var transaction: Transaction? = null
-            try {
-                    val receiveAddress = getAddress(selectedPubkey)
-                    val rbfOptin = false //PrefsUtil.getInstance(context).getValue(PrefsUtil.RBF_OPT_IN, false)
-                    val blockHeight = SentinelState.blockHeight?.height ?: -1L
-                    val totalValue = UnspentOutput.sumValue(utxoList)
-                    val address: String? = bipFormat.getToAddress(privKeyReader.key, privKeyReader.params)
-                    var feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), feeRange ?: 0f).coerceAtLeast(1f)
-                    var fee: Long = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
-                    var amount = totalValue - fee
-                    //Check if the amount too low for a tx or miner fee is high
-                    if (amount == 0L || fee > totalValue || amount <= SamouraiWalletConst.bDust.toLong()) {
-                        //check if the tx is possible with 1sat/b rate
-                        feeRange = 0.1f
-                        feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), 0.0f).coerceAtLeast(1f)
-                        fee = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
-                        amount = totalValue - fee
-                    }
-                    sweepPreview = SweepPreview(amount, address, bipFormat, fee, utxoList, privKeyReader.key, privKeyReader.params)
-                    val params = sweepPreview.params
-                    val receivers: MutableMap<String, Long> = LinkedHashMap()
-                    receivers[receiveAddress] = sweepPreview.amount
-                    val outpoints: MutableCollection<MyTransactionOutPoint> = mutableListOf()
-                    sweepPreview.utxos
-                        .map { unspentOutput: UnspentOutput -> unspentOutput.computeOutpoint(params) }.toCollection(outpoints);
-                    val bipFormatSupplier: BipFormatSupplier = getBipFormatSupplier(bipFormat);
-                    val tr = createTransaction(receivers, outpoints, bipFormatSupplier, rbfOptin, blockHeight)
-                    transaction = TransactionForSweepHelper.signTransactionForSweep(tr, sweepPreview.privKey, params, bipFormatSupplier)
-                    try {
-                        if (transaction != null) {
-                            hexTx = TxUtil.getInstance().getTxHex(transaction)
-                        }
-                    } catch (e: Exception) {
-                        throw  CancellationException("pushTx : ${e.message}")
-                    }
-
-            } catch (e: Exception) {
-                println( "issue on making transaction : " + e.message + ":: " + e)
+        try {
+            val receiveAddress = getAddress(selectedPubkey)
+            val rbfOptin = false //PrefsUtil.getInstance(context).getValue(PrefsUtil.RBF_OPT_IN, false)
+            val blockHeight = SentinelState.blockHeight?.height ?: -1L
+            val totalValue = UnspentOutput.sumValue(utxoList)
+            val address: String? = bipFormat.getToAddress(privKeyReader.key, privKeyReader.params)
+            var feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), feeRange ?: 0f).coerceAtLeast(1f)
+            var fee: Long = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
+            var amount = totalValue - fee
+            //Check if the amount too low for a tx or miner fee is high
+            if (amount == 0L || fee > totalValue || amount <= SamouraiWalletConst.bDust.toLong()) {
+                //check if the tx is possible with 1sat/b rate
+                feeRange = 0.1f
+                feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), 0.0f).coerceAtLeast(1f)
+                fee = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
+                amount = totalValue - fee
             }
+            sweepPreview = SweepPreview(amount, address, bipFormat, fee, utxoList, privKeyReader.key, privKeyReader.params)
+            val params = sweepPreview.params
+            val receivers: MutableMap<String, Long> = LinkedHashMap()
+            receivers[receiveAddress] = sweepPreview.amount
+            val outpoints: MutableCollection<MyTransactionOutPoint> = mutableListOf()
+            sweepPreview.utxos
+                .map { unspentOutput: UnspentOutput -> unspentOutput.computeOutpoint(params) }.toCollection(outpoints);
+            val bipFormatSupplier: BipFormatSupplier = getBipFormatSupplier(bipFormat);
+            val tr = createTransaction(receivers, outpoints, bipFormatSupplier, rbfOptin, blockHeight)
+            transaction = TransactionForSweepHelper.signTransactionForSweep(tr, sweepPreview.privKey, params, bipFormatSupplier)
+            try {
+                if (transaction != null) {
+                hexTx = TxUtil.getInstance().getTxHex(transaction)
+                }
+            } catch (e: Exception) {
+                throw  CancellationException("pushTx : ${e.message}")
+            }
+        } catch (e: Exception) {
+            println( "issue on making transaction : " + e.message + ":: " + e)
+        }
         return hexTx
     }
     private fun createTransaction(
@@ -586,6 +587,7 @@ class PreviewFragment : Fragment() {
 
     private fun preparePreview() {
         binding.receiveAddress.text = getAddress(selectedPubkey)
+        binding.collectionAndPubkey.text = "${selectCollection.collectionLabel}, ${selectedPubkey.label}"
         binding.fromAddress.text = this.utxoList.get(0).addr
         binding.amount.text = "${UnspentOutput.sumValue(utxoList).div(1e8)} BTC"
     }
@@ -721,6 +723,10 @@ class PreviewFragment : Fragment() {
         }
          */
         return BIP_FORMAT.PROVIDER;
+    }
+
+    fun setSelectedCollection(collection: PubKeyCollection) {
+        this.selectCollection = collection
     }
 }
 
