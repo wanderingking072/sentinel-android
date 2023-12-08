@@ -186,9 +186,15 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                 }
             }
             if (!foundUTXO) {
-                requireActivity().runOnUiThread({
-                    Toast.makeText(context, "This private key doesn't have any UTXOs", Toast.LENGTH_SHORT).show()
-                })
+                if (isAdded && activity != null) {
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(
+                            context,
+                            "This private key doesn't have any UTXOs",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
                 dismiss()
             }
         }
