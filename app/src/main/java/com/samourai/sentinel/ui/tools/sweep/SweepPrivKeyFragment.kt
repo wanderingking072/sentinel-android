@@ -40,6 +40,7 @@ import com.samourai.sentinel.ui.tools.sweep.TransactionForSweepHelper
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
+import com.samourai.sentinel.ui.views.SuccessfulBottomSheet
 import com.samourai.sentinel.util.apiScope
 import com.samourai.wallet.SamouraiWalletConst
 import com.samourai.wallet.api.backend.beans.UnspentOutput
@@ -101,22 +102,32 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
             pubKeyString = it
         }
 
-        previewSweep.setOnScanListener {
+        previewSweep.setOnSweepBtnTap {
             val hexTx = previewSweep.broadcastTx()
             var response: String? = null
             apiScope.launch {
                 runBlocking {
                     try {
-                        response = apiService.broadcast(hexTx!!)
+                        //response = apiService.broadcast(hexTx!!)
                     } catch (e: Exception) {
                         Log.d("SweepPrivateKey", "Error broadcasting tx: " + e)
                     }
                 }
                 requireActivity().runOnUiThread {
                     if (response != "TX_ID_NOT_FOUND") {
-                        finishFragment.setHash(response!!)
-                        finishFragment.setIsSuccess(true)
-                        binding.pager.currentItem = 4
+                        if (isAdded && activity != null) {
+                            val bottomSheet = SuccessfulBottomSheet(
+                                "Sweep Successful",
+                                //response!!,
+                                "whatever",
+                                onViewReady = {
+                                    it.view
+                                })
+                            bottomSheet.show(
+                                requireActivity().supportFragmentManager,
+                                bottomSheet.tag
+                            )
+                        }
                     }
                     else
                         Toast.makeText(
@@ -126,6 +137,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                         ).show()
                 }
             }
+            this.dismiss()
         }
 
 
@@ -467,7 +479,7 @@ class PreviewFragment : Fragment() {
         return view
     }
 
-    fun setOnScanListener(callback: () -> Unit) {
+    fun setOnSweepBtnTap(callback: () -> Unit) {
         this.onSweepButton = callback
     }
 
