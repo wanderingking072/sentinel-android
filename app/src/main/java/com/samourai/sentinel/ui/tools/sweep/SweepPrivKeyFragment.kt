@@ -98,6 +98,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
         setUpViewPager()
 
         scanPubKeyFragment.setOnScanListener {
+            view.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.VISIBLE
             validate(it)
             pubKeyString = it
         }
@@ -265,10 +266,6 @@ class ScanPubKeyFragment : Fragment() {
 
     fun setOnScanListener(callback: (scanData: String) -> Unit) {
         this.onScan = callback
-    }
-
-    fun showLoading(show: Boolean) {
-        view?.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = if (show) View.VISIBLE else View.GONE
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         view.findViewById<Button>(R.id.pastePubKey).text = "Paste Private Key"
