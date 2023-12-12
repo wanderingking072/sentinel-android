@@ -5,6 +5,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.samourai.sentinel.R
 import io.matthewnelson.kmp.tor.KmpTorLoaderAndroid
 import io.matthewnelson.kmp.tor.TorConfigProviderAndroid
 import io.matthewnelson.kmp.tor.common.address.*
@@ -212,21 +213,52 @@ class TorKmpManager(application : Application) {
 
 
     fun newIdentity(appContext: Application) {
-        appScope.launch(Dispatchers.IO) {
-            var result = manager.signal(TorControlSignal.Signal.NewNym)
-            appScope.launch(Dispatchers.Main) {
-                if (result.isSuccess) {
-                    val msg = "You have changed Tor identity"
-                    listener.addLine(msg)
-                    Toast.makeText(appContext, msg, Toast.LENGTH_SHORT).show()
-                } else if (result.isFailure) {
-                    val msg = "Tor identity change failed"
-                    listener.addLine(msg)
-                    Toast.makeText(appContext, msg, Toast.LENGTH_SHORT).show()
+        appScope.launch {
+            val result = manager.signal(TorControlSignal.Signal.NewNym)
+            result.onSuccess {
+                if (it !is String) {
+                    listener.addLine(TorControlSignal.NEW_NYM_SUCCESS)
+                    Toast.makeText(appContext, TorControlSignal.NEW_NYM_SUCCESS, Toast.LENGTH_SHORT).show()
+                    return@onSuccess
                 }
+
+                val post: String? = when {
+                    it.startsWith(TorControlSignal.NEW_NYM_RATE_LIMITED) -> {
+                        // Rate limiting NEWNYM request: delaying by 8 second(s)
+                        val seconds: Int? = it.drop(TorControlSignal.NEW_NYM_RATE_LIMITED.length)
+                            .substringBefore(' ')
+                            .toIntOrNull()
+
+                        if (seconds == null) {
+                            it
+                        } else {
+                            appContext.getString(
+                                R.string.kmp_tor_newnym_rate_limited,
+                                seconds
+                            )
+                        }
+                    }
+                    it == TorControlSignal.NEW_NYM_SUCCESS -> {
+                        appContext.getString(R.string.kmp_tor_newnym_success)
+                    }
+                    else -> {
+                        null
+                    }
+                }
+
+                if (post != null) {
+                    listener.addLine(post)
+                    Toast.makeText(appContext, post, Toast.LENGTH_SHORT).show()
+                }
+            }
+            result.onFailure {
+                val msg = "Tor identity change failed"
+                listener.addLine(msg)
+                Toast.makeText(appContext, msg, Toast.LENGTH_SHORT).show()
             }
         }
     }
+
 
     private inner class TorListener: TorManagerEvent.Listener() {
         private val _eventLines: MutableLiveData<String> = MutableLiveData("")
