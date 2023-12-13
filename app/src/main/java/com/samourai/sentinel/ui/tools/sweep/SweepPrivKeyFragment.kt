@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +13,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -114,30 +118,37 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                     }
                 }
                 requireActivity().runOnUiThread {
-                    if (response != "TX_ID_NOT_FOUND") {
-                        if (isAdded && activity != null) {
-                            val bottomSheet = SuccessfulBottomSheet(
-                                "Sweep Successful",
-                                //response!!,
-                                "whatever",
-                                onViewReady = {
-                                    it.view
-                                },)
-                            bottomSheet.show(
-                                requireActivity().supportFragmentManager,
-                                bottomSheet.tag
-                            )
+                    view.findViewById<ConstraintLayout>(R.id.sweepPreviewTitleLayout).visibility = View.GONE
+                    view.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress).visibility = View.VISIBLE
+                    view.findViewById<NestedScrollView>(R.id.sweepPreveiewScrollView).visibility = View.GONE
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        // Hide the ConstraintLayout after 4 seconds
+                        if (response != "TX_ID_NOT_FOUND") {
+                            if (isAdded && activity != null) {
+                                val bottomSheet = SuccessfulBottomSheet(
+                                    "Sweep Successful",
+                                    //response!!,
+                                    "whatever",
+                                    onViewReady = {
+                                        it.view
+                                    },)
+                                bottomSheet.show(
+                                    requireActivity().supportFragmentManager,
+                                    bottomSheet.tag
+                                )
+                            }
                         }
-                    }
-                    else
-                        Toast.makeText(
-                            context,
-                            "Error broadcasting transaction",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        else {
+                            Toast.makeText(
+                                context,
+                                "Error broadcasting transaction",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            dismiss()
+                        }
+                    }, 4000)
                 }
             }
-            this.dismiss()
         }
 
 
