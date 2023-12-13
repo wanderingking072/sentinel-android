@@ -98,7 +98,6 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
         setUpViewPager()
 
         scanPubKeyFragment.setOnScanListener {
-            view.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.VISIBLE
             validate(it)
             pubKeyString = it
         }
@@ -123,7 +122,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                                 "whatever",
                                 onViewReady = {
                                     it.view
-                                })
+                                },)
                             bottomSheet.show(
                                 requireActivity().supportFragmentManager,
                                 bottomSheet.tag
@@ -161,6 +160,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
 
     private fun validate(payload: String) {
+        view?.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.VISIBLE
         when {
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
                 privKeyReader = PrivKeyReader(payload.trim(), SentinelState.getNetworkParam())
@@ -172,6 +172,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                 }
             }
             else -> {
+                view?.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.INVISIBLE
                 Toast.makeText(context, "Invalid private key", Toast.LENGTH_LONG).show()
             }
         }
