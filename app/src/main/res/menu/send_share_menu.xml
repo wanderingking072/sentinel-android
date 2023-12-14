@@ -7,6 +7,9 @@
     <item android:id="@+id/menu_save_as_text_file"
         android:title="Save as text file" />
 
+    <item android:id="@+id/menu_share_psbt"
+        android:title="Share as psbt" />
+
     <item android:id="@+id/menu_save_as_psbt"
         android:icon="@drawable/ic_file_export"
         android:title="Save as psbt file" />

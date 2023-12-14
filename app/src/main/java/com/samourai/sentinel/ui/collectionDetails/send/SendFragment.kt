@@ -22,6 +22,7 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -196,6 +197,27 @@ class SendFragment : Fragment() {
                     }
                     R.id.menu_save_as_psbt -> {
                         sharePSBTFile()
+                    }
+                    R.id.menu_share_psbt -> {
+                        val psbtBytes: ByteArray? = viewModel.getPsbtBytes()
+                        val psbtFile = File(requireContext().cacheDir, "PSBT_transaction.psbt")
+                        psbtFile.writeBytes(psbtBytes!!)
+
+                        val uri = FileProvider.getUriForFile(
+                            requireContext(),
+                            "${requireContext().packageName}.provider",
+                            psbtFile
+                        )
+
+                        val sendIntent: Intent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            type = "application/octet-stream"
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
+                        val shareIntent = Intent.createChooser(sendIntent, null)
+                        startActivity(shareIntent)
                     }
                     R.id.menu_save_as_text_file -> {
                         saveTxtFile()
