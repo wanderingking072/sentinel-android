@@ -163,6 +163,18 @@ class CollectionDetailsActivity : SentinelActivity() {
                 )
             }
         }
+        else if (requestCode == 2 && resultCode == Activity.RESULT_OK) {
+            data?.data?.also { uri ->
+                val fileContent = sendFragment.viewModel.psbtLive.value
+                val outputStream = contentResolver.openOutputStream(uri)
+                outputStream?.write(fileContent?.toByteArray())
+                outputStream?.close()
+                this@CollectionDetailsActivity.showFloatingSnackBar(
+                    binding.root,
+                    text = "Txt file saved to ${uri.path}"
+                )
+            }
+        }
     }
 
     override fun onBackPressed() {
