@@ -3,12 +3,11 @@ package com.samourai.sentinel.ui.tools
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.samourai.sentinel.R
 import com.samourai.sentinel.ui.broadcast.BroadcastTx
-import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
+import com.samourai.sentinel.ui.tools.sweep.SweepPrivKeyFragment
 
 class ToolsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {

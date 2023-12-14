@@ -28,7 +28,7 @@ import com.samourai.sentinel.databinding.ContentCollectionSelectBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
-import com.samourai.sentinel.ui.tools.SweepPrivKeyFragment
+import com.samourai.sentinel.ui.tools.sweep.SweepPrivKeyFragment
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet

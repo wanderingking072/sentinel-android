@@ -1,4 +1,4 @@
-package com.samourai.sentinel.ui.tools
+package com.samourai.sentinel.ui.tools.sweep
 
 import android.Manifest
 import android.content.ClipboardManager
@@ -40,7 +40,6 @@ import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.send.SuggestedFee
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.adapters.PubkeysAdapter
-import com.samourai.sentinel.ui.tools.sweep.TransactionForSweepHelper
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
@@ -112,7 +111,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
             apiScope.launch {
                 runBlocking {
                     try {
-                        //response = apiService.broadcast(hexTx!!)
+                        response = apiService.broadcast(hexTx!!)
                     } catch (e: Exception) {
                         Log.d("SweepPrivateKey", "Error broadcasting tx: " + e)
                     }
@@ -122,13 +121,11 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                     view.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress).visibility = View.VISIBLE
                     view.findViewById<NestedScrollView>(R.id.sweepPreveiewScrollView).visibility = View.GONE
                     Handler(Looper.getMainLooper()).postDelayed({
-                        // Hide the ConstraintLayout after 4 seconds
                         if (response != "TX_ID_NOT_FOUND") {
                             if (isAdded && activity != null) {
                                 val bottomSheet = SuccessfulBottomSheet(
                                     "Sweep Successful",
-                                    //response!!,
-                                    "whatever",
+                                    response!!,
                                     onViewReady = {
                                         it.view
                                     },)
