@@ -7,11 +7,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/sweepPreviewTitleLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
 
-        <TextView
+    <TextView
             android:id="@+id/textView2"
             style="@style/TextAppearance.AppCompat.Title"
             android:layout_width="wrap_content"
@@ -43,7 +44,7 @@
 <!--    -->
 
     <androidx.core.widget.NestedScrollView
-        android:id="@+id/nScrollView"
+        android:id="@+id/sweepPreveiewScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -57,12 +58,13 @@
                 android:id="@+id/textView6"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
                 android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp"
                 android:text="Address"
                 android:textColor="@color/grey_accent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -70,13 +72,14 @@
                 android:id="@+id/fromAddress"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:layout_marginEnd="8dp"
-                android:layout_marginTop="16dp"
+                android:paddingTop="5dp"
                 android:text="bc1pzw2arl93wu4ykv0m8qgsmc3e00n5rcymnv8442tllveh6ac23zwsugzmgg"
                 android:textColor="@color/white"
                 android:textStyle="bold"
-                android:paddingTop="5dp"
                 app:layout_constraintEnd_toEndOf="@id/textView6"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="@id/textView6"
                 app:layout_constraintTop_toTopOf="@id/textView6" />
 
@@ -84,11 +87,12 @@
                 android:id="@+id/textView7"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
                 android:layout_marginEnd="8dp"
-                android:layout_marginTop="30dp"
                 android:text="Balance of unspent output"
                 android:textColor="@color/grey_accent"
                 app:layout_constraintEnd_toEndOf="@id/fromAddress"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="@id/fromAddress"
                 app:layout_constraintTop_toTopOf="@id/fromAddress" />
 
@@ -132,17 +136,31 @@
                 app:layout_constraintStart_toStartOf="@id/textView9"
                 app:layout_constraintTop_toTopOf="@id/textView9" />
 
+            <TextView
+                android:id="@+id/collectionAndPubkey"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="30dp"
+                android:text="Collection Name 12, pubkey name"
+                android:textColor="@color/blue_ui_2"
+                android:textStyle="bold"
+                android:paddingTop="5dp"
+                app:layout_constraintEnd_toEndOf="@id/receiveAddress"
+                app:layout_constraintStart_toStartOf="@id/receiveAddress"
+                app:layout_constraintTop_toTopOf="@id/receiveAddress" />
+
             <include
                 android:id="@+id/feeSelector"
                 layout="@layout/fee_selector"
                 android:layout_width="381dp"
                 android:layout_height="157dp"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="0dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="@+id/textView9"
                 app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="@+id/receiveAddress"
-                app:layout_constraintTop_toBottomOf="@+id/receiveAddress"
+                app:layout_constraintStart_toStartOf="@+id/collectionAndPubkey"
+                app:layout_constraintTop_toBottomOf="@+id/collectionAndPubkey"
                 app:layout_constraintVertical_bias="0.0" />
 
 
@@ -165,16 +183,48 @@
                 app:layout_constraintTop_toBottomOf="@+id/feeSelector"
                 app:shapeAppearance="@style/ShapeAppearance.MaterialComponents.MediumComponent" />
 
+
         </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
 
 
     </androidx.core.widget.NestedScrollView>
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/sweepPreviewCircularProgress"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:background="@color/cardview_dark_background"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="gone">
 
+        <ProgressBar
+            android:id="@+id/circularProgressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
+        <ImageView
+            android:id="@+id/iconImageView"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_broom"
+            app:tint="@color/green_ui_2"
+            android:contentDescription=""
+            tools:ignore="ContentDescription"
+            app:layout_constraintTop_toTopOf="@+id/circularProgressBar"
+            app:layout_constraintStart_toStartOf="@+id/circularProgressBar"
+            app:layout_constraintEnd_toEndOf="@+id/circularProgressBar"
+            app:layout_constraintBottom_toBottomOf="@+id/circularProgressBar"/>
 
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </LinearLayout>

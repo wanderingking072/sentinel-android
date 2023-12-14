@@ -169,9 +169,11 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
         }
         when {
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
-                this.dismiss()
-                val bottomSheetFragment = SweepPrivKeyFragment(payload.trim(), )
-                bottomSheetFragment.show(parentFragmentManager, bottomSheetFragment.tag)
+                if (isAdded && activity != null) {
+                    this.dismiss()
+                    val bottomSheetFragment = SweepPrivKeyFragment(payload.trim(), )
+                    bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
+                }
             }
 
             FormatsUtil.isValidBitcoinAddress(payload.trim()) -> {
@@ -258,7 +260,7 @@ class ScanPubKeyFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.findViewById<Button>(R.id.pastePubKey).text = "Paste Pubkey"
+        view.findViewById<Button>(R.id.pastePubKey).text = "Paste"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
         mCodeScanner.setLifeCycleOwner(this)
 

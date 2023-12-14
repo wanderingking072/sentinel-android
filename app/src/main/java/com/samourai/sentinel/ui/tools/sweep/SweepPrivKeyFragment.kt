@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +13,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -40,6 +44,7 @@ import com.samourai.sentinel.ui.tools.sweep.TransactionForSweepHelper
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
+import com.samourai.sentinel.ui.views.SuccessfulBottomSheet
 import com.samourai.sentinel.util.apiScope
 import com.samourai.wallet.SamouraiWalletConst
 import com.samourai.wallet.api.backend.beans.UnspentOutput
@@ -101,29 +106,47 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
             pubKeyString = it
         }
 
-        previewSweep.setOnScanListener {
+        previewSweep.setOnSweepBtnTap {
             val hexTx = previewSweep.broadcastTx()
             var response: String? = null
             apiScope.launch {
                 runBlocking {
                     try {
-                        response = apiService.broadcast(hexTx!!)
+                        //response = apiService.broadcast(hexTx!!)
                     } catch (e: Exception) {
                         Log.d("SweepPrivateKey", "Error broadcasting tx: " + e)
                     }
                 }
                 requireActivity().runOnUiThread {
-                    if (response != "TX_ID_NOT_FOUND") {
-                        finishFragment.setHash(response!!)
-                        finishFragment.setIsSuccess(true)
-                        binding.pager.currentItem = 4
-                    }
-                    else
-                        Toast.makeText(
-                            context,
-                            "Error broadcasting transaction",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    view.findViewById<ConstraintLayout>(R.id.sweepPreviewTitleLayout).visibility = View.GONE
+                    view.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress).visibility = View.VISIBLE
+                    view.findViewById<NestedScrollView>(R.id.sweepPreveiewScrollView).visibility = View.GONE
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        // Hide the ConstraintLayout after 4 seconds
+                        if (response != "TX_ID_NOT_FOUND") {
+                            if (isAdded && activity != null) {
+                                val bottomSheet = SuccessfulBottomSheet(
+                                    "Sweep Successful",
+                                    //response!!,
+                                    "whatever",
+                                    onViewReady = {
+                                        it.view
+                                    },)
+                                bottomSheet.show(
+                                    requireActivity().supportFragmentManager,
+                                    bottomSheet.tag
+                                )
+                            }
+                        }
+                        else {
+                            Toast.makeText(
+                                context,
+                                "Error broadcasting transaction",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            dismiss()
+                        }
+                    }, 4000)
                 }
             }
         }
@@ -131,6 +154,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
         chooseCollectionFragment.setOnSelectListener {
             choosePubkeyFragment.setSelectedCollection(it!!)
+            previewSweep.setSelectedCollection(it)
             binding.pager.setCurrentItem(2, true)
         }
 
@@ -147,6 +171,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
 
     private fun validate(payload: String) {
+        view?.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.VISIBLE
         when {
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
                 privKeyReader = PrivKeyReader(payload.trim(), SentinelState.getNetworkParam())
@@ -158,6 +183,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                 }
             }
             else -> {
+                view?.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.INVISIBLE
                 Toast.makeText(context, "Invalid private key", Toast.LENGTH_LONG).show()
             }
         }
@@ -185,9 +211,15 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                 }
             }
             if (!foundUTXO) {
-                requireActivity().runOnUiThread({
-                    Toast.makeText(context, "This private key doesn't have any UTXOs", Toast.LENGTH_SHORT).show()
-                })
+                if (isAdded && activity != null) {
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(
+                            context,
+                            "This private key doesn't have any UTXOs",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
                 dismiss()
             }
         }
@@ -246,10 +278,6 @@ class ScanPubKeyFragment : Fragment() {
 
     fun setOnScanListener(callback: (scanData: String) -> Unit) {
         this.onScan = callback
-    }
-
-    fun showLoading(show: Boolean) {
-        view?.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = if (show) View.VISIBLE else View.GONE
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         view.findViewById<Button>(R.id.pastePubKey).text = "Paste Private Key"
@@ -311,8 +339,9 @@ class ChooseCollectionFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = ContentCollectionSelectBinding.inflate(inflater, container, false)
+        binding.textView15.text = "Choose which Collection to receive the sweep to"
         val view = binding.root
         return view
     }
@@ -389,17 +418,16 @@ class ChoosePubkeyFragment : Fragment() {
         }
     }
 
-    public fun setSelectedCollection(collection: PubKeyCollection) {
+    fun setSelectedCollection(collection: PubKeyCollection) {
         this.selectedCollection = collection
         setUpCollectionSelectList()
     }
 
     private fun setUpCollectionSelectList() {
 
-        repository.findById(selectedCollection.id)
-        repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
+        repository.collectionsLiveData.observe(viewLifecycleOwner) {
             pubkeysAdapter.update(repository.findById(selectedCollection.id)!!.pubs)
-        })
+        }
 
         pubkeysAdapter.setLayoutType(PubkeysAdapter.Companion.LayoutType.STACKED)
         val linearLayoutManager = LinearLayoutManager(context)
@@ -423,8 +451,9 @@ class ChoosePubkeyFragment : Fragment() {
 class PreviewFragment : Fragment() {
     private var _binding: ContentSweepPreviewBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var selectedPubkey: PubKeyModel
+    private lateinit var selectCollection: PubKeyCollection
+
     private lateinit var utxoList: MutableList<UnspentOutput>
     private lateinit var bipFormat: BipFormat
     private lateinit var sweepPreview: SweepPreview
@@ -459,7 +488,7 @@ class PreviewFragment : Fragment() {
         return view
     }
 
-    fun setOnScanListener(callback: () -> Unit) {
+    fun setOnSweepBtnTap(callback: () -> Unit) {
         this.onSweepButton = callback
     }
 
@@ -474,44 +503,43 @@ class PreviewFragment : Fragment() {
             feeHigh = 3000L
         }
         var transaction: Transaction? = null
-            try {
-                    val receiveAddress = getAddress(selectedPubkey)
-                    val rbfOptin = false //PrefsUtil.getInstance(context).getValue(PrefsUtil.RBF_OPT_IN, false)
-                    val blockHeight = SentinelState.blockHeight?.height ?: -1L
-                    val totalValue = UnspentOutput.sumValue(utxoList)
-                    val address: String? = bipFormat.getToAddress(privKeyReader.key, privKeyReader.params)
-                    var feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), feeRange ?: 0f).coerceAtLeast(1f)
-                    var fee: Long = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
-                    var amount = totalValue - fee
-                    //Check if the amount too low for a tx or miner fee is high
-                    if (amount == 0L || fee > totalValue || amount <= SamouraiWalletConst.bDust.toLong()) {
-                        //check if the tx is possible with 1sat/b rate
-                        feeRange = 0.1f
-                        feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), 0.0f).coerceAtLeast(1f)
-                        fee = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
-                        amount = totalValue - fee
-                    }
-                    sweepPreview = SweepPreview(amount, address, bipFormat, fee, utxoList, privKeyReader.key, privKeyReader.params)
-                    val params = sweepPreview.params
-                    val receivers: MutableMap<String, Long> = LinkedHashMap()
-                    receivers[receiveAddress] = sweepPreview.amount
-                    val outpoints: MutableCollection<MyTransactionOutPoint> = mutableListOf()
-                    sweepPreview.utxos
-                        .map { unspentOutput: UnspentOutput -> unspentOutput.computeOutpoint(params) }.toCollection(outpoints);
-                    val bipFormatSupplier: BipFormatSupplier = getBipFormatSupplier(bipFormat);
-                    val tr = createTransaction(receivers, outpoints, bipFormatSupplier, rbfOptin, blockHeight)
-                    transaction = TransactionForSweepHelper.signTransactionForSweep(tr, sweepPreview.privKey, params, bipFormatSupplier)
-                    try {
-                        if (transaction != null) {
-                            hexTx = TxUtil.getInstance().getTxHex(transaction)
-                        }
-                    } catch (e: Exception) {
-                        throw  CancellationException("pushTx : ${e.message}")
-                    }
-
-            } catch (e: Exception) {
-                println( "issue on making transaction : " + e.message + ":: " + e)
+        try {
+            val receiveAddress = getAddress(selectedPubkey)
+            val rbfOptin = false //PrefsUtil.getInstance(context).getValue(PrefsUtil.RBF_OPT_IN, false)
+            val blockHeight = SentinelState.blockHeight?.height ?: -1L
+            val totalValue = UnspentOutput.sumValue(utxoList)
+            val address: String? = bipFormat.getToAddress(privKeyReader.key, privKeyReader.params)
+            var feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), feeRange ?: 0f).coerceAtLeast(1f)
+            var fee: Long = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
+            var amount = totalValue - fee
+            //Check if the amount too low for a tx or miner fee is high
+            if (amount == 0L || fee > totalValue || amount <= SamouraiWalletConst.bDust.toLong()) {
+                //check if the tx is possible with 1sat/b rate
+                feeRange = 0.1f
+                feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), 0.0f).coerceAtLeast(1f)
+                fee = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
+                amount = totalValue - fee
             }
+            sweepPreview = SweepPreview(amount, address, bipFormat, fee, utxoList, privKeyReader.key, privKeyReader.params)
+            val params = sweepPreview.params
+            val receivers: MutableMap<String, Long> = LinkedHashMap()
+            receivers[receiveAddress] = sweepPreview.amount
+            val outpoints: MutableCollection<MyTransactionOutPoint> = mutableListOf()
+            sweepPreview.utxos
+                .map { unspentOutput: UnspentOutput -> unspentOutput.computeOutpoint(params) }.toCollection(outpoints);
+            val bipFormatSupplier: BipFormatSupplier = getBipFormatSupplier(bipFormat);
+            val tr = createTransaction(receivers, outpoints, bipFormatSupplier, rbfOptin, blockHeight)
+            transaction = TransactionForSweepHelper.signTransactionForSweep(tr, sweepPreview.privKey, params, bipFormatSupplier)
+            try {
+                if (transaction != null) {
+                hexTx = TxUtil.getInstance().getTxHex(transaction)
+                }
+            } catch (e: Exception) {
+                throw  CancellationException("pushTx : ${e.message}")
+            }
+        } catch (e: Exception) {
+            println( "issue on making transaction : " + e.message + ":: " + e)
+        }
         return hexTx
     }
     private fun createTransaction(
@@ -586,6 +614,7 @@ class PreviewFragment : Fragment() {
 
     private fun preparePreview() {
         binding.receiveAddress.text = getAddress(selectedPubkey)
+        binding.collectionAndPubkey.text = "${selectCollection.collectionLabel}, ${selectedPubkey.label}"
         binding.fromAddress.text = this.utxoList.get(0).addr
         binding.amount.text = "${UnspentOutput.sumValue(utxoList).div(1e8)} BTC"
     }
@@ -721,6 +750,10 @@ class PreviewFragment : Fragment() {
         }
          */
         return BIP_FORMAT.PROVIDER;
+    }
+
+    fun setSelectedCollection(collection: PubKeyCollection) {
+        this.selectCollection = collection
     }
 }
 
