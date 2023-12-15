@@ -1,5 +1,6 @@
 package com.samourai.sentinel.util
 
+import android.os.Build
 import com.google.gson.reflect.TypeToken
 import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.data.AddressTypes
@@ -44,6 +45,32 @@ class ExportImportUtil {
                 put("dojo", JSONObject(dojoUtility.exportDojoPayload()!!))
             }
         }
+    }
+
+    fun makeSupportBackup(): JSONObject {
+        val payload = makePayload()
+        val pubkeyInfoArray = payload.getJSONArray("collections")
+
+
+        for (i in 0 until pubkeyInfoArray.length()) {
+            (pubkeyInfoArray[i] as JSONObject).remove("lastRefreshed")
+        }
+        val meta = JSONObject()
+        meta.put(
+            "version_name",
+            BuildConfig.VERSION_NAME
+        )
+        meta.put(
+            "android_release",
+            if (Build.VERSION.RELEASE == null) "" else Build.VERSION.RELEASE
+        )
+        meta.put("device_manufacturer", if (Build.MANUFACTURER == null) "" else Build.MANUFACTURER)
+        meta.put("device_model", if (Build.MODEL == null) "" else Build.MODEL)
+        meta.put("device_product", if (Build.PRODUCT == null) "" else Build.PRODUCT)
+
+        payload.put("meta", meta)
+
+        return payload
     }
 
     fun addVersionInfo(content: String): JSONObject {
