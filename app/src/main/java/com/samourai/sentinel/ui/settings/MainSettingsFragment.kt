@@ -1,7 +1,10 @@
 package com.samourai.sentinel.ui.settings;
 
 import android.app.Activity
-import android.content.*
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -22,9 +25,7 @@ import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.tor.SentinelTorManager
-import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.ui.SentinelActivity
-import com.samourai.sentinel.ui.dojo.DojoPairing
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.PrefsUtil
@@ -32,16 +33,27 @@ import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.LockScreenDialog
 import com.samourai.sentinel.ui.views.alertWithInput
 import com.samourai.sentinel.ui.views.confirm
-import com.samourai.sentinel.util.*
+import com.samourai.sentinel.util.ExportImportUtil
+import com.samourai.sentinel.util.Hash
+import com.samourai.sentinel.util.UtxoMetaUtil
 import com.samourai.wallet.crypto.AESUtil
 import com.samourai.wallet.util.CharSequenceX
-import kotlinx.coroutines.*
-import org.koin.java.KoinJavaComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
-import java.io.*
+import java.io.BufferedWriter
+import java.io.File
+import java.io.IOException
+import java.io.OutputStream
+import java.io.OutputStreamWriter
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 
 class MainSettingsFragment : PreferenceFragmentCompat() {
 
@@ -113,6 +125,22 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
 
         val clearWallet = findPreference<Preference>("clear")
 
+        val sendBackupSupport = findPreference<Preference>("sendBackupToSupport")
+
+        sendBackupSupport?.setOnPreferenceClickListener {
+            (activity as AppCompatActivity).confirm(label = "Send backup to support?",
+                message = "No sensitive info will be shared",
+                positiveText = "Yes",
+                negativeText = "No",
+                onConfirm = { confirmed ->
+                    if (confirmed)
+                        sendBackupToSupport()
+                }
+            )
+
+            true
+        }
+
         val shareErrorLog = findPreference<Preference>("shareErrorLog")
         shareErrorLog?.setOnPreferenceClickListener {
             val file = File("${requireActivity().cacheDir}/error_dump.log")
@@ -153,6 +181,16 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                 }
     }
 
+    private fun sendBackupToSupport() {
+        val payload: JSONObject = ExportImportUtil().makeSupportBackup()
+
+        val email = Intent(Intent.ACTION_SEND)
+        email.putExtra(Intent.EXTRA_EMAIL, arrayOf("help@samourai.support"))
+        email.putExtra(Intent.EXTRA_SUBJECT, "Sentinel support backup")
+        email.putExtra(Intent.EXTRA_TEXT, payload.toString())
+        email.type = "message/rfc822"
+        startActivity(Intent.createChooser(email, requireContext().getText(R.string.choose_email_client)))
+    }
     private fun setExchangeSettings() {
 
         fun setCurrencies() {
