@@ -3,7 +3,6 @@ package com.samourai.sentinel.ui.home
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
@@ -28,7 +27,6 @@ import com.samourai.sentinel.tor.EnumTorState
 import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
-import com.samourai.sentinel.ui.broadcast.BroadcastTx
 import com.samourai.sentinel.ui.collectionDetails.CollectionDetailsActivity
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
@@ -49,7 +47,6 @@ import com.samourai.sentinel.util.UtxoMetaUtil
 import com.samourai.sentinel.widgets.popUpMenu.popupMenu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
@@ -114,6 +111,8 @@ class HomeActivity : SentinelActivity() {
         binding.exchangeRateTxt.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
 
         model.getFiatBalance().observe(this, { updateFiat(it) })
+
+        binding.fab.setBackgroundResource(R.drawable.background_gradient);
 
         binding.fab.setOnClickListener {
             connectingDojo = false
