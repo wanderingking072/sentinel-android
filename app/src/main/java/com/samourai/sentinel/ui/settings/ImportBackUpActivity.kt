@@ -225,19 +225,28 @@ class ImportBackUpActivity : SentinelActivity() {
                         payloadObject.toString(),
                         binding.importPasswordInput.text.toString()
                 )
-                viewModel.viewModelScope.launch(Dispatchers.IO) {
-                    ExportImportUtil().startImportCollections(arrayListOf(payload), false)
-                }.invokeOnCompletion {
-                    if (it == null) {
-                        requireRestart = true
-                        showFloatingSnackBar(
+                if (payload == null) {
+                    showFloatingSnackBar(binding.importPastePayloadBtn, "Error decrypting payload. Check password.")
+                    return
+                }
+                else {
+                    viewModel.viewModelScope.launch(Dispatchers.IO) {
+                        ExportImportUtil().startImportCollections(arrayListOf(payload), false)
+                    }.invokeOnCompletion {
+                        if (it == null) {
+                            requireRestart = true
+                            showFloatingSnackBar(
                                 binding.importPastePayloadBtn,
                                 "Successfully imported",
                                 actionClick = { restart() },
                                 actionText = "restart"
-                        )
-                    } else {
-                        showFloatingSnackBar(binding.importPastePayloadBtn, "Error: ${it.message}")
+                            )
+                        } else {
+                            showFloatingSnackBar(
+                                binding.importPastePayloadBtn,
+                                "Error: ${it.message}"
+                            )
+                        }
                     }
                 }
             }
