@@ -83,14 +83,7 @@ class ExportImportUtil {
 
     fun decryptAndParseSamouraiPayload(backUp: String, password: String): PubKeyCollection {
         val backUpJson = JSONObject(backUp)
-        if (backUpJson.has("payload") &&  backUpJson.has("version")  ) {
-            val payloadVersion = backUpJson.getInt("version");
-            var decrypted = ""
-            decrypted = if(payloadVersion==1){
-                AESUtil.decrypt(backUpJson.getString("payload"), CharSequenceX(password), AESUtil.DefaultPBKDF2Iterations)
-            }else{
-                AESUtil.decryptSHA256(backUpJson.getString("payload"), CharSequenceX(password), AESUtil.DefaultPBKDF2HMACSHA256Iterations)
-            }
+            val decrypted = AESUtil.decrypt(backUpJson.getString("payload"), CharSequenceX(password), AESUtil.DefaultPBKDF2Iterations)
             val pubKeyCollection = PubKeyCollection(collectionLabel = "Samourai wallet")
             val json = JSONObject(decrypted)
             if (json.has("wallet")) {
@@ -188,9 +181,6 @@ class ExportImportUtil {
             } else {
                 throw  Exception("Invalid payload")
             }
-        } else {
-            throw  Exception("Invalid payload")
-        }
     }
 
     fun decryptSentinel(backUp: String, password: String): Triple<ArrayList<PubKeyCollection>?, JSONObject, JSONObject?> {
