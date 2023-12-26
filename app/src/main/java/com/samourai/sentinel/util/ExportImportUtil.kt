@@ -81,24 +81,27 @@ class ExportImportUtil {
         return payload
     }
 
-    fun decryptAndParseSamouraiPayload(backUp: String, password: String): PubKeyCollection {
-        val backUpJson = JSONObject(backUp)
-        if (backUpJson.has("payload") &&  backUpJson.has("version")  ) {
-            val payloadVersion = backUpJson.getInt("version");
-            var decrypted = ""
-            decrypted = if(payloadVersion==1){
-                AESUtil.decrypt(backUpJson.getString("payload"), CharSequenceX(password), AESUtil.DefaultPBKDF2Iterations)
-            }else{
-                AESUtil.decryptSHA256(backUpJson.getString("payload"), CharSequenceX(password), AESUtil.DefaultPBKDF2HMACSHA256Iterations)
-            }
+    fun decryptAndParseSamouraiPayload(backUp: String, password: String): PubKeyCollection? {
+        try {
+            val backUpJson = JSONObject(backUp)
+            val decrypted = AESUtil.decrypt(
+                backUpJson.getString("payload"),
+                CharSequenceX(password),
+                AESUtil.DefaultPBKDF2Iterations
+            )
             val pubKeyCollection = PubKeyCollection(collectionLabel = "Samourai wallet")
             val json = JSONObject(decrypted)
             if (json.has("wallet")) {
                 val wallet = json.getJSONObject("wallet")
-                val accounts = if (wallet.has("accounts")) wallet.getJSONArray("accounts") else JSONArray()
-                val biP49Accounts = if (wallet.has("bip49_accounts")) wallet.getJSONArray("bip49_accounts") else JSONArray()
-                val bip84Accounts = if (wallet.has("bip84_accounts")) wallet.getJSONArray("bip84_accounts") else JSONArray()
-                val whirlpoolAccount = if (wallet.has("whirlpool_account")) wallet.getJSONArray("whirlpool_account") else JSONArray()
+                val fingerprint = wallet.getString("fingerprint")
+                val accounts =
+                    if (wallet.has("accounts")) wallet.getJSONArray("accounts") else JSONArray()
+                val biP49Accounts =
+                    if (wallet.has("bip49_accounts")) wallet.getJSONArray("bip49_accounts") else JSONArray()
+                val bip84Accounts =
+                    if (wallet.has("bip84_accounts")) wallet.getJSONArray("bip84_accounts") else JSONArray()
+                val whirlpoolAccount =
+                    if (wallet.has("whirlpool_account")) wallet.getJSONArray("whirlpool_account") else JSONArray()
 
                 //Add default BIP44 xpub account
                 repeat(accounts.length()) {
@@ -108,10 +111,13 @@ class ExportImportUtil {
                         if (FormatsUtil.isValidXpub(xpub)) {
                             val pubKeyModel = PubKeyModel(
                                 pubKey = xpub,
-                                    label = "BIP44 account ${it}",
-                                    AddressTypes.BIP44,
-                                    change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
-                                    account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt("receiveIdx") else 0
+                                label = "Deposit BIP44 PUB",
+                                AddressTypes.BIP44,
+                                change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
+                                account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt(
+                                    "receiveIdx"
+                                ) else 0,
+                                fingerPrint = fingerprint
                             )
                             pubKeyCollection.pubs.add(pubKeyModel)
                         }
@@ -126,10 +132,13 @@ class ExportImportUtil {
                         if (FormatsUtil.isValidXpub(xpub)) {
                             val pubKeyModel = PubKeyModel(
                                 pubKey = xpub,
-                                    label = "BIP49 account $it",
-                                    AddressTypes.BIP49,
-                                    change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
-                                    account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt("receiveIdx") else 0
+                                label = "Deposit BIP49 PUB",
+                                AddressTypes.BIP49,
+                                change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
+                                account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt(
+                                    "receiveIdx"
+                                ) else 0,
+                                fingerPrint = fingerprint
                             )
                             pubKeyCollection.pubs.add(pubKeyModel)
                         }
@@ -142,13 +151,16 @@ class ExportImportUtil {
                     if (jsonObject.has("zpub")) {
                         val xpub = jsonObject.getString("zpub")
                         if (FormatsUtil.isValidXpub(xpub)) {
-                            var label = "BIP84 account ${it}"
+                            val label = "Deposit BIP84 PUB"
                             val pubKeyModel = PubKeyModel(
                                 pubKey = xpub,
-                                    label = label,
-                                    AddressTypes.BIP84,
-                                    change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
-                                    account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt("receiveIdx") else 0
+                                label = label,
+                                AddressTypes.BIP84,
+                                change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
+                                account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt(
+                                    "receiveIdx"
+                                ) else 0,
+                                fingerPrint = fingerprint
                             )
                             pubKeyCollection.pubs.add(pubKeyModel)
                         }
@@ -163,22 +175,27 @@ class ExportImportUtil {
                         var label = "Whirlpool $it"
                         when (it) {
                             0 -> {
-                                label = "Whirlpool Pre-mix"
+                                label = "Premix PUB"
                             }
+
                             1 -> {
-                                label = "Whirlpool Post-mix"
+                                label = "Postmix PUB"
                             }
+
                             2 -> {
-                                label = "Whirlpool bad bank"
+                                label = "Bad Bank PUB"
                             }
                         }
                         if (FormatsUtil.isValidXpub(xpub)) {
                             val pubKeyModel = PubKeyModel(
                                 pubKey = xpub,
-                                    label = label,
-                                    AddressTypes.BIP84,
-                                    change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
-                                    account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt("receiveIdx") else 0
+                                label = label,
+                                AddressTypes.BIP84,
+                                change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
+                                account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt(
+                                    "receiveIdx"
+                                ) else 0,
+                                fingerPrint = fingerprint
                             )
                             pubKeyCollection.pubs.add(pubKeyModel)
                         }
@@ -186,10 +203,10 @@ class ExportImportUtil {
                 }
                 return pubKeyCollection
             } else {
-                throw  Exception("Invalid payload")
+                throw Exception("Invalid payload")
             }
-        } else {
-            throw  Exception("Invalid payload")
+        } catch (_: Exception) {
+            return null
         }
     }
 
