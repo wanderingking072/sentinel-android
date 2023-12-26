@@ -114,7 +114,6 @@
         android:textColor="@color/white"
         app:backgroundTint="@null"
         app:elevation="12dp"
-        app:icon="@drawable/ic_baseline_wallet_24"
         app:iconTint="@color/white"
         app:shapeAppearance="@style/ShapeAppearance.MaterialComponents.MediumComponent" />
 
