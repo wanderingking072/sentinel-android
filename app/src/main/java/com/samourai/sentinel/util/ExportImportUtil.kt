@@ -89,7 +89,7 @@ class ExportImportUtil {
                 CharSequenceX(password),
                 AESUtil.DefaultPBKDF2Iterations
             )
-            val pubKeyCollection = PubKeyCollection(collectionLabel = "Samourai wallet")
+            val pubKeyCollection = PubKeyCollection(collectionLabel = "My Samourai wallet")
             val json = JSONObject(decrypted)
             if (json.has("wallet")) {
                 val wallet = json.getJSONObject("wallet")
