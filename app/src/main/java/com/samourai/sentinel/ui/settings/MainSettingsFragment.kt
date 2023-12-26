@@ -129,7 +129,6 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
 
         sendBackupSupport?.setOnPreferenceClickListener {
             (activity as AppCompatActivity).confirm(label = "Send backup to support?",
-                message = "No sensitive info will be shared",
                 positiveText = "Yes",
                 negativeText = "No",
                 onConfirm = { confirmed ->
