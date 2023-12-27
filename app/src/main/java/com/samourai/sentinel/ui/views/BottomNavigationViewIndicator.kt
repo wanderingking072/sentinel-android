@@ -11,15 +11,16 @@ import android.graphics.drawable.Drawable
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import androidx.annotation.Keep
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import com.google.android.material.bottomnavigation.BottomNavigationMenuView
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.samourai.sentinel.R
-import com.samourai.sentinel.R.styleable.*
+import com.google.android.material.bottomnavigation.BottomNavigationView.OnNavigationItemSelectedListener
+import com.samourai.sentinel.R.styleable.BottomNavigationViewIndicator
+import com.samourai.sentinel.R.styleable.BottomNavigationViewIndicator_clipableBackground
+import com.samourai.sentinel.R.styleable.BottomNavigationViewIndicator_targetBottomNavigation
 
 /**
  * sentinel-android
@@ -158,6 +159,10 @@ class ListenableBottomNavigationView @JvmOverloads constructor(
             for (i in 0 until menu.size()) if (menu.getItem(i) == it) listener(i)
             false
         })
+    }
+
+    fun getMenuItem(itemPosition: Int): MenuItem? {
+        return menu.getItem(itemPosition)
     }
 
     override fun onNavigationItemSelected(item: MenuItem) = onNavigationItemSelectedListeners

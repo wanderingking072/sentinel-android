@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.inject
 
 
-class CollectionDetailsActivity : SentinelActivity() {
+class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTabChangedListener {
 
 
     private lateinit var pagerAdapter: PagerAdapter
@@ -256,6 +256,21 @@ class CollectionDetailsActivity : SentinelActivity() {
                 }
             }
         }
+    }
+
+    override fun onTabChanged(position: Int) {
+        if (position >= 0) {
+            val pubSelected = collection?.pubs?.get(position)
+            val xpub = XPUB(pubSelected?.pubKey)
+            xpub.decode()
+            val account = xpub.child + HARDENED
+            if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC)
+                binding.bottomNav.getMenuItem(0)?.setIcon(null)
+            else
+                binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
+        }
+        else
+            binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
     }
 
 

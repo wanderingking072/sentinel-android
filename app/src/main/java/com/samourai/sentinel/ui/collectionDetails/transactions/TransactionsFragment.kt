@@ -1,5 +1,6 @@
 package com.samourai.sentinel.ui.collectionDetails.transactions
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
@@ -22,10 +23,7 @@ import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.utxos.UtxosActivity
 import com.samourai.sentinel.util.MonetaryUtil
-import com.samourai.sentinel.util.PrefsUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
-import kotlinx.coroutines.flow.merge
-import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent.inject
 import java.text.DecimalFormat
 
@@ -43,6 +41,7 @@ class TransactionsFragment : Fragment() {
     private val exchangeRateRepository: ExchangeRateRepository by inject(ExchangeRateRepository::class.java)
     val indexPubSelected: MutableLiveData<Int> by lazy { MutableLiveData<Int>() }
     val df = DecimalFormat("#")
+    private var tabChangeListener: OnTabChangedListener? = null
 
 
     override fun onCreateView(
@@ -79,10 +78,13 @@ class TransactionsFragment : Fragment() {
             }
         }.attach()
 
+
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab:
                                        TabLayout.Tab
                                        ?) {
+                if (tabChangeListener != null)
+                    tabChangeListener?.onTabChanged(tab?.position!!-1)
                 indexPubSelected.value = tab?.position!!
                 setBalance(tab.position-1)
             }
@@ -122,6 +124,14 @@ class TransactionsFragment : Fragment() {
         }
     }
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnTabChangedListener) {
+            tabChangeListener = context
+        } else {
+            throw ClassCastException("$context must implement OnButtonClickListener")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -247,6 +257,8 @@ class TransactionsFragment : Fragment() {
         }
     }
 
-
+    interface OnTabChangedListener {
+        fun onTabChanged(position: Int)
+    }
 }
 
