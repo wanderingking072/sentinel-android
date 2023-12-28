@@ -3,7 +3,12 @@ package com.samourai.sentinel.ui.collectionDetails.transactions
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -45,9 +50,9 @@ class TransactionsFragment : Fragment() {
 
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         _binding = FragmentTransactionsBinding.inflate(inflater, container, false)
         val view = binding.root
@@ -108,6 +113,16 @@ class TransactionsFragment : Fragment() {
             setBalance(-1)
         }
 
+        binding.collectionBalanceBtc.setOnLongClickListener {
+            goToUTXOActivity()
+            true
+        }
+
+        binding.collectionBalanceFiat.setOnLongClickListener {
+            goToUTXOActivity()
+            true
+        }
+
         binding.collectionBalanceFiat.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
         fiatBalanceLiveData.observe(viewLifecycleOwner, Observer {
             if (isAdded) {
@@ -116,12 +131,19 @@ class TransactionsFragment : Fragment() {
             }
         })
         transactionsViewModel.getMessage().observe(
-                this.viewLifecycleOwner
+            this.viewLifecycleOwner
         ) {
             if (it != "null")
                 (requireActivity() as AppCompatActivity)
                     .showFloatingSnackBar(binding.collectionBalanceBtc, "Error : $it")
         }
+    }
+
+    private fun goToUTXOActivity() {
+        startActivityForResult(Intent(context, UtxosActivity::class.java).apply {
+            putExtra("collection", collection.id)
+            putExtra("indexPub", indexPubSelected.value)
+        }, EDIT_REQUEST_ID)
     }
 
     override fun onAttach(context: Context) {
@@ -244,10 +266,10 @@ class TransactionsFragment : Fragment() {
     }
 
     private class CollectionPubKeysViewpager(
-            fa: FragmentActivity?,
-            private val collection: PubKeyCollection,
+        fa: FragmentActivity?,
+        private val collection: PubKeyCollection,
 
-            ) : FragmentStateAdapter(fa!!) {
+        ) : FragmentStateAdapter(fa!!) {
         override fun createFragment(position: Int): Fragment {
             return TransactionsListFragment(position, collection)
         }
