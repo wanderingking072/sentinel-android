@@ -31,6 +31,7 @@ import org.koin.java.KoinJavaComponent.inject
 class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTabChangedListener {
 
 
+    private var isFirstToast = true
     private lateinit var pagerAdapter: PagerAdapter
     private val receiveFragment: ReceiveFragment = ReceiveFragment()
     private val sendFragment: SendFragment = SendFragment()
@@ -84,13 +85,15 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
         binding.bottomNav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.bottom_nav_receive -> {
-                    if (collectionOnlyHasWhirlpoolPubs())
+                    if (collectionOnlyHasWhirlpoolPubs() && !isFirstToast) {
                         this@CollectionDetailsActivity.showFloatingSnackBar(
                             binding.root,
                             text = "Receiving is not available for postmix, premix and badbank"
                         )
+                    }
                     else
                         binding.fragmentHostContainerPager.setCurrentItem(0, true)
+                    isFirstToast = false
                 }
 
                 R.id.bottom_nav_send -> {
