@@ -200,7 +200,7 @@ class HomeActivity : SentinelActivity() {
                         .build()
                 }
                 item {
-                    label = "Tools"
+                    label = "\t\tTools"
                     icon = R.drawable.ic_tools
                     iconSize = 18
                     hasNestedItems
@@ -213,7 +213,7 @@ class HomeActivity : SentinelActivity() {
             }
             section {
                 item {
-                    label = getString(R.string.action_settings)
+                    label = "\t\tSettings"
                     icon = R.drawable.ic_cog
                     iconSize = 18
                     callback = {
@@ -223,7 +223,7 @@ class HomeActivity : SentinelActivity() {
                     }
                 }
                 item {
-                    label = "Exit Wallet"
+                    label = "\t\tExit"
                     iconSize = 18
                     iconColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)
                     labelColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)

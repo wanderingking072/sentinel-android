@@ -24,11 +24,11 @@
             app:layout_scrollFlags="scroll">
 
             <com.samourai.sentinel.widgets.CircleImageView
-                android:layout_width="43dp"
+                android:layout_width="34dp"
                 android:src="@drawable/icon_innergradient"
                 android:id="@+id/toolbarIcon"
                 android:background="?selectableItemBackground"
-                android:layout_height="43dp"/>
+                android:layout_height="34dp"/>
 
         </com.google.android.material.appbar.MaterialToolbar>
 
