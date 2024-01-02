@@ -385,7 +385,7 @@ class HomeActivity : SentinelActivity() {
 
         linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
-        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(applicationContext, R.drawable.divider_home)!!)
+        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(applicationContext, R.drawable.divider_tx)!!)
         binding.collectionRecyclerView.apply {
             adapter = collectionsAdapter
             layoutManager = linearLayoutManager

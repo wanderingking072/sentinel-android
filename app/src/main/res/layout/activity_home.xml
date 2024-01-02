@@ -10,13 +10,13 @@
 
     <com.google.android.material.appbar.AppBarLayout
         style="@style/ToolbarV3"
-        android:backgroundTint="#262626"
+        android:backgroundTint="#202020"
         android:layout_width="match_parent"
         android:layout_height="200dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbarHome"
-            android:backgroundTint="#262626"
+            android:backgroundTint="#202020"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:elevation="0dp"
