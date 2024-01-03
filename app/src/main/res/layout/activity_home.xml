@@ -10,13 +10,13 @@
 
     <com.google.android.material.appbar.AppBarLayout
         style="@style/ToolbarV3"
-        android:backgroundTint="#262626"
+        android:backgroundTint="#202020"
         android:layout_width="match_parent"
         android:layout_height="200dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbarHome"
-            android:backgroundTint="#262626"
+            android:backgroundTint="#202020"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:elevation="0dp"
@@ -24,11 +24,11 @@
             app:layout_scrollFlags="scroll">
 
             <com.samourai.sentinel.widgets.CircleImageView
-                android:layout_width="43dp"
+                android:layout_width="34dp"
                 android:src="@drawable/icon_innergradient"
                 android:id="@+id/toolbarIcon"
                 android:background="?selectableItemBackground"
-                android:layout_height="43dp"/>
+                android:layout_height="34dp"/>
 
         </com.google.android.material.appbar.MaterialToolbar>
 

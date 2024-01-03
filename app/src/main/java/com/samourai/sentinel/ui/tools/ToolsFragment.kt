@@ -16,6 +16,8 @@ class ToolsFragment : PreferenceFragmentCompat() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setTransparencyToIcons()
+
         findPreference<Preference>("sweep")
             ?.setOnPreferenceClickListener {
                 val bottomSheetFragment = SweepPrivKeyFragment()
@@ -27,6 +29,16 @@ class ToolsFragment : PreferenceFragmentCompat() {
                 startActivity(Intent(requireActivity(), BroadcastTx::class.java))
                 true
             }
+    }
+
+    private fun setTransparencyToIcons() {
+        findPreference<Preference>("sweep")!!.icon.let {
+            it!!.alpha = 150
+        }
+
+        findPreference<Preference>("broadcastTx")!!.icon.let {
+            it!!.alpha = 150
+        }
     }
 
 }

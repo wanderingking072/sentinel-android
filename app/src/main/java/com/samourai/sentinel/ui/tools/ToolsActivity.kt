@@ -2,16 +2,15 @@ package com.samourai.sentinel.ui.tools
 
 import android.os.Bundle
 import android.view.Gravity
+import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.transition.Fade
 import androidx.transition.Slide
 import androidx.transition.TransitionSet
 import com.samourai.sentinel.R
-import com.samourai.sentinel.databinding.SettingsActivityBinding
 import com.samourai.sentinel.databinding.ToolsActivityLayoutBinding
 import com.samourai.sentinel.ui.SentinelActivity
-import com.samourai.sentinel.ui.settings.MainSettingsFragment
 
 class ToolsActivity : SentinelActivity(), PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
@@ -20,6 +19,7 @@ class ToolsActivity : SentinelActivity(), PreferenceFragmentCompat.OnPreferenceS
         super.onCreate(savedInstanceState)
         binding = ToolsActivityLayoutBinding.inflate(layoutInflater)
         val view = binding.root
+        window.statusBarColor = ContextCompat.getColor(this, R.color.v3_primary)
         setContentView(view)
         setSupportActionBar(binding.toolbarToolsScreen)
         if (savedInstanceState == null) {
