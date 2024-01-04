@@ -3,6 +3,7 @@ package com.samourai.sentinel.util
 import android.os.Build
 import com.google.gson.reflect.TypeToken
 import com.samourai.sentinel.BuildConfig
+import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
@@ -15,9 +16,11 @@ import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.wallet.crypto.AESUtil
 import com.samourai.wallet.util.CharSequenceX
+import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.bitcoinj.core.NetworkParameters
 import org.json.JSONArray
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
@@ -55,6 +58,14 @@ class ExportImportUtil {
         for (i in 0 until pubkeyInfoArray.length()) {
             (pubkeyInfoArray[i] as JSONObject).remove("lastRefreshed")
         }
+
+        for (i in 0 until payload.getJSONArray("collections").length()) {
+            for (o in 0 until  (payload.getJSONArray("collections")[i]as JSONObject).getJSONArray("pubs").length()) {
+                ((payload.getJSONArray("collections")[i]as JSONObject).getJSONArray("pubs")[o] as JSONObject)
+                    .put("path", getPath((payload.getJSONArray("collections")[i]as JSONObject).getJSONArray("pubs")[o] as JSONObject))
+            }
+        }
+
         val meta = JSONObject()
         meta.put(
             "version_name",
@@ -71,6 +82,39 @@ class ExportImportUtil {
         payload.put("meta", meta)
 
         return payload
+    }
+
+    private fun getPath(pubkey: JSONObject): String {
+        val HARDENED = 2147483648
+        var path = "m\\"
+        if (pubkey.getString("type").equals(AddressTypes.ADDRESS.toString()))
+            return ""
+        return try {
+            val xpub = XPUB(pubkey.getString("pubKey"))
+            xpub.decode()
+
+            path += getPurpose(pubkey).toString() + "'\\" // add purpose
+            path += if (SentinelState.getNetworkParam() == NetworkParameters.testNet3()) "1'\\" else "0'\\" //add coin type
+            path += (xpub.child + HARDENED).toString() + "'" // add account
+            path
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    fun getPurpose(pubkey: JSONObject): Int {
+        return  when(pubkey.getString("type")){
+            AddressTypes.BIP49.toString()->{
+                return  49
+            }
+            AddressTypes.BIP84.toString()->{
+                return  84
+            }
+            AddressTypes.BIP44.toString()->{
+                return  44
+            }
+            else -> 0
+        }
     }
 
     fun addVersionInfo(content: String): JSONObject {
