@@ -67,6 +67,7 @@ class HomeActivity : SentinelActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         val view = binding.root
+        window.statusBarColor = ContextCompat.getColor(this, R.color.mpm_black)
         setContentView(view)
         setSwipeBackEnable(false)
         setSupportActionBar(binding.toolbarHome)

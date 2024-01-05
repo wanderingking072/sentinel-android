@@ -180,6 +180,8 @@
     <color name="mpm_red">#D05756</color>
     <color name="mpm_black">#202020</color>
 
+    <color name="grey_homeActivity">#2d2d2d</color>
+
     <color name="off_black">#181818</color>
     <color name="text_ui2_grey">#96979a</color>
 

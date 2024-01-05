@@ -32,7 +32,7 @@ open class SentinelActivity : AppCompatActivity(), SwipeBackActivityBase {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = ContextCompat.getColor(this, R.color.status_bar_color)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.v3_primary)
         mHelper = SwipeBackActivityHelper(this)
         mHelper.onActivityCreate();
         overridePendingTransition(R.anim.slide_in, R.anim.no_anim)

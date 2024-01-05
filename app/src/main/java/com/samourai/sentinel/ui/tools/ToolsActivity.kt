@@ -19,7 +19,6 @@ class ToolsActivity : SentinelActivity(), PreferenceFragmentCompat.OnPreferenceS
         super.onCreate(savedInstanceState)
         binding = ToolsActivityLayoutBinding.inflate(layoutInflater)
         val view = binding.root
-        window.statusBarColor = ContextCompat.getColor(this, R.color.v3_primary)
         setContentView(view)
         setSupportActionBar(binding.toolbarToolsScreen)
         if (savedInstanceState == null) {
