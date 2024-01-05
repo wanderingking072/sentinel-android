@@ -32,6 +32,7 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
 
 
     private var isFirstToast = true
+    private var isTabWhirlpoolPub = false
     private lateinit var pagerAdapter: PagerAdapter
     private val receiveFragment: ReceiveFragment = ReceiveFragment()
     private val sendFragment: SendFragment = SendFragment()
@@ -85,20 +86,19 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
         binding.bottomNav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.bottom_nav_receive -> {
-                    if (collectionOnlyHasWhirlpoolPubs() && !isFirstToast) {
+                    if ((collectionOnlyHasWhirlpoolPubs() || isTabWhirlpoolPub) && !isFirstToast) {
                         this@CollectionDetailsActivity.showFloatingSnackBar(
                             binding.root,
                             text = "Receiving is not available for postmix, premix and badbank"
                         )
                     }
-                    else
+                    else {
                         binding.fragmentHostContainerPager.setCurrentItem(0, true)
+                    }
                     isFirstToast = false
                 }
 
                 R.id.bottom_nav_send -> {
-                    //Toast.makeText(this, "Send - coming soon", Toast.LENGTH_LONG).show()
-
                     if (collectionOnlyHasSingleAddresses())
                         this@CollectionDetailsActivity.showFloatingSnackBar(
                             binding.root,
@@ -267,13 +267,18 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
             val xpub = XPUB(pubSelected?.pubKey)
             xpub.decode()
             val account = xpub.child + HARDENED
-            if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC)
+            isTabWhirlpoolPub = if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC) {
                 binding.bottomNav.getMenuItem(0)?.setIcon(null)
-            else
+                true
+            } else {
                 binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
+                false
+            }
         }
-        else
+        else {
             binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
+            isTabWhirlpoolPub = false
+        }
     }
 
 
