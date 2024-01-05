@@ -54,7 +54,6 @@ class ExportImportUtil {
         val payload = makePayload()
         val pubkeyInfoArray = payload.getJSONArray("collections")
 
-
         for (i in 0 until pubkeyInfoArray.length()) {
             (pubkeyInfoArray[i] as JSONObject).remove("lastRefreshed")
         }
@@ -80,6 +79,12 @@ class ExportImportUtil {
         meta.put("device_product", if (Build.PRODUCT == null) "" else Build.PRODUCT)
 
         payload.put("meta", meta)
+
+        (payload.get("prefs") as JSONObject).remove("blockHeight")
+        (payload.get("prefs") as JSONObject).remove("pinHash")
+        (payload.get("prefs") as JSONObject).remove("apiEndPointTor")
+        (payload.get("prefs") as JSONObject).remove("apiEndPoint")
+        (payload.get("prefs") as JSONObject).remove("authorization")
 
         return payload
     }

@@ -108,7 +108,7 @@
 
         <Preference
             app:key="sendBackupToSupport"
-            app:summary="Send Sentinel backup file to tech support. Does not contain Dojo info."
+            app:summary="Share your Sentinel backup with tech support to aid with troubleshooting"
             app:title="Send backup to tech support" />
 
     </PreferenceCategory>
