@@ -228,8 +228,10 @@ class MaterialPopupMenuBuilder {
          */
         var hasNestedItems: Boolean = false
 
+        var isTitle: Boolean = false
+
         override fun toString(): String {
-            return "ItemHolder(label=$label, labelRes=$labelRes, labelColor=$labelColor, icon=$icon, iconDrawable=$iconDrawable, iconColor=$iconColor, hasNestedItems=$hasNestedItems, viewBoundCallback=$viewBoundCallback, callback=$callback, dismissOnSelect=$dismissOnSelect)"
+            return "ItemHolder(label=$label, labelRes=$labelRes, labelColor=$labelColor, icon=$icon, iconDrawable=$iconDrawable, iconColor=$iconColor, hasNestedItems=$hasNestedItems, isTitle=$isTitle,viewBoundCallback=$viewBoundCallback, callback=$callback, dismissOnSelect=$dismissOnSelect)"
         }
 
         override fun convertToPopupMenuItem(): MaterialPopupMenu.PopupMenuItem {
@@ -245,6 +247,7 @@ class MaterialPopupMenuBuilder {
                 disableTint = disableTint,
                 iconColor = iconColor,
                 hasNestedItems = hasNestedItems,
+                isTitle = isTitle,
                 viewBoundCallback = resolveViewBoundCallback(),
                 callback = callback,
                 dismissOnSelect = dismissOnSelect

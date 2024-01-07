@@ -199,9 +199,10 @@ class HomeActivity : SentinelActivity() {
                     iconShapeAppearanceModel = ShapeAppearanceModel().toBuilder()
                         .setAllCornerSizes(resources.getDimension(R.dimen.qr_image_corner_radius))
                         .build()
+                    isTitle = true
                 }
                 item {
-                    label = "\t\tTools"
+                    label = "\tTools"
                     icon = R.drawable.ic_tools
                     iconSize = 18
                     hasNestedItems
@@ -214,7 +215,7 @@ class HomeActivity : SentinelActivity() {
             }
             section {
                 item {
-                    label = "\t\tSettings"
+                    label = "\tSettings"
                     icon = R.drawable.ic_cog
                     iconSize = 18
                     callback = {
@@ -224,7 +225,7 @@ class HomeActivity : SentinelActivity() {
                     }
                 }
                 item {
-                    label = "\t\tExit"
+                    label = "\tExit"
                     iconSize = 18
                     iconColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)
                     labelColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)

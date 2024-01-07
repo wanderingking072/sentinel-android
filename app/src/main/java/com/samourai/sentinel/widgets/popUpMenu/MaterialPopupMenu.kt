@@ -113,6 +113,7 @@ internal constructor(
         val iconDrawable: Drawable?,
         @ColorInt val iconColor: Int,
         val hasNestedItems: Boolean,
+        val isTitle:Boolean,
         override val viewBoundCallback: ViewBoundCallback,
         override val callback: () -> Unit,
         override val dismissOnSelect: Boolean

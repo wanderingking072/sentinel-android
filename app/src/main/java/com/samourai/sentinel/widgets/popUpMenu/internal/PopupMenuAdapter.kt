@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.annotation.CallSuper
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.view.marginStart
 import androidx.recyclerview.widget.RecyclerView
 import com.github.zawadz88.materialpopupmenu.internal.SectionedRecyclerViewAdapter
 import com.google.android.material.imageview.ShapeableImageView
@@ -118,6 +119,11 @@ internal class PopupMenuAdapter(
                 params.height = size.toInt()
                 params.width = size.toInt()
                 icon.layoutParams = params;
+            }
+            if (!castedPopupMenuItem.isTitle) {
+                val layoutParams = icon.layoutParams as ViewGroup.MarginLayoutParams
+                layoutParams.marginStart = 17
+                icon.layoutParams = layoutParams
             }
             if (castedPopupMenuItem.icon != 0 || castedPopupMenuItem.iconDrawable != null) {
                 icon.apply {
