@@ -54,8 +54,8 @@ internal constructor(
             context = styledContext,
             dropDownGravity = dropdownGravity,
             fixedContentWidthInPx = fixedContentWidthInPx,
-            dropDownVerticalOffset = dropDownVerticalOffset,
-            dropDownHorizontalOffset = dropDownHorizontalOffset
+            dropDownVerticalOffset = -50,
+            dropDownHorizontalOffset = -50
         )
         val adapter = PopupMenuAdapter(sections) { popupWindow.dismiss() }
 
