@@ -138,8 +138,85 @@ class ExportImportUtil {
                 CharSequenceX(password),
                 AESUtil.DefaultPBKDF2Iterations
             )
-            val pubKeyCollection = PubKeyCollection(collectionLabel = "My Samourai wallet")
+            val pubKeyCollection = PubKeyCollection(collectionLabel = "My Samourai Wallet", isImportFromWallet = true)
             val json = JSONObject(decrypted)
+
+
+            if (json.has("watch-only")) {
+
+                val watchOnlyArray: JSONArray = json.getJSONArray("watch-only")
+
+                val fingerprint = watchOnlyArray[0].toString()
+                val deposit44 = watchOnlyArray[1].toString()
+                val deposit49 = watchOnlyArray[2].toString()
+                val deposit84 = watchOnlyArray[3].toString()
+                val premix = watchOnlyArray[4].toString()
+                val postmix = watchOnlyArray[5].toString()
+                val badbank = watchOnlyArray[6].toString()
+
+                if (FormatsUtil.isValidXpub(deposit44)) {
+                    val pubKeyModel = PubKeyModel(
+                        pubKey = deposit44,
+                        label = "Deposit BIP44",
+                        type = AddressTypes.BIP44,
+                        fingerPrint = fingerprint
+                    )
+                    pubKeyCollection.pubs.add(pubKeyModel)
+                }
+
+                if (FormatsUtil.isValidXpub(deposit49)) {
+                    val pubKeyModel = PubKeyModel(
+                        pubKey = deposit49,
+                        label = "Deposit BIP49",
+                        type = AddressTypes.BIP49,
+                        fingerPrint = fingerprint
+                    )
+                    pubKeyCollection.pubs.add(pubKeyModel)
+                }
+
+                if (FormatsUtil.isValidXpub(deposit84)) {
+                    val pubKeyModel = PubKeyModel(
+                        pubKey = deposit84,
+                        label = "Deposit BIP84",
+                        type = AddressTypes.BIP84,
+                        fingerPrint = fingerprint
+                    )
+                    pubKeyCollection.pubs.add(pubKeyModel)
+                }
+
+                if (FormatsUtil.isValidXpub(premix)) {
+                    val pubKeyModel = PubKeyModel(
+                        pubKey = premix,
+                        label = "Premix",
+                        type = AddressTypes.BIP84,
+                        fingerPrint = fingerprint
+                    )
+                    pubKeyCollection.pubs.add(pubKeyModel)
+                }
+
+                if (FormatsUtil.isValidXpub(postmix)) {
+                    val pubKeyModel = PubKeyModel(
+                        pubKey = postmix,
+                        label = "Postmix",
+                        type = AddressTypes.BIP84,
+                        fingerPrint = fingerprint
+                    )
+                    pubKeyCollection.pubs.add(pubKeyModel)
+                }
+
+                if (FormatsUtil.isValidXpub(badbank)) {
+                    val pubKeyModel = PubKeyModel(
+                        pubKey = badbank,
+                        label = "Bad Bank",
+                        type = AddressTypes.BIP84,
+                        fingerPrint = fingerprint
+                    )
+                    pubKeyCollection.pubs.add(pubKeyModel)
+                }
+                return pubKeyCollection
+            }
+
+            /*
             if (json.has("wallet")) {
                 val wallet = json.getJSONObject("wallet")
                 val fingerprint = wallet.getString("fingerprint")
@@ -160,7 +237,7 @@ class ExportImportUtil {
                         if (FormatsUtil.isValidXpub(xpub)) {
                             val pubKeyModel = PubKeyModel(
                                 pubKey = xpub,
-                                label = "Deposit BIP44 PUB",
+                                label = "Deposit BIP44",
                                 AddressTypes.BIP44,
                                 change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
                                 account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt(
@@ -181,7 +258,7 @@ class ExportImportUtil {
                         if (FormatsUtil.isValidXpub(xpub)) {
                             val pubKeyModel = PubKeyModel(
                                 pubKey = xpub,
-                                label = "Deposit BIP49 PUB",
+                                label = "Deposit BIP49",
                                 AddressTypes.BIP49,
                                 change_index = if (jsonObject.has("changeIdx")) jsonObject.getInt("changeIdx") else 0,
                                 account_index = if (jsonObject.has("receiveIdx")) jsonObject.getInt(
@@ -200,7 +277,7 @@ class ExportImportUtil {
                     if (jsonObject.has("zpub")) {
                         val xpub = jsonObject.getString("zpub")
                         if (FormatsUtil.isValidXpub(xpub)) {
-                            val label = "Deposit BIP84 PUB"
+                            val label = "Deposit BIP84"
                             val pubKeyModel = PubKeyModel(
                                 pubKey = xpub,
                                 label = label,
@@ -224,15 +301,15 @@ class ExportImportUtil {
                         var label = "Whirlpool $it"
                         when (it) {
                             0 -> {
-                                label = "Premix PUB"
+                                label = "Premix"
                             }
 
                             1 -> {
-                                label = "Postmix PUB"
+                                label = "Postmix"
                             }
 
                             2 -> {
-                                label = "Bad Bank PUB"
+                                label = "Bad Bank"
                             }
                         }
                         if (FormatsUtil.isValidXpub(xpub)) {
@@ -254,9 +331,11 @@ class ExportImportUtil {
             } else {
                 throw Exception("Invalid payload")
             }
+             */
         } catch (_: Exception) {
             return null
         }
+        return null
     }
 
     fun decryptSentinel(backUp: String, password: String): Triple<ArrayList<PubKeyCollection>?, JSONObject, JSONObject?> {

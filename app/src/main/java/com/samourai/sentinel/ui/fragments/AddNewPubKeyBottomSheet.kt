@@ -26,12 +26,17 @@ import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ContentChooseAddressTypeBinding
 import com.samourai.sentinel.databinding.ContentCollectionSelectBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
+import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
+import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.tools.sweep.SweepPrivKeyFragment
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
+import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.GenericBottomSheet
+import com.samourai.sentinel.ui.views.alertWithInput
+import com.samourai.sentinel.util.ExportImportUtil
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.wallet.util.PrivKeyReader
 import com.samourai.wallet.util.XPUB
@@ -42,6 +47,7 @@ import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bitcoinj.crypto.ChildNumber
 import org.bouncycastle.util.encoders.Hex
 import org.json.JSONObject
@@ -168,6 +174,34 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
             }
         }
         when {
+            (JSONObject(payload.trim()).has("external") &&  JSONObject(payload.trim()).has("payload")) -> {
+                GlobalScope.launch(Dispatchers.IO) {
+                    withContext(Dispatchers.Main) {
+                        (activity as SentinelActivity).alertWithInput(labelEditText = "Password",
+                            buttonLabel = "Encrypt",
+                            maskInput = true,
+                            maxLen = 128,
+                            label = "Input payload password", onConfirm = { password ->
+                                val collection = ExportImportUtil().decryptAndParseSamouraiPayload(payload.trim(), password)
+                                if (collection == null) {
+                                    Toast.makeText(context, "Error decrypting payload. Check password.", Toast.LENGTH_LONG).show()
+                                }
+                                else {
+                                    GlobalScope.launch(Dispatchers.IO) {
+                                        ExportImportUtil().startImportCollections(arrayListOf(collection), false)
+                                    }.invokeOnCompletion { it ->
+                                        if (it == null) {
+                                            Toast.makeText(context, "Successfully imported.", Toast.LENGTH_LONG).show()
+                                        } else {
+                                            Toast.makeText(context, "Error: ${it}", Toast.LENGTH_LONG).show()
+
+                                        }
+                                    }
+                                }
+                            })
+                    }
+                }
+            }
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
                 if (isAdded && activity != null) {
                     this.dismiss()
