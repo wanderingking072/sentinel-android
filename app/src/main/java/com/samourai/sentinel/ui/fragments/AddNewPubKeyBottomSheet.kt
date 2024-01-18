@@ -175,37 +175,16 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
         }
         when {
             (JSONObject(payload.trim()).has("external") &&  JSONObject(payload.trim()).has("payload")) -> {
-                GlobalScope.launch(Dispatchers.IO) {
-                    withContext(Dispatchers.Main) {
-                        (activity as SentinelActivity).alertWithInput(labelEditText = "Password",
-                            buttonLabel = "Encrypt",
-                            maskInput = true,
-                            maxLen = 128,
-                            label = "Input payload password", onConfirm = { password ->
-                                val collection = ExportImportUtil().decryptAndParseSamouraiPayload(payload.trim(), password)
-                                if (collection == null) {
-                                    Toast.makeText(context, "Error decrypting payload. Check password.", Toast.LENGTH_LONG).show()
-                                }
-                                else {
-                                    GlobalScope.launch(Dispatchers.IO) {
-                                        ExportImportUtil().startImportCollections(arrayListOf(collection), false)
-                                    }.invokeOnCompletion { it ->
-                                        if (it == null) {
-                                            Toast.makeText(context, "Successfully imported.", Toast.LENGTH_LONG).show()
-                                        } else {
-                                            Toast.makeText(context, "Error: ${it}", Toast.LENGTH_LONG).show()
-
-                                        }
-                                    }
-                                }
-                            })
-                    }
+                if (isAdded && activity != null) {
+                    this.dismiss()
+                    val bottomSheetFragment = WalletPairingFragment(payload.trim(), secure)
+                    bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
                 }
             }
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
                 if (isAdded && activity != null) {
                     this.dismiss()
-                    val bottomSheetFragment = SweepPrivKeyFragment(payload.trim(), )
+                    val bottomSheetFragment = SweepPrivKeyFragment(payload.trim(), secure)
                     bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
                 }
             }
