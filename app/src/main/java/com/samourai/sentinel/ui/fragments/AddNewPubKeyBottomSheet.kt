@@ -174,13 +174,6 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
             }
         }
         when {
-            (JSONObject(payload.trim()).has("external") &&  JSONObject(payload.trim()).has("payload")) -> {
-                if (isAdded && activity != null) {
-                    this.dismiss()
-                    val bottomSheetFragment = WalletPairingFragment(payload.trim(), secure)
-                    bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
-                }
-            }
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
                 if (isAdded && activity != null) {
                     this.dismiss()
@@ -213,6 +206,13 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
                     binding.pager.post {
                         selectAddressTypeFragment.setType(type)
                     }
+                }
+            }
+            (JSONObject(payload.trim()).has("external") &&  JSONObject(payload.trim()).has("payload")) -> {
+                if (isAdded && activity != null) {
+                    this.dismiss()
+                    val bottomSheetFragment = WalletPairingFragment(payload.trim(), secure)
+                    bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
                 }
             }
             else -> {
@@ -515,8 +515,15 @@ class ChooseCollectionFragment : Fragment() {
     }
 
     private fun setUpCollectionSelectList() {
-
         repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
+            val iterator = it.iterator()
+
+            while (iterator.hasNext()) {
+                val collection = iterator.next()
+                if (collection.isImportFromWallet)
+                    iterator.remove()
+            }
+
             collectionsAdapter.update(it)
         })
         collectionsAdapter.setLayoutType(CollectionsAdapter.Companion.LayoutType.STACKED)

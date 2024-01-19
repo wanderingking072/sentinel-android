@@ -140,6 +140,8 @@ class CollectionEditActivity : SentinelActivity() {
             val model = intent.extras?.getString("collection")?.let { repository.findById(it) }
             if (model != null) {
                 viewModel.setCollection(model)
+                if (model.isImportFromWallet)
+                    binding.addNewPubFab.visibility = View.GONE
                 // Check if any new Public key is passed through intent
                 // we will set last item as editable so the new Public key  will be shown in edit layout
                 if (intent.extras!!.containsKey("pubKey")) {
@@ -366,7 +368,8 @@ class CollectionEditActivity : SentinelActivity() {
                 maxLen = 30,
                 labelEditText = "Label",
                 value = pubKeyModel.label,
-                buttonLabel = "Save"
+                buttonLabel = "Save",
+                isEditable = !viewModel.getCollection().value?.isImportFromWallet!!
             )
     }
 
@@ -382,7 +385,8 @@ class CollectionEditActivity : SentinelActivity() {
             maxLen = 8,
             labelEditText = "Fingerprint",
             value = if (pubKeyModel.fingerPrint == null) "" else pubKeyModel.fingerPrint!!,
-            buttonLabel = "Save"
+            buttonLabel = "Save",
+            isEditable = !viewModel.getCollection().value?.isImportFromWallet!!
         )
     }
 
