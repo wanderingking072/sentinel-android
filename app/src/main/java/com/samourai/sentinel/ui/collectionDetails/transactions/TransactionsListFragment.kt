@@ -46,6 +46,13 @@ class TransactionsListFragment(
             LivePagedListBuilder(
                 txDao.getTxAssociatedToCollection(pubKeyCollection.id), 12
             ).build()
+        else if (pubKeyCollection.isImportFromWallet && position == 1)
+            LivePagedListBuilder(
+                txDao.getPaginatedTx(pubKeyCollection.id,
+                    listOf(pubKeyCollection.pubs[0].pubKey,
+                        pubKeyCollection.pubs[4].pubKey,
+                        pubKeyCollection.pubs[5].pubKey)), 12
+            ).build()
         else LivePagedListBuilder(
             txDao.getPaginatedTx(pubKeyCollection.id, pubKeyCollection.pubs[position - 1].pubKey), 12
         ).build()

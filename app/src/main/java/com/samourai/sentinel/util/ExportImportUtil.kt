@@ -154,26 +154,6 @@ class ExportImportUtil {
                 val postmix = watchOnlyArray[5].toString()
                 val badbank = watchOnlyArray[6].toString()
 
-                if (FormatsUtil.isValidXpub(deposit44)) {
-                    val pubKeyModel = PubKeyModel(
-                        pubKey = deposit44,
-                        label = "Deposit BIP44",
-                        type = AddressTypes.BIP44,
-                        fingerPrint = fingerprint
-                    )
-                    pubKeyCollection.pubs.add(pubKeyModel)
-                }
-
-                if (FormatsUtil.isValidXpub(deposit49)) {
-                    val pubKeyModel = PubKeyModel(
-                        pubKey = deposit49,
-                        label = "Deposit BIP49",
-                        type = AddressTypes.BIP49,
-                        fingerPrint = fingerprint
-                    )
-                    pubKeyCollection.pubs.add(pubKeyModel)
-                }
-
                 if (FormatsUtil.isValidXpub(deposit84)) {
                     val pubKeyModel = PubKeyModel(
                         pubKey = deposit84,
@@ -209,6 +189,26 @@ class ExportImportUtil {
                         pubKey = badbank,
                         label = "Bad Bank",
                         type = AddressTypes.BIP84,
+                        fingerPrint = fingerprint
+                    )
+                    pubKeyCollection.pubs.add(pubKeyModel)
+                }
+
+                if (FormatsUtil.isValidXpub(deposit44)) {
+                    val pubKeyModel = PubKeyModel(
+                        pubKey = deposit44,
+                        label = "Deposit BIP44",
+                        type = AddressTypes.BIP44,
+                        fingerPrint = fingerprint
+                    )
+                    pubKeyCollection.pubs.add(pubKeyModel)
+                }
+
+                if (FormatsUtil.isValidXpub(deposit49)) {
+                    val pubKeyModel = PubKeyModel(
+                        pubKey = deposit49,
+                        label = "Deposit BIP49",
+                        type = AddressTypes.BIP49,
                         fingerPrint = fingerprint
                     )
                     pubKeyCollection.pubs.add(pubKeyModel)
