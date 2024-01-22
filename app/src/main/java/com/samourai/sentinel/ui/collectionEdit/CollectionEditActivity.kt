@@ -20,7 +20,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
-import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
@@ -79,10 +78,12 @@ class CollectionEditActivity : SentinelActivity() {
 
         viewModel.getCollection().observe(this) {
             binding.collectionEdiText.setText(it.collectionLabel.trimEnd())
+            pubKeyAdapter.setIsImportFromWallet(it.isImportFromWallet)
             binding.collectionEdiText.doOnTextChanged { text, _, _, _ ->
                 it.collectionLabel = text.toString()
             }
         }
+
 
         viewModel.getPubKeys().observe(this, Observer {
             pubKeyAdapter.update(it)
@@ -232,12 +233,13 @@ class CollectionEditActivity : SentinelActivity() {
             RecyclerView.OnItemTouchListener {
             override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
 
-                fun  viewPubKey(pubKeyModel: PubKeyModel){
+                fun  viewPubKey(pubKeyModel: PubKeyModel, position: Int){
                     val dialog =  QRBottomSheetDialog(
                         pubKeyModel.pubKey,
                         pubKeyModel.label,
                         pubKeyModel.label,
-                        secure = prefs.displaySecure!!
+                        secure = prefs.displaySecure!!,
+                        collection = if (viewModel.getCollection().value!!.isImportFromWallet && position == 0) viewModel.getCollection().value else null
                     )
                     dialog.show(supportFragmentManager, dialog.tag)
                 }
@@ -270,7 +272,7 @@ class CollectionEditActivity : SentinelActivity() {
                         if (pressDuration < MAX_CLICK_DURATION && distance(pressedX, pressedY, e.getX(), e.getY()) < MAX_CLICK_DISTANCE && childView != null) {
                             val position = rv.getChildAdapterPosition(childView)
                             if (position != RecyclerView.NO_POSITION && (e.x < 920)) {
-                                viewPubKey(viewModel.getPubKeys().value!!.get(position))
+                                viewPubKey(viewModel.getPubKeys().value!![position], position)
                             }
                         }
                     }
@@ -369,7 +371,7 @@ class CollectionEditActivity : SentinelActivity() {
                 labelEditText = "Label",
                 value = pubKeyModel.label,
                 buttonLabel = "Save",
-                isEditable = !viewModel.getCollection().value?.isImportFromWallet!!
+                isEditable = !(viewModel.getCollection().value?.isImportFromWallet != null && viewModel.getCollection().value?.isImportFromWallet!!)
             )
     }
 
