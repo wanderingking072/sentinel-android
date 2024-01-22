@@ -26,6 +26,7 @@ import com.samourai.sentinel.ui.home.HomeViewModel
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.ExportImportUtil
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent
 
@@ -120,6 +121,7 @@ class PasswordFragment : Fragment() {
             }
             else {
                 this.onSelect(collection)
+                this.onDestroy()
             }
         }
     }
@@ -151,21 +153,24 @@ class LoadingFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+        binding.broadcastProgress.visibility = View.VISIBLE
+
         lifecycleScope.launch(Dispatchers.Main) {
-            ExportImportUtil().startImportCollections(arrayListOf(collection), false)
-        }.invokeOnCompletion {
-            lifecycleScope.launch(Dispatchers.Main) {
-                if (it == null) {
-                    //repository.addNew(collection)
-                    //homeViewModel.fetchBalance()
-                    binding.dialogTitle.text = "My Samourai Wallet added!"
-                    binding.broadcastProgress.visibility = View.GONE
-                    binding.successCheck.visibility = View.VISIBLE
-                    println("Success!")
-                } else {
-                    println("ERROR")
-                }
+            try {
+                ExportImportUtil().startImportCollections(arrayListOf(collection), false)
+
+                delay(3000)
+
+                binding.broadcastProgress.visibility = View.GONE
+                binding.successCheck.visibility = View.VISIBLE
+            } catch (e: Exception) {
+                println("Error: ${e.message}")
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        homeViewModel.fetchBalance()
     }
 }
