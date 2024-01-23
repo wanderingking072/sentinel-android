@@ -2,10 +2,8 @@ package com.samourai.sentinel.ui.dojo
 
 import android.Manifest
 import android.app.Application
-import android.app.PendingIntent
 import android.content.Context
 import android.content.DialogInterface
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,32 +11,40 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.invertedx.hummingbird.QRScanner
-import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.R
-import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.tor.EnumTorState
 import com.samourai.sentinel.tor.SentinelTorManager
-import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.apiScope
-import kotlinx.coroutines.*
-import okhttp3.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent
 import java.io.IOException
-import java.net.InetSocketAddress
-import java.net.Proxy
 
 class DojoConfigureBottomSheet : GenericBottomSheet() {
     private var payloadPassed: String? = null;
@@ -152,7 +158,11 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             client.newCall(request).enqueue(object : Callback {
 
                 override fun onResponse(call: Call, response: Response) {
-                    if (response.isSuccessful) {
+                    if (response.code == 401 || !response.body.toString().contains("authorizations")) {
+                        Log.d("DojoConfiguration", "Unauthorized: wrong API key")
+                        dismissAllOrToast(false)
+                    }
+                    else if (response.isSuccessful) {
                         val string = response.body?.string() ?: "{}"
                         val json = JSONObject(string)
                         dojoUtil.setDojoPayload(payload)
@@ -165,10 +175,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                                 dismissAllOrToast(true)
                             }
                         }
-                    } else if (response.code == 401) {
-                        Log.d("DojoConfiguration", "Unauthorized: wrong API key")
-                        dismissAllOrToast(false)
-                    } else {
+                    }  else {
                         dismissAllOrToast(false)
                     }
                 }
@@ -214,7 +221,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                     this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
                     this@DojoConfigureBottomSheet.dismiss()
                 }, 500)
-                Toast.makeText(requireContext(), "Unable to connect to Dojo. Please try again", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Unable to connect to Dojo. Please try again", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -222,7 +229,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
 
 
     private fun setUpTor() {
-        SentinelTorManager.setUp(context!!.applicationContext as Application)
+        SentinelTorManager.setUp(context?.applicationContext as Application)
         if (prefsUtil.enableTor == true) {
             SentinelTorManager.start()
         }
@@ -372,7 +379,7 @@ class ConnectManuallyFragment : Fragment() {
         apiText = view.findViewById(R.id.setUpWalletApiKeyInput)
         connectButton = view.findViewById(R.id.setUpWalletConnectDojo)
 
-        connectButton?.setOnClickListener(View.OnClickListener {
+        connectButton?.setOnClickListener {
             if (onionText?.text?.isBlank() == true || apiText?.text?.isBlank() == true)
                 dojoPayload = null
             else
@@ -385,7 +392,7 @@ class ConnectManuallyFragment : Fragment() {
                         "}\n" +
                         "}"
             connectOnClickListener?.onClick(view)
-        })
+        }
     }
 }
 
