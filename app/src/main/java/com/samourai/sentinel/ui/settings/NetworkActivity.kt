@@ -3,6 +3,7 @@ package com.samourai.sentinel.ui.settings
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
@@ -13,7 +14,6 @@ import androidx.core.content.ContextCompat
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.api.ApiService
-import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.tor.EnumTorState
 import com.samourai.sentinel.tor.SentinelTorManager
@@ -25,9 +25,6 @@ import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.apiScope
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.inject
 
@@ -136,7 +133,14 @@ class NetworkActivity : SentinelActivity() {
                                         SentinelTorManager.start()
                                         prefsUtil.enableTor = true
                                     }
-                                    importAllXpubs()
+                                    else {
+                                        SentinelTorManager.stop()
+                                        prefsUtil.enableTor = false
+                                    }
+                                    if (!prefsUtil.isAPIEndpointEnabled())
+                                        removeDojo()
+                                    else
+                                        importAllXpubs()
                                 }
                             )
                             if (prefsUtil.testnet!!) {
@@ -153,9 +157,20 @@ class NetworkActivity : SentinelActivity() {
 
     private fun importAllXpubs() {
         apiScope.launch {
-            repository.pubKeyCollections.forEach {
-                it.pubs.forEach {
-                    apiService.importXpub(it.pubKey, "bip${it.getPurpose()}")
+            val toImport = mutableListOf<Pair<String, String>>()
+
+            repository.pubKeyCollections.forEach { collection ->
+                collection.pubs.forEach { pub ->
+                    val purpose = "bip${pub.getPurpose()}"
+                    toImport.add(pub.pubKey to purpose)
+                }
+            }
+
+            toImport.forEach { (pubKey, purpose) ->
+                try {
+                    apiService.importXpub(pubKey, purpose)
+                } catch (e: Exception) {
+                    Log.d("NetworkActivity", "Error: ${e}")
                 }
             }
         }
