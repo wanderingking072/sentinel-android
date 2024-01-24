@@ -158,13 +158,13 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             client.newCall(request).enqueue(object : Callback {
 
                 override fun onResponse(call: Call, response: Response) {
-                    if (response.code == 401 || !response.body.toString().contains("authorizations")) {
+                    val body = response.body?.string() ?: "{}"
+                    if (response.code == 401 || !body.contains("authorizations")) {
                         Log.d("DojoConfiguration", "Unauthorized: wrong API key")
                         dismissAllOrToast(false)
                     }
                     else if (response.isSuccessful) {
-                        val string = response.body?.string() ?: "{}"
-                        val json = JSONObject(string)
+                        val json = JSONObject(body)
                         dojoUtil.setDojoPayload(payload)
                         prefsUtil.apiEndPointTor = pairing.pairing.url
                         prefsUtil.apiEndPoint = pairing.pairing.url
