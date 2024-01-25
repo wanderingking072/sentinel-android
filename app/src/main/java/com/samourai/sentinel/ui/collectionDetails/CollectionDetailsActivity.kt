@@ -264,14 +264,17 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
             val account = xpub.child + HARDENED
             isTabWhirlpoolPub = if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC) {
                 binding.bottomNav.getMenuItem(0)?.setIcon(null)
+                binding.bottomNav.getMenuItem(0)?.setEnabled(false)
                 true
             } else {
                 binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
+                binding.bottomNav.getMenuItem(0)?.setEnabled(true)
                 false
             }
         }
         else {
             binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
+            binding.bottomNav.getMenuItem(0)?.setEnabled(true)
             isTabWhirlpoolPub = false
         }
     }
