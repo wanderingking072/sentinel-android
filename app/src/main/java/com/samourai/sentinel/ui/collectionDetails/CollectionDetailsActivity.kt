@@ -86,12 +86,7 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
         binding.bottomNav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.bottom_nav_receive -> {
-                    if ((collectionOnlyHasWhirlpoolPubs() || isTabWhirlpoolPub) && !isFirstToast) {
-                        this@CollectionDetailsActivity.showFloatingSnackBar(
-                            binding.root,
-                            text = "Receiving is not available for postmix, premix and badbank"
-                        )
-                    }
+                    if ((collectionOnlyHasWhirlpoolPubs() || isTabWhirlpoolPub) && !isFirstToast) {}
                     else {
                         binding.fragmentHostContainerPager.setCurrentItem(0, true)
                     }

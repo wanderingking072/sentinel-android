@@ -525,13 +525,13 @@ class ReceiveFragment : Fragment() {
 
     fun setDropDownPub(index: Int) {
         if (index <= 0 || !isAdded) {
-            //indexPubSelector = index
+            setDropDownPub(1)
             return
         }
         val items = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it.label }.toMutableList()
 
         val newIndex =
-            if (isPubDifferentThanWhirlpool(collection.pubs[index-1])) index-collection.pubs.count{!isPubDifferentThanWhirlpool(it)}
+            if (isPubDifferentThanWhirlpool(collection.pubs[index-1])) index
         else findFirstNonWhirlpoolPub()
 
         if (items.size != 0 && newIndex > 0) {
