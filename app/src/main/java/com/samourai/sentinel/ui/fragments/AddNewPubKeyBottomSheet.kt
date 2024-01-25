@@ -26,12 +26,17 @@ import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ContentChooseAddressTypeBinding
 import com.samourai.sentinel.databinding.ContentCollectionSelectBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
+import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
+import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.tools.sweep.SweepPrivKeyFragment
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
+import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.GenericBottomSheet
+import com.samourai.sentinel.ui.views.alertWithInput
+import com.samourai.sentinel.util.ExportImportUtil
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.wallet.util.PrivKeyReader
 import com.samourai.wallet.util.XPUB
@@ -42,6 +47,7 @@ import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bitcoinj.crypto.ChildNumber
 import org.bouncycastle.util.encoders.Hex
 import org.json.JSONObject
@@ -171,7 +177,7 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
             PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
                 if (isAdded && activity != null) {
                     this.dismiss()
-                    val bottomSheetFragment = SweepPrivKeyFragment(payload.trim(), )
+                    val bottomSheetFragment = SweepPrivKeyFragment(payload.trim(), secure)
                     bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
                 }
             }
@@ -200,6 +206,13 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
                     binding.pager.post {
                         selectAddressTypeFragment.setType(type)
                     }
+                }
+            }
+            (JSONObject(payload.trim()).has("external") &&  JSONObject(payload.trim()).has("payload")) -> {
+                if (isAdded && activity != null) {
+                    this.dismiss()
+                    val bottomSheetFragment = WalletPairingFragment(payload.trim(), secure)
+                    bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
                 }
             }
             else -> {
@@ -502,8 +515,15 @@ class ChooseCollectionFragment : Fragment() {
     }
 
     private fun setUpCollectionSelectList() {
-
         repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
+            val iterator = it.iterator()
+
+            while (iterator.hasNext()) {
+                val collection = iterator.next()
+                if (collection.isImportFromWallet)
+                    iterator.remove()
+            }
+
             collectionsAdapter.update(it)
         })
         collectionsAdapter.setLayoutType(CollectionsAdapter.Companion.LayoutType.STACKED)

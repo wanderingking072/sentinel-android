@@ -167,13 +167,18 @@ fun AppCompatActivity.alertWithInput(
     maskInput: Boolean = false,
     isCancelable: Boolean = true,
     maxLen: Int = 34,
-    onConfirm: (String) -> Unit
+    onConfirm: (String) -> Unit,
+    isEditable: Boolean = true
 ): GenericBottomSheet {
     val bottomSheet = InputBottomSheet(label, onViewReady = {
         val view = it.view
         view?.findViewById<MaterialButton>(R.id.bottomSheetConfirmPositiveBtn)?.text = buttonLabel
         view?.findViewById<TextInputLayout>(R.id.bottomSheetInputFieldLayout)?.hint = labelEditText
         val textInput = view?.findViewById<TextInputEditText>(R.id.bottomSheetInputField);
+        if (!isEditable) {
+            textInput?.isFocusable = false
+            textInput?.isFocusableInTouchMode = false
+        }
         textInput?.setText(value)
         if(maskInput){
             textInput?.inputType = EditorInfo.TYPE_TEXT_VARIATION_PASSWORD

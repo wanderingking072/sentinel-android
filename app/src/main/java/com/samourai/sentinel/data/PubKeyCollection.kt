@@ -7,7 +7,8 @@ data class PubKeyCollection(
         var balance: Long = 0L,
         var id: String = "",
         var lastRefreshed: Long = 0L,
-        var pubs: ArrayList<PubKeyModel> = arrayListOf()
+        var pubs: ArrayList<PubKeyModel> = arrayListOf(),
+        var isImportFromWallet: Boolean = false
 ) {
     fun updateBalance() {
         if (pubs.isEmpty()) {

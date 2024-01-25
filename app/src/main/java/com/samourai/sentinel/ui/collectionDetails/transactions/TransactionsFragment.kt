@@ -75,11 +75,22 @@ class TransactionsFragment : Fragment() {
 
         binding.txViewPager.adapter = CollectionPubKeysViewpager(this.activity, collection)
         binding.txViewPager.offscreenPageLimit = 5
+
         TabLayoutMediator(binding.tabLayout, binding.txViewPager) { tab, position ->
-            if(position == 0){
-                tab.text = "All"
-            }else{
-                tab.text = collection.pubs[position-1].label
+            if (collection.isImportFromWallet) {
+                when (position) {
+                    0 -> tab.text = "All"
+                    1 -> tab.text = "Deposit"
+                    2 -> tab.text = "Premix"
+                    3 -> tab.text = "Postmix"
+                    4 -> tab.text = "Badbank"
+                }
+            }
+            else {
+                if (position == 0)
+                    tab.text = "All"
+                else
+                    tab.text = collection.pubs[position - 1].label
             }
         }.attach()
 
@@ -169,6 +180,24 @@ class TransactionsFragment : Fragment() {
     }
 
     fun setBalance(pubkeyIndex: Int) {
+        //Handle deposit tab in collection imported from wallet
+        if (collection.isImportFromWallet && pubkeyIndex == 0) {
+            var blockedUtxoBalanceSum = 0L
+            var balance = 0L
+            collection.pubs.forEach { pub ->
+                if (pub.label.lowercase().contains("deposit")) {
+                    balance += pub.balance
+                    val blockedUtxos1 =
+                        UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
+                    blockedUtxos1.forEach { blockedUtxo ->
+                        blockedUtxoBalanceSum += blockedUtxo.amount
+                    }
+                }
+            }
+            val finalBalance = balance - blockedUtxoBalanceSum
+            binding.collectionBalanceFiat.text = getFiatBalance(finalBalance, exchangeRateRepository.getRateLive().value)
+            binding.collectionBalanceBtc.text = df.format(finalBalance.div(1e8)) + " BTC"
+        }
         if (pubkeyIndex != -1) {
             var blockedUtxoBalanceSum = 0L
             val blockedUtxos =
@@ -181,6 +210,7 @@ class TransactionsFragment : Fragment() {
             binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
         }
         else {
+            //Handle "All" tab
             var blockedUtxosBalanceSum = 0L
             collection.pubs.forEach { pubKeyModel ->
                 val blockedUtxos1 =
@@ -275,7 +305,10 @@ class TransactionsFragment : Fragment() {
         }
 
         override fun getItemCount(): Int {
-            return collection.pubs.size + 1
+            return if (collection.isImportFromWallet)
+                collection.pubs.size - 1
+            else
+                collection.pubs.size + 1
         }
     }
 

@@ -23,8 +23,13 @@ import java.util.*
 class PubKeyAdapter : RecyclerView.Adapter<PubKeyAdapter.PubKeyViewHolder>() {
 
     private var editingItem = ""
+    private var isImportFromWallet = false
     private var onDeleteClick: (Int) -> Unit = {}
     private var onOptionsClick: (Int, PubKeyModel) -> Unit = { _, _ -> run {} }
+
+    fun setIsImportFromWallet(isImportWallet: Boolean) {
+        this.isImportFromWallet = isImportWallet
+    }
 
     private val diffCallBack = object : DiffUtil.ItemCallback<PubKeyModel>() {
 
@@ -66,7 +71,10 @@ class PubKeyAdapter : RecyclerView.Adapter<PubKeyAdapter.PubKeyViewHolder>() {
     }
 
     override fun getItemCount(): Int {
-        return mDiffer.currentList.size
+        return if (isImportFromWallet)
+                mDiffer.currentList.size - 2
+            else
+                mDiffer.currentList.size
     }
 
     override fun onBindViewHolder(holderPubKey: PubKeyViewHolder, position: Int) {
@@ -78,7 +86,7 @@ class PubKeyAdapter : RecyclerView.Adapter<PubKeyAdapter.PubKeyViewHolder>() {
         holderPubKey.pubModel = pubKeyModel
         holderPubKey.selectedPub = editingItem
         holderPubKey.pubKeyAmount.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(pubKeyModel.balance)} BTC"
-        holderPubKey.label.text = pubKeyModel.label
+        holderPubKey.label.text = if (isImportFromWallet && position == 0) "Deposit" else pubKeyModel.label
         holderPubKey.pubKeyType.text = pubKeyModel.type.toString()
 
         holderPubKey.moreButton.setOnClickListener {
