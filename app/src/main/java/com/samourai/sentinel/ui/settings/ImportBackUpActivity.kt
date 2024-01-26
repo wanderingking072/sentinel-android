@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.transition.TransitionManager
@@ -61,6 +62,8 @@ class ImportBackUpActivity : SentinelActivity() {
         setContentView(view)
         setSupportActionBar(binding.toolbarImportActivity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.v3_background)
 
 
         binding.importChoosePayloadBtn.setOnClickListener {
