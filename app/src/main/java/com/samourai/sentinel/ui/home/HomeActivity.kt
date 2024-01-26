@@ -134,7 +134,7 @@ class HomeActivity : SentinelActivity() {
         model.getErrorMessage().observe(this) {
             if (it != "null" &&  SentinelTorManager.getTorState().state != EnumTorState.STARTING) {
                 if (!it.lowercase().startsWith("unable to resolve host")
-                    && !it.lowercase().contains("StandaloneCoroutine was cancelled")) {
+                    && !it.lowercase().contains("standalonecoroutine was cancelled")) {
                     this@HomeActivity.showFloatingSnackBar(
                         binding.fab,
                         text = "No data connection available. Please enable data"
