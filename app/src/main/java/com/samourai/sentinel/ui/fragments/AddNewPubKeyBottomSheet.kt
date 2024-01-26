@@ -163,12 +163,14 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
         val type = FormatsUtil.getPubKeyType(payload)
         if (FormatsUtil.isValidBitcoinAddress(payload.trim()) || FormatsUtil.isValidXpub(payload)) {
             if (isPublicKeyTesnet(payload) && !SentinelState.isTestNet()) {
-                Toast.makeText(context, "Can't track Testnet public keys in Mainnet", Toast.LENGTH_LONG).show()
+                if (context != null)
+                    Toast.makeText(context, "Can't track Testnet public keys in Mainnet", Toast.LENGTH_LONG).show()
                 this.dismiss()
                 return
             }
             if (!isPublicKeyTesnet(payload) && SentinelState.isTestNet()) {
-                Toast.makeText(context, "Can't track Mainnet public keys in Testnet", Toast.LENGTH_LONG).show()
+                if (context != null)
+                    Toast.makeText(context, "Can't track Mainnet public keys in Testnet", Toast.LENGTH_LONG).show()
                 this.dismiss()
                 return
             }
