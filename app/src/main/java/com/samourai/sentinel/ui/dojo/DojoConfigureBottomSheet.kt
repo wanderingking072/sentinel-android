@@ -159,7 +159,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
 
                 override fun onResponse(call: Call, response: Response) {
                     val body = response.body?.string() ?: "{}"
-                    if (response.code == 401 || !body.contains("authorizations")) {
+                    if (response.code == 401 || (response.isSuccessful && !body.contains("authorizations"))) {
                         Log.d("DojoConfiguration", "Unauthorized: wrong API key")
                         dismissAllOrToast(false)
                     }
@@ -221,7 +221,9 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                     this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
                     this@DojoConfigureBottomSheet.dismiss()
                 }, 500)
-                Toast.makeText(context, "Unable to connect to Dojo. Please try again", Toast.LENGTH_LONG).show()
+                if (context != null)
+                    Toast.makeText(context, "Unable to connect to Dojo. Please try again", Toast.LENGTH_LONG).show()
+                this.dismiss()
             }
         }
     }
