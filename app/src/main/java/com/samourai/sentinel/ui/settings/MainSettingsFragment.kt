@@ -108,6 +108,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
         }
 
         val hapticPin = findPreference<CheckBoxPreference>("haptic")
+        hapticPin?.isChecked = prefsUtil.haptics ?: false
         hapticPin?.let {
             it.setOnPreferenceClickListener {
                 prefsUtil.haptics = !prefsUtil.haptics!!
