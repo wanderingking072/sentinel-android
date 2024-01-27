@@ -10,6 +10,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.viewModels
@@ -59,11 +60,14 @@ class TransactionsFragment : Fragment() {
         df.minimumIntegerDigits = 1
         df.minimumFractionDigits = 8
         df.maximumFractionDigits = 8
+
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.mpm_black)
 
         initViewModel()
 
@@ -247,6 +251,7 @@ class TransactionsFragment : Fragment() {
         (activity as SentinelActivity).setSupportActionBar(binding.toolbarCollectionDetails)
         (activity as SentinelActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbarCollectionDetails.title = collection.collectionLabel
+        binding.toolbarCollectionDetails.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.mpm_black))
         setBalance(-1)
     }
 

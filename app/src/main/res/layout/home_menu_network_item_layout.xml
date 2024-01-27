@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="50dp"
-    android:layout_height="32dp"
+    android:layout_height="50dp"
     android:layout_gravity="center"
     android:clickable="false"
     tools:ignore="HardcodedText">
@@ -13,6 +13,7 @@
         android:layout_marginEnd="10dp"
         android:layout_gravity="center"
         android:clickable="false"
+        android:layout_marginTop="7dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="Network icon"
         android:src="@drawable/ic_network_check_white_24dp" />
