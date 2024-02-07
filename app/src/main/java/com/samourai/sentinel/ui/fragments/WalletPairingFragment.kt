@@ -89,7 +89,7 @@ class PasswordFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.layout_bottom_sheet, container)
-        view.findViewById<TextView>(R.id.dialogTitle).text = "Enter password"
+        view.findViewById<TextView>(R.id.dialogTitle).text = "Enter one time pairing password"
         val inputContent = inflater.inflate(R.layout.content_bottom_sheet_input, null)
         val content = view.findViewById<FrameLayout>(R.id.contentContainer)
         content.addView(inputContent)
@@ -142,7 +142,7 @@ class LoadingFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = LayoutLoadingBottomBinding.inflate(inflater, container, false)
-        binding.dialogTitle.text = "Importing pubkeys..."
+        binding.dialogTitle.text = "Adding collection"
         val view = binding.root
         return view
     }
