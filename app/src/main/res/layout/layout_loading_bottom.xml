@@ -25,10 +25,11 @@
             android:layout_height="wrap_content" />
 
         <androidx.cardview.widget.CardView
-            android:layout_width="150dp"
-            android:layout_height="150dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             app:cardCornerRadius="250dp"
             app:cardBackgroundColor="@color/green_ui_2"
+            android:layout_gravity="center">
             android:layout_gravity="center">
 
             <RelativeLayout
@@ -55,7 +56,8 @@
                     android:layout_centerInParent="true"
                     android:indeterminate="true"
                     android:scaleType="centerCrop"
-                    app:indicatorColor="@color/white" />
+                    app:indicatorColor="@color/white"
+                    android:visibility="gone"/>
 
             </RelativeLayout>
 

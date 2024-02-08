@@ -25,6 +25,7 @@ import com.samourai.sentinel.databinding.LayoutLoadingBottomBinding
 import com.samourai.sentinel.ui.home.HomeViewModel
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.ExportImportUtil
+import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -37,6 +38,8 @@ class WalletPairingFragment(private val payload: String = "", secure: Boolean = 
     private val binding get() = _binding!!
     private val passwordFragment = PasswordFragment()
     private val loadingFragment = LoadingFragment()
+    private val successFragment = SuccessFragment()
+    private val homeViewModel: HomeViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,6 +59,14 @@ class WalletPairingFragment(private val payload: String = "", secure: Boolean = 
             loadingFragment.setCollection(it!!)
             binding.pager.currentItem = 1
         }
+        loadingFragment.setSuccessCheck {
+            apiScope.launch {
+                homeViewModel.fetchBalance()
+                delay(3000)
+            }.invokeOnCompletion {
+                binding.pager.currentItem = 2
+            }
+        }
     }
 
     private fun setUpViewPager() {
@@ -63,6 +74,7 @@ class WalletPairingFragment(private val payload: String = "", secure: Boolean = 
         val item = arrayListOf<Fragment>()
         item.add(passwordFragment)
         item.add(loadingFragment)
+        item.add(successFragment)
 
         binding.pager.adapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int {
@@ -132,8 +144,7 @@ class LoadingFragment : Fragment() {
     private var _binding: LayoutLoadingBottomBinding? = null
     private val binding get() = _binding!!
     private lateinit var collection: PubKeyCollection
-    private val repository: CollectionRepository by KoinJavaComponent.inject(CollectionRepository::class.java)
-    private val homeViewModel: HomeViewModel by viewModels()
+    private var onSelect: () -> Unit = {}
 
 
     override fun onCreateView(
@@ -151,6 +162,10 @@ class LoadingFragment : Fragment() {
         this.collection = collection
     }
 
+    fun setSuccessCheck(callback: () -> Unit = {}) {
+        this.onSelect = callback
+    }
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         binding.broadcastProgress.visibility = View.VISIBLE
@@ -159,18 +174,31 @@ class LoadingFragment : Fragment() {
             try {
                 ExportImportUtil().startImportCollections(arrayListOf(collection), false)
 
-                delay(3000)
-
-                binding.broadcastProgress.visibility = View.GONE
-                binding.successCheck.visibility = View.VISIBLE
+                onSelect()
             } catch (e: Exception) {
                 println("Error: ${e.message}")
             }
         }
     }
+}
 
-    override fun onDestroy() {
-        super.onDestroy()
-        homeViewModel.fetchBalance()
+class SuccessFragment : Fragment() {
+
+    private var _binding: LayoutLoadingBottomBinding? = null
+    private val binding get() = _binding!!
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = LayoutLoadingBottomBinding.inflate(inflater, container, false)
+        binding.dialogTitle.text = "New collection added"
+        val view = binding.root
+        return view
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        binding.successCheck.visibility = View.VISIBLE
     }
 }
