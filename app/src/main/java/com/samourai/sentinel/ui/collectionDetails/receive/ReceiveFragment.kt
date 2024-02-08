@@ -25,6 +25,7 @@ import android.widget.AutoCompleteTextView
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -35,6 +36,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
+import com.google.android.material.textfield.TextInputLayout
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.client.android.Contents
@@ -79,6 +81,9 @@ class ReceiveFragment : Fragment() {
     private lateinit var tvPath: TextView
     private var pubKeyIndex = 0
     private lateinit var pubKeyDropDown: AutoCompleteTextView
+    private lateinit var generalDropdown: TextInputLayout
+    private lateinit var addressTypesSpinner: Spinner
+
     private val receiveViewModel: ReceiveViewModel by viewModels()
     private lateinit var advancedContainer: ConstraintLayout
     private val HARDENED = 2147483648
@@ -106,6 +111,9 @@ class ReceiveFragment : Fragment() {
         receiveQR = root.findViewById(R.id.receiveQR)
         receiveAddressText = root.findViewById(R.id.receiveAddressText)
         pubKeyDropDown = root.findViewById(R.id.pubKeySelector)
+        generalDropdown = root.findViewById(R.id.dropdown_menu)
+        addressTypesSpinner = root.findViewById(R.id.address_type_spinner)
+
         advancedButton = root.findViewById(R.id.advance_button)
         advancedContainer = root.findViewById(R.id.container_advance_options)
         btcEditText = root.findViewById(R.id.amountBTC)
@@ -115,6 +123,12 @@ class ReceiveFragment : Fragment() {
         qrFile = "${requireContext().cacheDir.path}${File.separator}qr.png";
 
 
+        if(collection.isImportFromWallet) {
+            generalDropdown.visibility = View.GONE
+            addressTypesSpinner.visibility = View.VISIBLE
+            populateSpinner()
+        }
+
         setUpSpinner()
 
         generateQR()
@@ -122,6 +136,37 @@ class ReceiveFragment : Fragment() {
         tvPath.text = getPath()
 
         setUpToolBar()
+
+        addressTypesSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                when (position) {
+                    1 -> {
+                        //BIP 49
+                        pubKeyIndex = 5
+                    }
+
+                    2 -> {
+                        //BIP 44
+                        pubKeyIndex = 4
+                    }
+
+                    else -> {
+                        //BIP 84
+                        pubKeyIndex = 0
+                    }
+                }
+                tvPath.text = getPath()
+                generateQR()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+        }
 
         receiveAddressText.setOnClickListener {
 
@@ -176,6 +221,15 @@ class ReceiveFragment : Fragment() {
                     }
                 }
         )
+    }
+
+    private fun populateSpinner() {
+        val adapter = ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.address_types, android.R.layout.simple_spinner_item
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        addressTypesSpinner.adapter = adapter
     }
 
     private fun shareQR() {
@@ -278,7 +332,6 @@ class ReceiveFragment : Fragment() {
     }
 
     fun getPath(): String {
-
         var path = "m/"
 
         if (collection.pubs.size == 0) {
@@ -289,7 +342,7 @@ class ReceiveFragment : Fragment() {
             return collection.pubs[pubKeyIndex].pubKey
         }
         val pubKey = collection.pubs[pubKeyIndex]
-        val xpub = XPUB(pubKey.pubKey.toString())
+        val xpub = XPUB(pubKey.pubKey)
         xpub.decode()
 
         path += pubKey.getPurpose().toString() + "'/" // add purpose
