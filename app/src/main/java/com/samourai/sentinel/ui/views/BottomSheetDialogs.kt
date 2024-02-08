@@ -178,6 +178,14 @@ fun AppCompatActivity.alertWithInput(
         if (!isEditable) {
             textInput?.isFocusable = false
             textInput?.isFocusableInTouchMode = false
+            view?.findViewById<MaterialButton>(R.id.bottomSheetConfirmPositiveBtn)?.visibility = View.GONE
+
+            view?.findViewById<TextInputLayout>(R.id.bottomSheetInputFieldLayout)?.setPadding(
+                view?.findViewById<TextInputLayout>(R.id.bottomSheetInputFieldLayout)?.getPaddingLeft()!!,
+                view?.findViewById<TextInputLayout>(R.id.bottomSheetInputFieldLayout)?.getPaddingTop()!!,
+                view?.findViewById<TextInputLayout>(R.id.bottomSheetInputFieldLayout)?.getPaddingRight()!!,
+                100);
+
         }
         textInput?.setText(value)
         if(maskInput){

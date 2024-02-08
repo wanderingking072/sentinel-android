@@ -27,6 +27,9 @@ interface UtxoDao {
     @Query("SELECT * from utxos WHERE collectionId=:collectionId AND pubKey=:pubKey")
     fun getUTXObyCollectionAndPubKey(collectionId: String,pubKey: String): LiveData<List<Utxo>>
 
+    @Query("SELECT * from utxos WHERE collectionId=:collectionId AND pubKey IN (:pubKeys)")
+    fun getUTXObyCollectionAndPubKeys(collectionId: String, pubKeys: List<String>): LiveData<List<Utxo>>
+
     @Query("SELECT * from utxos WHERE pubKey=:pubKey")
     fun getUtxoWithPubKey(pubKey: String): LiveData<List<Utxo>>
 
