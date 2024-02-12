@@ -187,7 +187,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                         if (SentinelTorManager.getProxy() != null)
                             setDojo()
                         else
-                            dismissAllOrToast(false)
+                            dismissAllOrToast(false, true)
                     }
                     else {
                         dismissAllOrToast(false, true)
@@ -214,9 +214,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         else if (retry && numRetries <= 2) {
             numRetries += 1
             Thread.sleep(5000)
-            if (SentinelTorManager.getProxy() != null) {
-                setDojo()
-            }
+            setDojo()
         }
         else {
             Handler(Looper.getMainLooper()).post {
