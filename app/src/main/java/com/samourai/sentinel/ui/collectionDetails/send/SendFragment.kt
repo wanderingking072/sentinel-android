@@ -134,9 +134,6 @@ class SendFragment : Fragment() {
             containerTransform(fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView, fragmentSpendBinding.composeBtn)
         }
 
-
-
-        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
         setBalance(mCollection!!.pubs[findFirstNonAddressPubkey()-1])
 
         if (isAdded) {
@@ -530,7 +527,6 @@ class SendFragment : Fragment() {
             val selectPubKeyModel = pubKeySelector.pubs[newIndex-1]
             viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
             transactionComposer.setPubKey(selectPubKeyModel)
-            fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
             setBalance(mCollection!!.pubs[newIndex-1])
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(mCollection!!.pubs.get(newIndex-1).label, false)
 
@@ -541,6 +537,15 @@ class SendFragment : Fragment() {
     }
 
     private fun isPubkeyAddressOrPremix(it: PubKeyModel): Boolean {
+        //Also has to filter if collection is imported via Samourai Wallet pairing menu
+
+        if (mCollection!!.isImportFromWallet) {
+            if (it.label.equals("Deposit BIP49") || it.label.equals("Deposit BIP44"))
+                return false
+            if (it.label.equals("Deposit BIP84"))
+                it.label = "Deposit"
+        }
+
         if (it.type == AddressTypes.ADDRESS)
             return false
 
@@ -589,9 +594,10 @@ class SendFragment : Fragment() {
                 val selectPubKeyModel = getPubKeyModelByLabel(items[index])
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
-                fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
+
                 setBalance(getPubKeyModelByLabel(items[index]))
-                    view?.isEnabled = true
+
+                view?.isEnabled = true
                 view?.alpha = 1f
                 fragmentSpendBinding.composeBtn.isEnabled = true
             }
@@ -612,13 +618,35 @@ class SendFragment : Fragment() {
     }
 
     private fun setBalance(pub: PubKeyModel) {
-        var blockedUtxoBalanceSum = 0L
-        val blockedUtxos =  UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
-        blockedUtxos.forEach{ utxo ->
-            blockedUtxoBalanceSum += utxo.amount
+
+        if (mCollection!!.isImportFromWallet && pub.label == "Deposit") {
+            var blockedUtxoBalanceSum = 0L
+            val totalBalance =
+                mCollection!!.pubs[0].balance + mCollection!!.pubs[4].balance + mCollection!!.pubs[5].balance
+            val depositPubs = listOf(
+                mCollection!!.pubs[0].pubKey,
+                mCollection!!.pubs[4].pubKey,
+                mCollection!!.pubs[5].pubKey
+            )
+            depositPubs.forEach {
+                val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKey(it)
+                blockedUtxos.forEach { utxo ->
+                    blockedUtxoBalanceSum += utxo.amount
+                }
+            }
+            val finalBalance = totalBalance - blockedUtxoBalanceSum
+            fragmentSpendBinding.fragmentComposeTx.totalBTC.text =
+                decimalFormatBTC.format(finalBalance.div(1e8)).toString() + " BTC"
+        } else {
+            var blockedUtxoBalanceSum = 0L
+            val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
+            blockedUtxos.forEach { utxo ->
+                blockedUtxoBalanceSum += utxo.amount
+            }
+            val balance = pub.balance - blockedUtxoBalanceSum
+            fragmentSpendBinding.fragmentComposeTx.totalBTC.text =
+                decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
         }
-        val balance = pub.balance - blockedUtxoBalanceSum
-        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
     }
 
     private fun setUpFee() {
