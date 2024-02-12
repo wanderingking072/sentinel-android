@@ -130,8 +130,9 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             dojoConnectFragment.showTorProgress()
             SentinelTorManager.getTorStateLiveData().observe(this) {
                 if (it.state == EnumTorState.ON) {
-                    dojoConnectFragment.showTorProgressSuccess()
-                    setDojo()
+                    if (dojoConnectFragment.showTorProgressSuccess()) {
+                        setDojo()
+                    }
                 }
             }
         }
@@ -185,6 +186,8 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                         Thread.sleep(5000)
                         if (SentinelTorManager.getProxy() != null)
                             setDojo()
+                        else
+                            dismissAllOrToast(false, true)
                     }
                     else {
                         dismissAllOrToast(false, true)
@@ -211,9 +214,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         else if (retry && numRetries <= 2) {
             numRetries += 1
             Thread.sleep(5000)
-            if (SentinelTorManager.getProxy() != null) {
-                setDojo()
-            }
+            setDojo()
         }
         else {
             Handler(Looper.getMainLooper()).post {
@@ -339,9 +340,14 @@ class DojoConnectFragment : Fragment() {
                 .start()
     }
 
-    fun showTorProgressSuccess() {
-        progressTor.visibility = View.INVISIBLE
-        checkImageTor.visibility = View.VISIBLE
+    @Synchronized
+    fun showTorProgressSuccess() : Boolean {
+        if (checkImageTor.visibility != View.VISIBLE) {
+            progressTor.visibility = View.INVISIBLE
+            checkImageTor.visibility = View.VISIBLE
+            return true
+        }
+        return false
     }
 
     fun showDojoProgress() {
