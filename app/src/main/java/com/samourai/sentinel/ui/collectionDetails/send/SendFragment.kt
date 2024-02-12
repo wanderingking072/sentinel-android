@@ -47,6 +47,7 @@ import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
+import com.samourai.wallet.util.XPUB
 import com.sparrowwallet.hummingbird.UR
 import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
@@ -83,6 +84,9 @@ class SendFragment : Fragment() {
     private val fragmentSpendBinding get() = _fragmentSpendBinding!!
     private var indexPubSelector = -1
     val viewModel: SendViewModel by viewModels()
+
+    private val HARDENED = 2147483648
+    private val PREMIX_ACC = 2147483645L
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -512,7 +516,9 @@ class SendFragment : Fragment() {
         val newIndex = if (mCollection!!.pubs[index-1].type != AddressTypes.ADDRESS) index else findFirstNonAddressPubkey()
 
         mCollection?.let { pubKeySelector ->
-            val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
+            val items = pubKeySelector.pubs.filter {
+                isPubkeyAddressOrPremix(it)
+            }.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                 requireContext(),
@@ -534,10 +540,29 @@ class SendFragment : Fragment() {
             }
     }
 
+    private fun isPubkeyAddressOrPremix(it: PubKeyModel): Boolean {
+        if (it.type == AddressTypes.ADDRESS)
+            return false
+
+        val xpub = XPUB(it.pubKey)
+        xpub.decode()
+        val account = xpub.child + HARDENED
+        if (account == PREMIX_ACC)
+            return false
+
+        return true
+    }
+
     private fun findFirstNonAddressPubkey(): Int {
+        //Pubkey must also NOT be Premix
         mCollection!!.pubs.forEach {
-            if (it.type != AddressTypes.ADDRESS)
-                return mCollection!!.pubs.indexOf(it)+1
+            if (it.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(it.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                if (account != PREMIX_ACC)
+                    return mCollection!!.pubs.indexOf(it)+1
+            }
         }
         return 1
     }
@@ -551,7 +576,7 @@ class SendFragment : Fragment() {
             return
         }
         mCollection?.let { pubKeySelector ->
-            val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
+            val items = pubKeySelector.pubs.filter { isPubkeyAddressOrPremix(it) }.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                     requireContext(),
