@@ -101,6 +101,8 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
         }
         if (collection.isImportFromWallet)
             holder.icon.setImageResource(R.drawable.ic_samourai_logo)
+        else
+            holder.icon.setImageResource(R.drawable.ic_baseline_wallet_24)
     }
 
     fun setBalance(position: Int): Long {

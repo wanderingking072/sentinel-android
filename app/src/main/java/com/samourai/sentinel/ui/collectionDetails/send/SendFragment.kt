@@ -47,6 +47,7 @@ import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
+import com.samourai.wallet.util.XPUB
 import com.sparrowwallet.hummingbird.UR
 import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
@@ -83,6 +84,9 @@ class SendFragment : Fragment() {
     private val fragmentSpendBinding get() = _fragmentSpendBinding!!
     private var indexPubSelector = -1
     val viewModel: SendViewModel by viewModels()
+
+    private val HARDENED = 2147483648
+    private val PREMIX_ACC = 2147483645L
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -130,9 +134,6 @@ class SendFragment : Fragment() {
             containerTransform(fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView, fragmentSpendBinding.composeBtn)
         }
 
-
-
-        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
         setBalance(mCollection!!.pubs[findFirstNonAddressPubkey()-1])
 
         if (isAdded) {
@@ -512,7 +513,9 @@ class SendFragment : Fragment() {
         val newIndex = if (mCollection!!.pubs[index-1].type != AddressTypes.ADDRESS) index else findFirstNonAddressPubkey()
 
         mCollection?.let { pubKeySelector ->
-            val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
+            val items = pubKeySelector.pubs.filter {
+                isPubkeyAddressOrPremix(it)
+            }.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                 requireContext(),
@@ -524,7 +527,6 @@ class SendFragment : Fragment() {
             val selectPubKeyModel = pubKeySelector.pubs[newIndex-1]
             viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
             transactionComposer.setPubKey(selectPubKeyModel)
-            fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
             setBalance(mCollection!!.pubs[newIndex-1])
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(mCollection!!.pubs.get(newIndex-1).label, false)
 
@@ -534,10 +536,38 @@ class SendFragment : Fragment() {
             }
     }
 
+    private fun isPubkeyAddressOrPremix(it: PubKeyModel): Boolean {
+        //Also has to filter if collection is imported via Samourai Wallet pairing menu
+
+        if (mCollection!!.isImportFromWallet) {
+            if (it.label.equals("Deposit BIP49") || it.label.equals("Deposit BIP44"))
+                return false
+            if (it.label.equals("Deposit BIP84"))
+                it.label = "Deposit"
+        }
+
+        if (it.type == AddressTypes.ADDRESS)
+            return false
+
+        val xpub = XPUB(it.pubKey)
+        xpub.decode()
+        val account = xpub.child + HARDENED
+        if (account == PREMIX_ACC)
+            return false
+
+        return true
+    }
+
     private fun findFirstNonAddressPubkey(): Int {
+        //Pubkey must also NOT be Premix
         mCollection!!.pubs.forEach {
-            if (it.type != AddressTypes.ADDRESS)
-                return mCollection!!.pubs.indexOf(it)+1
+            if (it.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(it.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                if (account != PREMIX_ACC)
+                    return mCollection!!.pubs.indexOf(it)+1
+            }
         }
         return 1
     }
@@ -551,7 +581,7 @@ class SendFragment : Fragment() {
             return
         }
         mCollection?.let { pubKeySelector ->
-            val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
+            val items = pubKeySelector.pubs.filter { isPubkeyAddressOrPremix(it) }.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                     requireContext(),
@@ -564,9 +594,10 @@ class SendFragment : Fragment() {
                 val selectPubKeyModel = getPubKeyModelByLabel(items[index])
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
                 transactionComposer.setPubKey(selectPubKeyModel)
-                fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
+
                 setBalance(getPubKeyModelByLabel(items[index]))
-                    view?.isEnabled = true
+
+                view?.isEnabled = true
                 view?.alpha = 1f
                 fragmentSpendBinding.composeBtn.isEnabled = true
             }
@@ -587,13 +618,35 @@ class SendFragment : Fragment() {
     }
 
     private fun setBalance(pub: PubKeyModel) {
-        var blockedUtxoBalanceSum = 0L
-        val blockedUtxos =  UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
-        blockedUtxos.forEach{ utxo ->
-            blockedUtxoBalanceSum += utxo.amount
+
+        if (mCollection!!.isImportFromWallet && pub.label == "Deposit") {
+            var blockedUtxoBalanceSum = 0L
+            val totalBalance =
+                mCollection!!.pubs[0].balance + mCollection!!.pubs[4].balance + mCollection!!.pubs[5].balance
+            val depositPubs = listOf(
+                mCollection!!.pubs[0].pubKey,
+                mCollection!!.pubs[4].pubKey,
+                mCollection!!.pubs[5].pubKey
+            )
+            depositPubs.forEach {
+                val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKey(it)
+                blockedUtxos.forEach { utxo ->
+                    blockedUtxoBalanceSum += utxo.amount
+                }
+            }
+            val finalBalance = totalBalance - blockedUtxoBalanceSum
+            fragmentSpendBinding.fragmentComposeTx.totalBTC.text =
+                decimalFormatBTC.format(finalBalance.div(1e8)).toString() + " BTC"
+        } else {
+            var blockedUtxoBalanceSum = 0L
+            val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
+            blockedUtxos.forEach { utxo ->
+                blockedUtxoBalanceSum += utxo.amount
+            }
+            val balance = pub.balance - blockedUtxoBalanceSum
+            fragmentSpendBinding.fragmentComposeTx.totalBTC.text =
+                decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
         }
-        val balance = pub.balance - blockedUtxoBalanceSum
-        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
     }
 
     private fun setUpFee() {

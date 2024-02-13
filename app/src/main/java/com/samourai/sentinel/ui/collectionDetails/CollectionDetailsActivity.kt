@@ -33,6 +33,7 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
 
     private var isFirstToast = true
     private var isTabWhirlpoolPub = false
+    private var isTabPremix = false
     private lateinit var pagerAdapter: PagerAdapter
     private val receiveFragment: ReceiveFragment = ReceiveFragment()
     private val sendFragment: SendFragment = SendFragment()
@@ -271,6 +272,16 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
                 binding.bottomNav.getMenuItem(0)?.setEnabled(true)
                 false
             }
+            if (account == PREMIX_ACC) {
+                binding.bottomNav.getMenuItem(2)?.setIcon(null)
+                binding.bottomNav.getMenuItem(2)?.setEnabled(false)
+                isTabPremix = true
+            }
+            else {
+                binding.bottomNav.getMenuItem(2)?.setIcon(R.drawable.ic_baseline_sent_24)
+                binding.bottomNav.getMenuItem(2)?.setEnabled(true)
+                isTabPremix = false
+            }
         }
         else {
             binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
@@ -278,7 +289,5 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
             isTabWhirlpoolPub = false
         }
     }
-
-
 }
 

@@ -34,6 +34,12 @@
     <string name="options_haptic">Haptic Feedback</string>
     <string name="options_haptic_2">Haptics enhance interactions and convey useful information to users through the sense of touch.</string>
 
+    <string-array name="address_types">
+        <item>Segwit native (bech32)</item>
+        <item>Segwit compatibility (P2SH)</item>
+        <item>Legacy (P2PKH)</item>
+    </string-array>
+
     <string name="timeline_today">Today</string>
     <string name="timeline_yesterday">Yesterday</string>
     <string name="timeline_older">Older</string>
