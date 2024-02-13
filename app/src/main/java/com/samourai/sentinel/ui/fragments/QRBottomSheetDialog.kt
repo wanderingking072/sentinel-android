@@ -66,7 +66,7 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
 
         if (collection != null && collection.isImportFromWallet) {
             val layoutParams = qRImage.layoutParams as ConstraintLayout.LayoutParams
-            val newMarginEnd = (90 * resources.displayMetrics.density).toInt()
+            val newMarginEnd = (80 * resources.displayMetrics.density).toInt()
             layoutParams.marginEnd = newMarginEnd
             qRImage.layoutParams = layoutParams
 
