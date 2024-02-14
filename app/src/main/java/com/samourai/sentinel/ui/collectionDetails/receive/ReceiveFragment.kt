@@ -80,6 +80,7 @@ class ReceiveFragment : Fragment() {
     private lateinit var advancedButton: LinearLayout
     private lateinit var tvPath: TextView
     private var pubKeyIndex = 0
+    private var pubsShownInDropdown: List<PubKeyModel> = listOf()
     private lateinit var pubKeyDropDown: AutoCompleteTextView
     private lateinit var generalDropdown: TextInputLayout
     private lateinit var addressTypesSpinner: Spinner
@@ -439,7 +440,7 @@ class ReceiveFragment : Fragment() {
             pubKeyDropDown.threshold = 50
             pubKeyDropDown.setText(items.first(), false)
             pubKeyDropDown.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
-                pubKeyIndex = index
+                pubKeyIndex = collection.pubs.indexOf(getPubKeyModelByLabel(pubsShownInDropdown[index].label))
                 generateQR()
                 tvPath.text = getPath()
             }
@@ -583,9 +584,10 @@ class ReceiveFragment : Fragment() {
         }
         val items = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it.label }.toMutableList()
 
-        val newIndex =
-            if (isPubDifferentThanWhirlpool(collection.pubs[index-1])) index
-        else findFirstNonWhirlpoolPub()
+        val newPubkeys = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it }.toMutableList()
+        pubsShownInDropdown = newPubkeys
+
+        val newIndex = getIndexByLabel(newPubkeys, collection.pubs[index-1].label)
 
         if (items.size != 0 && newIndex > 0) {
             val adapter: ArrayAdapter<String> = ArrayAdapter(requireContext(),
@@ -593,10 +595,26 @@ class ReceiveFragment : Fragment() {
             pubKeyDropDown.inputType = InputType.TYPE_NULL
             pubKeyDropDown.setAdapter(adapter)
             pubKeyDropDown.setText(items[newIndex-1], false)
-            pubKeyIndex = newIndex-1
+            pubKeyIndex = index-1
             generateQR()
             tvPath.text = getPath()
         }
+    }
+
+    private fun getIndexByLabel(items: MutableList<PubKeyModel>, label: String): Int {
+        items.forEach {
+            if (it.label == label)
+                return items.indexOf(it)+1
+        }
+        return 1
+    }
+
+    private fun getPubKeyModelByLabel(label: String): PubKeyModel {
+        collection.pubs.forEach {
+            if (it.label == label)
+                return it
+        }
+        return collection.pubs[0]
     }
 
     private fun findFirstNonWhirlpoolPub(): Int {
