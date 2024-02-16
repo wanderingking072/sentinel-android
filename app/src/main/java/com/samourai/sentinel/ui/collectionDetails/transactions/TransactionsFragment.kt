@@ -124,8 +124,10 @@ class TransactionsFragment : Fragment() {
         })
 
         balanceLiveData.observe(viewLifecycleOwner) {
-            binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
-            setBalance(-1)
+            if (it != null) {
+                binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
+                setBalance(-1)
+            }
         }
 
         binding.collectionBalanceBtc.setOnLongClickListener {
