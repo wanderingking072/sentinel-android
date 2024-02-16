@@ -331,6 +331,10 @@ class ChooseCollectionFragment : Fragment() {
 
     private var _binding: ContentCollectionSelectBinding? = null
     private val binding get() = _binding!!
+    private val HARDENED = 2147483648
+    private val POSTMIX_ACC = 2147483646L
+    private val PREMIX_ACC = 2147483645L
+    private val BADBANK_ACC = 2147483644L
 
 
     override fun onCreateView(
@@ -358,10 +362,23 @@ class ChooseCollectionFragment : Fragment() {
         }
     }
 
+    private fun containsOtherThanWhirlpoolAccounts(collection: PubKeyCollection): Boolean {
+        collection.pubs.forEach {
+            val xpub = XPUB(it.pubKey)
+            xpub.decode()
+            val account = xpub.child + HARDENED
+            if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+                return true
+        }
+        return false
+    }
+
     private fun setUpCollectionSelectList() {
 
         repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
-            collectionsAdapter.update(it)
+            val collections = it
+            val filteredCollections = ArrayList(collections.filter { containsOtherThanWhirlpoolAccounts(it) }.map { it }.toMutableList())
+            collectionsAdapter.update(filteredCollections)
         })
         collectionsAdapter.setLayoutType(CollectionsAdapter.Companion.LayoutType.STACKED)
         val linearLayoutManager = LinearLayoutManager(context)
