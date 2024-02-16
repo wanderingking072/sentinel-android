@@ -57,6 +57,7 @@ import com.samourai.wallet.send.beans.SweepPreview
 import com.samourai.wallet.util.FeeUtil
 import com.samourai.wallet.util.PrivKeyReader
 import com.samourai.wallet.util.TxUtil
+import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -390,6 +391,10 @@ class ChoosePubkeyFragment : Fragment() {
     private var _binding: ContentPubkeySelectBinding? = null
     private val binding get() = _binding!!
     private lateinit var selectedCollection: PubKeyCollection
+    private val HARDENED = 2147483648
+    private val POSTMIX_ACC = 2147483646L
+    private val PREMIX_ACC = 2147483645L
+    private val BADBANK_ACC = 2147483644L
 
 
     override fun onCreateView(
@@ -420,10 +425,21 @@ class ChoosePubkeyFragment : Fragment() {
         setUpCollectionSelectList()
     }
 
+    private fun isPubDifferentThanWhirlpool(pubkey: PubKeyModel): Boolean {
+        return if (pubkey.type != AddressTypes.ADDRESS) {
+            val xpub = XPUB(pubkey.pubKey)
+            xpub.decode()
+            val account = xpub.child + HARDENED
+            (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+        } else
+            true
+    }
     private fun setUpCollectionSelectList() {
 
         repository.collectionsLiveData.observe(viewLifecycleOwner) {
-            pubkeysAdapter.update(repository.findById(selectedCollection.id)!!.pubs)
+            val collectionPubs = repository.findById(selectedCollection.id)!!.pubs
+            val filteredPubs = ArrayList(collectionPubs.filter { isPubDifferentThanWhirlpool(it) }.map { it }.toMutableList())
+            pubkeysAdapter.update(filteredPubs)
         }
 
         pubkeysAdapter.setLayoutType(PubkeysAdapter.Companion.LayoutType.STACKED)
