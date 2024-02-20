@@ -74,11 +74,11 @@ class CollectionEditActivity : SentinelActivity() {
 
         checkIntent()
 
-        setUpPubKeyList()
 
         viewModel.getCollection().observe(this) {
             binding.collectionEdiText.setText(it.collectionLabel.trimEnd())
             pubKeyAdapter.setIsImportFromWallet(it.isImportFromWallet)
+            setUpPubKeyList()
             binding.collectionEdiText.doOnTextChanged { text, _, _, _ ->
                 it.collectionLabel = text.toString()
             }
@@ -150,7 +150,7 @@ class CollectionEditActivity : SentinelActivity() {
 
                     if (newPubKey?.pubKey?.let { model.getPubKey(it) } != null) {
                         this@CollectionEditActivity.showFloatingSnackBar(
-                                binding.collectionDetailsRootLayout,
+                            binding.collectionDetailsRootLayout,
                             text = "Public key already exists in this collection",
                             duration = Snackbar.LENGTH_LONG
                         )
@@ -319,16 +319,20 @@ class CollectionEditActivity : SentinelActivity() {
         }
 
         fun  viewPubKey(pubKeyModel: PubKeyModel){
-           val dialog =  QRBottomSheetDialog(
-               pubKeyModel.pubKey,
-               pubKeyModel.label,
-               pubKeyModel.label,
-               secure = prefs.displaySecure!!
-           )
+            val dialog =  QRBottomSheetDialog(
+                pubKeyModel.pubKey,
+                pubKeyModel.label,
+                pubKeyModel.label,
+                secure = prefs.displaySecure!!
+            )
             dialog.show(supportFragmentManager, dialog.tag)
         }
 
-        val items = arrayListOf("Edit","View Master Fingerprint","Delete")
+        val items =
+            if (viewModel.getCollection().value!!.isImportFromWallet)
+                arrayListOf("View Master Fingerprint","Delete")
+            else
+                arrayListOf("Edit","View Master Fingerprint","Delete")
         pubKeyAdapter.setOnEditClickListener { i, pubKeyModel ->
             MaterialAlertDialogBuilder(this)
                 .setItems(
@@ -336,13 +340,20 @@ class CollectionEditActivity : SentinelActivity() {
                 ) { _, which ->
                     when (which) {
                         0 -> {
-                            edit(pubKeyModel, i)
+                            if (!viewModel.getCollection().value!!.isImportFromWallet)
+                                edit(pubKeyModel, i)
+                            else
+                                editFingerprint(pubKeyModel, i)
                         }
                         1 -> {
-                            editFingerprint(pubKeyModel, i)
+                            if (!viewModel.getCollection().value!!.isImportFromWallet)
+                                editFingerprint(pubKeyModel, i)
+                            else
+                                delete(i)
                         }
                         2 -> {
-                            delete(i)
+                            if (!viewModel.getCollection().value!!.isImportFromWallet)
+                                delete(i)
                         }
                     }
                 }
@@ -359,20 +370,20 @@ class CollectionEditActivity : SentinelActivity() {
     }
 
     fun edit(pubKeyModel: PubKeyModel, i: Int){
-            this.alertWithInput(
-                label = "Public key label",
-                onConfirm = {
-                    pubKeyModel.label = it
-                    viewModel.updateKey(i, pubKeyModel)
-                    pubKeyAdapter.notifyItemChanged(i)
-                },
-                isCancelable = false,
-                maxLen = 30,
-                labelEditText = "Label",
-                value = pubKeyModel.label,
-                buttonLabel = "Save",
-                isEditable = !(viewModel.getCollection().value?.isImportFromWallet != null && viewModel.getCollection().value?.isImportFromWallet!!)
-            )
+        this.alertWithInput(
+            label = "Public key label",
+            onConfirm = {
+                pubKeyModel.label = it
+                viewModel.updateKey(i, pubKeyModel)
+                pubKeyAdapter.notifyItemChanged(i)
+            },
+            isCancelable = false,
+            maxLen = 30,
+            labelEditText = "Label",
+            value = pubKeyModel.label,
+            buttonLabel = "Save",
+            isEditable = !(viewModel.getCollection().value?.isImportFromWallet != null && viewModel.getCollection().value?.isImportFromWallet!!)
+        )
     }
 
     fun editFingerprint(pubKeyModel: PubKeyModel, i: Int){
@@ -411,7 +422,7 @@ class CollectionEditActivity : SentinelActivity() {
                 val items: ArrayList<PubKeyModel> = arrayListOf()
                 if (viewModel.getCollection().value?.getPubKey(it.pubKey) != null) {
                     this@CollectionEditActivity.showFloatingSnackBar(
-                            binding.collectionDetailsRootLayout,
+                        binding.collectionDetailsRootLayout,
                         text = "Public key already exists in this collection",
                         duration = Snackbar.LENGTH_LONG
                     )
@@ -435,7 +446,7 @@ class CollectionEditActivity : SentinelActivity() {
         if (item.itemId == R.id.saveCollectionMenuItem || item.itemId == android.R.id.home) {
             if (binding.collectionEdiText.text.isNullOrEmpty() || binding.collectionEdiText.text.isBlank()) {
                 this@CollectionEditActivity.showFloatingSnackBar(
-                        binding.collectionEdiText.parent as ViewGroup,
+                    binding.collectionEdiText.parent as ViewGroup,
                     text = "Please enter collection label",
                     duration = Snackbar.LENGTH_SHORT
                 )
