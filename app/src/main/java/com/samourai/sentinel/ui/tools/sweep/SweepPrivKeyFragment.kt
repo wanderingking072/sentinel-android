@@ -122,7 +122,15 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                     view.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress).visibility = View.VISIBLE
                     view.findViewById<NestedScrollView>(R.id.sweepPreveiewScrollView).visibility = View.GONE
                     Handler(Looper.getMainLooper()).postDelayed({
-                        if (response != "TX_ID_NOT_FOUND") {
+                        if (response == null) {
+                            Toast.makeText(
+                                context,
+                                "Error broadcasting transaction",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            dismiss()
+                        }
+                        else if (response != "TX_ID_NOT_FOUND") {
                             if (isAdded && activity != null) {
                                 val bottomSheet = SuccessfulBottomSheet(
                                     "Sweep Successful",
@@ -729,7 +737,8 @@ class PreviewFragment : Fragment() {
                 pct = feeMed / value
                 nbBlocks = ceil(pct * 6.0).toInt()
             }
-            binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
+
+            //binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
             if (nbBlocks > 50) {
                 binding.feeSelector.estBlockTime.text = "50+ blocks"
             }
@@ -738,6 +747,7 @@ class PreviewFragment : Fragment() {
             binding.feeSelector.totalMinerFee.text =
                 computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong()).toString()
             feeRange = sliderVal
+            view?.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress)?.visibility = View.GONE
         }
         binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
         binding.feeSelector.totalMinerFee.text =

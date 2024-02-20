@@ -111,16 +111,42 @@
                 app:layout_constraintTop_toTopOf="@id/textView7" />
 
             <TextView
-                android:id="@+id/textView9"
+                android:id="@+id/textView10"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginTop="25dp"
-                android:text="Receive address"
+                android:layout_marginTop="40dp"
+                android:text="Sweep to"
                 android:textColor="@color/grey_accent"
                 app:layout_constraintEnd_toEndOf="@id/amount"
                 app:layout_constraintStart_toStartOf="@id/amount"
                 app:layout_constraintTop_toTopOf="@id/amount" />
+
+            <TextView
+                android:id="@+id/collectionAndPubkey"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="16dp"
+                android:text="Collection Name 12, pubkey name"
+                android:textColor="@color/blue_ui_2"
+                android:textStyle="bold"
+                android:paddingTop="5dp"
+                app:layout_constraintEnd_toEndOf="@id/textView10"
+                app:layout_constraintStart_toStartOf="@id/textView10"
+                app:layout_constraintTop_toTopOf="@id/textView10" />
+
+            <TextView
+                android:id="@+id/textView9"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="40dp"
+                android:text="Receive address"
+                android:textColor="@color/grey_accent"
+                app:layout_constraintEnd_toEndOf="@id/collectionAndPubkey"
+                app:layout_constraintStart_toStartOf="@id/collectionAndPubkey"
+                app:layout_constraintTop_toTopOf="@id/collectionAndPubkey" />
 
             <TextView
                 android:id="@+id/receiveAddress"
@@ -136,20 +162,6 @@
                 app:layout_constraintStart_toStartOf="@id/textView9"
                 app:layout_constraintTop_toTopOf="@id/textView9" />
 
-            <TextView
-                android:id="@+id/collectionAndPubkey"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="30dp"
-                android:text="Collection Name 12, pubkey name"
-                android:textColor="@color/blue_ui_2"
-                android:textStyle="bold"
-                android:paddingTop="5dp"
-                app:layout_constraintEnd_toEndOf="@id/receiveAddress"
-                app:layout_constraintStart_toStartOf="@id/receiveAddress"
-                app:layout_constraintTop_toTopOf="@id/receiveAddress" />
-
             <include
                 android:id="@+id/feeSelector"
                 layout="@layout/fee_selector"
@@ -159,8 +171,8 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="@+id/textView9"
                 app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="@+id/collectionAndPubkey"
-                app:layout_constraintTop_toBottomOf="@+id/collectionAndPubkey"
+                app:layout_constraintStart_toStartOf="@+id/receiveAddress"
+                app:layout_constraintTop_toBottomOf="@+id/receiveAddress"
                 app:layout_constraintVertical_bias="0.0" />
 
 
