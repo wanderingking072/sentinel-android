@@ -164,12 +164,9 @@
                 app:layout_constraintVertical_bias="0.0" />
 
 
-            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                style="@style/Widget.MaterialComponents.ExtendedFloatingActionButton.Icon"
-                android:layout_width="match_parent"
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentBottom="true"
                 android:layout_marginTop="15dp"
                 android:gravity="center"
                 android:elevation="0dp"
@@ -177,12 +174,15 @@
                 android:paddingHorizontal="24dp"
                 android:text="Sweep"
                 android:textColor="@color/white"
+                app:backgroundTint="@color/green_ui_2"
+                app:cornerRadius="50dp"
                 app:elevation="12dp"
                 app:iconTint="@color/white"
-                app:layout_constraintStart_toStartOf="@+id/feeSelector"
                 app:layout_constraintTop_toBottomOf="@+id/feeSelector"
-                app:shapeAppearance="@style/ShapeAppearance.MaterialComponents.MediumComponent" />
-
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginStart="11dp"
+                android:layout_marginEnd="11dp" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
