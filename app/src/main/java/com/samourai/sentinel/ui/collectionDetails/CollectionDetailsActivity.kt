@@ -260,27 +260,30 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
     override fun onTabChanged(position: Int) {
         if (position >= 0) {
             val pubSelected = collection?.pubs?.get(position)
-            val xpub = XPUB(pubSelected?.pubKey)
-            xpub.decode()
-            val account = xpub.child + HARDENED
-            isTabWhirlpoolPub = if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC) {
-                binding.bottomNav.getMenuItem(0)?.setIcon(null)
-                binding.bottomNav.getMenuItem(0)?.setEnabled(false)
-                true
-            } else {
-                binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
-                binding.bottomNav.getMenuItem(0)?.setEnabled(true)
-                false
-            }
-            if (account == PREMIX_ACC) {
-                binding.bottomNav.getMenuItem(2)?.setIcon(null)
-                binding.bottomNav.getMenuItem(2)?.setEnabled(false)
-                isTabPremix = true
-            }
-            else {
-                binding.bottomNav.getMenuItem(2)?.setIcon(R.drawable.ic_baseline_sent_24)
-                binding.bottomNav.getMenuItem(2)?.setEnabled(true)
-                isTabPremix = false
+            if (pubSelected?.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(pubSelected?.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                isTabWhirlpoolPub =
+                    if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC) {
+                        binding.bottomNav.getMenuItem(0)?.setIcon(null)
+                        binding.bottomNav.getMenuItem(0)?.setEnabled(false)
+                        true
+                    } else {
+                        binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
+                        binding.bottomNav.getMenuItem(0)?.setEnabled(true)
+                        false
+                    }
+
+                isTabPremix = if (account == PREMIX_ACC) {
+                    binding.bottomNav.getMenuItem(2)?.setIcon(null)
+                    binding.bottomNav.getMenuItem(2)?.setEnabled(false)
+                    true
+                } else {
+                    binding.bottomNav.getMenuItem(2)?.setIcon(R.drawable.ic_baseline_sent_24)
+                    binding.bottomNav.getMenuItem(2)?.setEnabled(true)
+                    false
+                }
             }
         }
         else {
