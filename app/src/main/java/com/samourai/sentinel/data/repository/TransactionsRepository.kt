@@ -161,9 +161,13 @@ class TransactionsRepository {
             saveTx(newTransactions, collectionId)
             saveUtxos(utxos, collectionId)
         } catch (e: Exception) {
-            apiScope.launch(Dispatchers.Main) {
-                loading.postValue(false)
+            if (!e.message?.lowercase()!!.contains("unable to resolve host")
+                && !e.message?.lowercase()!!.contains("standalonecoroutine was cancelled")) {
+                    apiScope.launch(Dispatchers.Main) {
+                        loading.postValue(false)
+                    }
             }
+
             throw  e
         }
     }
