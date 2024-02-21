@@ -372,10 +372,14 @@ class ChooseCollectionFragment : Fragment() {
 
     private fun containsOtherThanWhirlpoolAccounts(collection: PubKeyCollection): Boolean {
         collection.pubs.forEach {
-            val xpub = XPUB(it.pubKey)
-            xpub.decode()
-            val account = xpub.child + HARDENED
-            if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+            if (it.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(it.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+                    return true
+            }
+            else
                 return true
         }
         return false
