@@ -431,6 +431,8 @@ class ReceiveFragment : Fragment() {
 
     private fun setUpSpinner() {
         val items = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it.label }.toMutableList()
+        val newPubkeys = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it }.toMutableList()
+        pubsShownInDropdown = newPubkeys
 
         if (items.size != 0) {
             val adapter: ArrayAdapter<String> = ArrayAdapter(requireContext(),
