@@ -552,7 +552,7 @@ class PreviewFragment : Fragment() {
             val totalValue = UnspentOutput.sumValue(utxoList)
             val address: String? = bipFormat.getToAddress(privKeyReader.key, privKeyReader.params)
             var feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), feeRange ?: 0f).coerceAtLeast(1f)
-            var fee: Long = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
+            var fee: Long = computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong())
             var amount = totalValue - fee
             //Check if the amount too low for a tx or miner fee is high
             if (amount == 0L || fee > totalValue || amount <= SamouraiWalletConst.bDust.toLong()) {
