@@ -589,7 +589,11 @@ class ReceiveFragment : Fragment() {
         val newPubkeys = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it }.toMutableList()
         pubsShownInDropdown = newPubkeys
 
-        val newIndex = getIndexByLabel(newPubkeys, collection.pubs[index-1].label)
+        val newIndex =
+            if (index-1 > 0)
+                getIndexByLabel(newPubkeys, collection.pubs[index-1].label)
+            else
+                -1
 
         if (items.size != 0 && newIndex > 0) {
             val adapter: ArrayAdapter<String> = ArrayAdapter(requireContext(),

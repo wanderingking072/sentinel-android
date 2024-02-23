@@ -285,7 +285,7 @@ class CollectionEditActivity : SentinelActivity() {
             override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
 
-        fun delete(index: Int){
+        fun delete(index: Int, pubKeyModel: PubKeyModel){
             this.confirm(label = "Confirm",
                 message = "Are you sure want to remove this public key ?",
                 positiveText = "Yes",
@@ -295,14 +295,14 @@ class CollectionEditActivity : SentinelActivity() {
                         val collection = viewModel.getCollection().value ?: return@confirm
                         apiScope.launch(context = Dispatchers.IO) {
                             transactionsRepository.removeTxsRelatedToPubKey(
-                                collection.pubs[index],
+                                collection.pubs[collection.pubs.indexOf(pubKeyModel)],
                                 collection.id
                             )
                             needCollectionRefresh = true
                             withContext(Dispatchers.Main) {
                                 setResult(Activity.RESULT_OK)
                             }
-                            viewModel.removePubKey(index)
+                            viewModel.removePubKey(collection.pubs.indexOf(pubKeyModel))
                             pubKeyAdapter.update(viewModel.getPubKeys().value!!)
                             //TODO: find a better way to refresh the pubkey list
                             binding.pubKeyRecyclerView.post {
@@ -349,11 +349,11 @@ class CollectionEditActivity : SentinelActivity() {
                             if (!viewModel.getCollection().value!!.isImportFromWallet)
                                 editFingerprint(pubKeyModel, i)
                             else
-                                delete(i)
+                                delete(i, pubKeyModel)
                         }
                         2 -> {
                             if (!viewModel.getCollection().value!!.isImportFromWallet)
-                                delete(i)
+                                delete(i, pubKeyModel)
                         }
                     }
                 }
