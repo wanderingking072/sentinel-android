@@ -91,6 +91,8 @@ class ReceiveFragment : Fragment() {
     private val POSTMIX_ACC = 2147483646L
     private val PREMIX_ACC = 2147483645L
     private val BADBANK_ACC = 2147483644L
+    private val SWAPS_REFUND = 2147483642L
+    private val SWAPS_ASB = 2147483641L
 
 
     private lateinit var qrFile: String
@@ -419,19 +421,20 @@ class ReceiveFragment : Fragment() {
         }
     }
 
-    private fun isPubDifferentThanWhirlpool(pubkey: PubKeyModel): Boolean {
+    private fun isPubAllowedToReceive (pubkey: PubKeyModel): Boolean {
         return if (pubkey.type != AddressTypes.ADDRESS) {
             val xpub = XPUB(pubkey.pubKey)
             xpub.decode()
             val account = xpub.child + HARDENED
-            (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+            (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC &&
+                    account != SWAPS_REFUND && account != SWAPS_ASB)
         } else
             true
     }
 
     private fun setUpSpinner() {
-        val items = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it.label }.toMutableList()
-        val newPubkeys = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it }.toMutableList()
+        val items = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it.label }.toMutableList()
+        val newPubkeys = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList()
         pubsShownInDropdown = newPubkeys
 
         if (items.size != 0) {
@@ -584,9 +587,9 @@ class ReceiveFragment : Fragment() {
             setDropDownPub(1)
             return
         }
-        val items = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it.label }.toMutableList()
+        val items = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it.label }.toMutableList()
 
-        val newPubkeys = collection.pubs.filter { isPubDifferentThanWhirlpool(it) }.map { it }.toMutableList()
+        val newPubkeys = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList()
         pubsShownInDropdown = newPubkeys
 
         val newIndex =
@@ -621,21 +624,6 @@ class ReceiveFragment : Fragment() {
                 return it
         }
         return collection.pubs[0]
-    }
-
-    private fun findFirstNonWhirlpoolPub(): Int {
-        collection.pubs.forEach {
-            if (it.type != AddressTypes.ADDRESS) {
-                val xpub = XPUB(it.pubKey)
-                xpub.decode()
-                val account = xpub.child + HARDENED
-                if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
-                    return collection.pubs.indexOf(it)+1
-            } else
-                return collection.pubs.indexOf(it)+1
-        }
-
-        return 1
     }
 
 

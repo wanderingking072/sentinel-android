@@ -45,7 +45,8 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
     private val POSTMIX_ACC = 2147483646L
     private val PREMIX_ACC = 2147483645L
     private val BADBANK_ACC = 2147483644L
-
+    private val SWAPS_REFUND = 2147483642L
+    private val SWAPS_ASB = 2147483641L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,7 +88,7 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
         binding.bottomNav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.bottom_nav_receive -> {
-                    if ((collectionOnlyHasWhirlpoolPubs() || isTabWhirlpoolPub) && !isFirstToast) {}
+                    if ((collectionHasOnlyNoSendPubkeys() || isTabWhirlpoolPub) && !isFirstToast) {}
                     else {
                         binding.fragmentHostContainerPager.setCurrentItem(0, true)
                     }
@@ -198,13 +199,14 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
         return true
     }
 
-    private fun collectionOnlyHasWhirlpoolPubs(): Boolean {
+    private fun collectionHasOnlyNoSendPubkeys(): Boolean {
         collection?.pubs?.forEach {
             if (it.type != AddressTypes.ADDRESS) {
                 val xpub = XPUB(it.pubKey)
                 xpub.decode()
                 val account = xpub.child + HARDENED
-                if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+                if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC
+                    && account != SWAPS_REFUND && account != SWAPS_ASB)
                     return false
             }
             else
@@ -265,7 +267,8 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
                 xpub.decode()
                 val account = xpub.child + HARDENED
                 isTabWhirlpoolPub =
-                    if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC) {
+                    if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC ||
+                        account == SWAPS_REFUND || account == SWAPS_ASB) {
                         binding.bottomNav.getMenuItem(0)?.setIcon(null)
                         binding.bottomNav.getMenuItem(0)?.setEnabled(false)
                         true
