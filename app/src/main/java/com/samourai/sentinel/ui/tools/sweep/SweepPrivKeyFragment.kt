@@ -74,7 +74,7 @@ import kotlin.math.ceil
 
 class SweepPrivKeyFragment(private val privKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
 
-    private val scanPubKeyFragment = ScanPubKeyFragment()
+    private val scanPubKeyFragment = ScanPubKeyFragment(privKey)
     private var newPubKeyListener: ((pubKey: PubKeyModel?) -> Unit)? = null
     private val chooseCollectionFragment = ChooseCollectionFragment()
     private val choosePubkeyFragment = ChoosePubkeyFragment()
@@ -272,7 +272,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 }
 
 
-class ScanPubKeyFragment : Fragment() {
+class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
 
     private lateinit var  mCodeScanner: QRScanner;
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
@@ -286,6 +286,9 @@ class ScanPubKeyFragment : Fragment() {
         this.onScan = callback
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        if (privKey.isNotEmpty())
+            view.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.VISIBLE
+
         view.findViewById<Button>(R.id.pastePubKey).text = "Paste Private Key"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
         mCodeScanner.setLifeCycleOwner(this)
