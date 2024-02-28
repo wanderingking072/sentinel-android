@@ -84,6 +84,7 @@ class SendFragment : Fragment() {
     private val fragmentSpendBinding get() = _fragmentSpendBinding!!
     private var indexPubSelector = -1
     val viewModel: SendViewModel by viewModels()
+    private var availableBalance: Long = 0L
 
     private val HARDENED = 2147483648
     private val PREMIX_ACC = 2147483645L
@@ -121,6 +122,13 @@ class SendFragment : Fragment() {
         exchangeRateRepository.getRateLive().observe(this.viewLifecycleOwner) {
             rate = it
             DecimalFormat.getNumberInstance().currency = Currency.getInstance(rate.currency)
+        }
+
+        fragmentSpendBinding.fragmentComposeTx.totalBTC.setOnClickListener {
+            viewModel.setAmount(availableBalance.div(1e8))
+            setBtcEdit(decimalFormatBTC.format(availableBalance.div(1e8)).toString())
+            val fiatRate = availableBalance.div(1e8).times(rate.rate)
+            setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
         }
 
         watchAddressAndAmount()
@@ -635,6 +643,7 @@ class SendFragment : Fragment() {
                 }
             }
             val finalBalance = totalBalance - blockedUtxoBalanceSum
+            availableBalance = finalBalance
             fragmentSpendBinding.fragmentComposeTx.totalBTC.text =
                 decimalFormatBTC.format(finalBalance.div(1e8)).toString() + " BTC"
         } else {
@@ -644,6 +653,7 @@ class SendFragment : Fragment() {
                 blockedUtxoBalanceSum += utxo.amount
             }
             val balance = pub.balance - blockedUtxoBalanceSum
+            availableBalance = balance
             fragmentSpendBinding.fragmentComposeTx.totalBTC.text =
                 decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
         }
