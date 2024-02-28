@@ -204,11 +204,12 @@ class TorKmpManager(application : Application) {
     }
 
     fun isConnected(): Boolean {
-        return manager.state.isOn()
+        return manager.state.isOn() && manager.state.bootstrap >= 100
     }
 
     fun isStarting(): Boolean {
-        return manager.state.isStarting();
+        return manager.state.isStarting() ||
+                (manager.state.isOn() && manager.state.bootstrap < 100);
     }
 
 
@@ -285,8 +286,13 @@ class TorKmpManager(application : Application) {
                 liveTorState.progressIndicator = state.bootstrap
 
                 if (state.isOn()) {
-                    torState.state = EnumTorState.ON
-                    liveTorState.state = EnumTorState.ON
+                    if (state.bootstrap >= 100) {
+                        torState.state = EnumTorState.ON
+                        liveTorState.state = EnumTorState.ON
+                    } else {
+                        torState.state = EnumTorState.STARTING
+                        liveTorState.state = EnumTorState.STARTING
+                    }
                 } else if (state.isStarting()) {
                     torState.state = EnumTorState.STARTING
                     liveTorState.state = EnumTorState.STARTING
