@@ -81,6 +81,7 @@ class TransactionComposer {
             }
             receivers = hashMapOf()
             selectedUtxos = arrayListOf()
+            balance = 0L
             amount = inputAmount
             address = inputAddress
             selectedFee = inputFee

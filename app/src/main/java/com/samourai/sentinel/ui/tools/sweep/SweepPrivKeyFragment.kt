@@ -54,7 +54,7 @@ import com.samourai.wallet.segwit.SegwitAddress
 import com.samourai.wallet.send.MyTransactionOutPoint
 import com.samourai.wallet.send.SendFactoryGeneric
 import com.samourai.wallet.send.beans.SweepPreview
-import com.samourai.wallet.util.FeeUtil
+import com.samourai.sentinel.send.FeeUtil
 import com.samourai.wallet.util.PrivKeyReader
 import com.samourai.wallet.util.TxUtil
 import com.samourai.wallet.util.XPUB
@@ -766,6 +766,7 @@ class PreviewFragment : Fragment() {
             return
         }
         val sliderValue: Float = binding.feeSelector.feeSlider.value / binding.feeSelector.feeSlider.valueTo
+        binding.feeSelector.selectedFeeRate.text = "${selectedFee.div(1000)} sats/b"
         val sliderInPercentage = sliderValue * 100
         if (sliderInPercentage < 33) {
             binding.feeSelector.selectedFeeRateLayman.setText(R.string.low)
@@ -787,7 +788,7 @@ class PreviewFragment : Fragment() {
         } else {
             inputsP2PKH = unspentOutputs.size
         }
-        return FeeUtil.getInstance().estimatedFeeSegwit(inputsP2PKH, inputsP2SH_P2WPKH, inputsP2WPKH, 1, 0, feePerB)
+        return FeeUtil.getInstance().calculateFee(FeeUtil.getInstance().estimatedSizeSegwit(inputsP2PKH, inputsP2SH_P2WPKH, inputsP2WPKH, 1), feePerB)
     }
 
     private fun getBipFormatSupplier(bipFormat: BipFormat?): BipFormatSupplier {

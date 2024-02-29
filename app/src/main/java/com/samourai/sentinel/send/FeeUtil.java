@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-public class FeeUtil  {
+public class FeeUtil extends com.samourai.wallet.util.FeeUtil {
 
     private static String[] providers = {
             "Samourai (bitcoind)",
@@ -142,6 +142,27 @@ public class FeeUtil  {
 
     public BigInteger estimatedFeeSegwit(int inputsP2PKH, int inputsP2SHP2WPKH, int inputsP2WPKH, int outputs)   {
         int size = estimatedSizeSegwit(inputsP2PKH, inputsP2SHP2WPKH, inputsP2WPKH, outputs);
+        return calculateFee(size, getSuggestedFee().getDefaultPerKB());
+    }
+
+    public BigInteger estimatedFeeSegwit(
+            final int inputsP2PKH,
+            final int inputsP2SHP2WPKH,
+            final int inputsP2WPKH,
+            final int outputsNonTaproot,
+            final int outputsTaproot)   {
+
+        final int size = estimatedSizeSegwit(
+                inputsP2PKH,
+                inputsP2SHP2WPKH,
+                inputsP2WPKH,
+                outputsNonTaproot,
+                outputsTaproot,
+                0);
+
+        if (SentinelState.Companion.isTestNet()) {
+            return calculateFee(size + 1, getSuggestedFee().getDefaultPerKB());
+        }
         return calculateFee(size, getSuggestedFee().getDefaultPerKB());
     }
 
