@@ -32,12 +32,20 @@ internal class UtxoActivityViewModel(private val pubKeyCollection: PubKeyCollect
     }
 
 
-    fun getUtxo(pubKey: String): LiveData<List<Utxo>> {
+    fun getUtxoByPubAndCollection(pubKey: String): LiveData<List<Utxo>> {
         return utxoDao.getUTXObyCollectionAndPubKey(pubKeyCollection.id, pubKey)
     }
 
-    fun getUtxo(pubkeys: List<String>): LiveData<List<Utxo>> {
+    fun getUtxoByPubOnly(pubKey: String): LiveData<List<Utxo>> {
+        return utxoDao.getUtxoWithPubKey(pubKey)
+    }
+
+    fun getUtxoByPubAndCollection(pubkeys: List<String>): LiveData<List<Utxo>> {
         return utxoDao.getUTXObyCollectionAndPubKeys(pubKeyCollection.id, pubkeys)
+    }
+
+    fun getUtxoByPubOnly(pubkeys: List<String>): LiveData<List<Utxo>> {
+        return utxoDao.getUTXObyPubKeys(pubkeys)
     }
 
 

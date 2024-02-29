@@ -52,7 +52,7 @@ class UtxosActivity : SentinelActivity() {
         if (collection!!.isImportFromWallet) {
             pubKeys.forEach { pubKeyModel ->
                 if (pubKeys.indexOf(pubKeyModel) == 0) {
-                    utxoViewModel.getUtxo(listOf(
+                    utxoViewModel.getUtxoByPubOnly(listOf(
                             pubKeys[0].pubKey,
                             pubKeys[4].pubKey,
                             pubKeys[5].pubKey))
@@ -60,7 +60,7 @@ class UtxosActivity : SentinelActivity() {
                     }
                 }
                 else {
-                    utxoViewModel.getUtxo(pubKeyModel.pubKey).observe(this@UtxosActivity) {
+                    utxoViewModel.getUtxoByPubOnly(pubKeyModel.pubKey).observe(this@UtxosActivity) {
                         utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it))
                     }
                 }
@@ -68,7 +68,7 @@ class UtxosActivity : SentinelActivity() {
         }
         else {
             pubKeys.forEach { pubKeyModel ->
-                utxoViewModel.getUtxo(pubKeyModel.pubKey).observe(this@UtxosActivity) {
+                utxoViewModel.getUtxoByPubOnly(pubKeyModel.pubKey).observe(this@UtxosActivity) {
                     utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it))
                 }
             }
@@ -139,25 +139,33 @@ class UtxosActivity : SentinelActivity() {
                 if (collection!!.isImportFromWallet) {
                     when (position) {
                         0 -> {
-                            utxoViewModel.getUtxo(listOf(
+                            utxoViewModel.getUtxoByPubOnly(listOf(
                                 pubKeys[0].pubKey,
                                 pubKeys[4].pubKey,
-                                pubKeys[5].pubKey))
+                                pubKeys[5].pubKey)).observe(this@UtxosActivity) {
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                            }
                         }
                         1 -> {
-                            utxoViewModel.getUtxo(pubKeys[1].pubKey)
+                            utxoViewModel.getUtxoByPubOnly(pubKeys[1].pubKey).observe(this@UtxosActivity) {
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                            }
                         }
                         2 -> {
-                            utxoViewModel.getUtxo(pubKeys[2].pubKey)
+                            utxoViewModel.getUtxoByPubOnly(pubKeys[2].pubKey).observe(this@UtxosActivity) {
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                            }
                         }
                         3 -> {
-                            utxoViewModel.getUtxo(pubKeys[3].pubKey)
+                            utxoViewModel.getUtxoByPubOnly(pubKeys[3].pubKey).observe(this@UtxosActivity) {
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                            }
                         }
                     }
 
                 }
                 else {
-                    utxoViewModel.getUtxo(pubKeys[position].pubKey).observe(this@UtxosActivity) {
+                    utxoViewModel.getUtxoByPubOnly(pubKeys[position].pubKey).observe(this@UtxosActivity) {
                         utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
                     }
                 }
