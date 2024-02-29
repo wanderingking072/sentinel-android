@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginTop="8dp"
-            android:text="Sweep Preview"
+            android:text="Sweep preview"
             android:textColor="@color/v3_white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
@@ -87,7 +87,7 @@
                 android:id="@+id/textView7"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
+                android:layout_marginTop="35dp"
                 android:layout_marginEnd="8dp"
                 android:text="Balance of unspent output"
                 android:textColor="@color/grey_accent"
@@ -111,16 +111,42 @@
                 app:layout_constraintTop_toTopOf="@id/textView7" />
 
             <TextView
-                android:id="@+id/textView9"
+                android:id="@+id/textView10"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:layout_marginTop="25dp"
-                android:text="Receive address"
+                android:layout_marginTop="35dp"
+                android:text="Sweep to"
                 android:textColor="@color/grey_accent"
                 app:layout_constraintEnd_toEndOf="@id/amount"
                 app:layout_constraintStart_toStartOf="@id/amount"
                 app:layout_constraintTop_toTopOf="@id/amount" />
+
+            <TextView
+                android:id="@+id/collectionAndPubkey"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="16dp"
+                android:text="Collection Name 12, pubkey name"
+                android:textColor="@color/blue_ui_2"
+                android:textStyle="bold"
+                android:paddingTop="5dp"
+                app:layout_constraintEnd_toEndOf="@id/textView10"
+                app:layout_constraintStart_toStartOf="@id/textView10"
+                app:layout_constraintTop_toTopOf="@id/textView10" />
+
+            <TextView
+                android:id="@+id/textView9"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="35dp"
+                android:text="Receive address"
+                android:textColor="@color/grey_accent"
+                app:layout_constraintEnd_toEndOf="@id/collectionAndPubkey"
+                app:layout_constraintStart_toStartOf="@id/collectionAndPubkey"
+                app:layout_constraintTop_toTopOf="@id/collectionAndPubkey" />
 
             <TextView
                 android:id="@+id/receiveAddress"
@@ -136,20 +162,6 @@
                 app:layout_constraintStart_toStartOf="@id/textView9"
                 app:layout_constraintTop_toTopOf="@id/textView9" />
 
-            <TextView
-                android:id="@+id/collectionAndPubkey"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="30dp"
-                android:text="Collection Name 12, pubkey name"
-                android:textColor="@color/blue_ui_2"
-                android:textStyle="bold"
-                android:paddingTop="5dp"
-                app:layout_constraintEnd_toEndOf="@id/receiveAddress"
-                app:layout_constraintStart_toStartOf="@id/receiveAddress"
-                app:layout_constraintTop_toTopOf="@id/receiveAddress" />
-
             <include
                 android:id="@+id/feeSelector"
                 layout="@layout/fee_selector"
@@ -159,30 +171,30 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="@+id/textView9"
                 app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="@+id/collectionAndPubkey"
-                app:layout_constraintTop_toBottomOf="@+id/collectionAndPubkey"
+                app:layout_constraintStart_toStartOf="@+id/receiveAddress"
+                app:layout_constraintTop_toBottomOf="@+id/receiveAddress"
                 app:layout_constraintVertical_bias="0.0" />
 
 
-            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                style="@style/Widget.MaterialComponents.ExtendedFloatingActionButton.Icon"
-                android:layout_width="match_parent"
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginTop="15dp"
+                android:layout_marginTop="5dp"
                 android:gravity="center"
                 android:elevation="0dp"
                 android:id="@+id/sweepBtn"
                 android:paddingHorizontal="24dp"
                 android:text="Sweep"
                 android:textColor="@color/white"
+                app:backgroundTint="@color/green_ui_2"
+                app:cornerRadius="50dp"
                 app:elevation="12dp"
                 app:iconTint="@color/white"
-                app:layout_constraintStart_toStartOf="@+id/feeSelector"
                 app:layout_constraintTop_toBottomOf="@+id/feeSelector"
-                app:shapeAppearance="@style/ShapeAppearance.MaterialComponents.MediumComponent" />
-
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginStart="11dp"
+                android:layout_marginEnd="11dp" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

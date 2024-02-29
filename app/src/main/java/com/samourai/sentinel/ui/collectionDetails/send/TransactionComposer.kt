@@ -81,6 +81,7 @@ class TransactionComposer {
             }
             receivers = hashMapOf()
             selectedUtxos = arrayListOf()
+            balance = 0L
             amount = inputAmount
             address = inputAddress
             selectedFee = inputFee
@@ -221,6 +222,9 @@ class TransactionComposer {
                 outPoints.addAll(u.outpoints)
             }
 
+            for (receiver in receivers)
+                if (receiver.value.toLong() == 0L)
+                    receivers.remove(receiver.key)
 
             val transaction = try {
                 SendFactory.getInstance()

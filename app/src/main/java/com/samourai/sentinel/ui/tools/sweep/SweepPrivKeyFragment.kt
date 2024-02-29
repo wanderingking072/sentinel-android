@@ -54,9 +54,10 @@ import com.samourai.wallet.segwit.SegwitAddress
 import com.samourai.wallet.send.MyTransactionOutPoint
 import com.samourai.wallet.send.SendFactoryGeneric
 import com.samourai.wallet.send.beans.SweepPreview
-import com.samourai.wallet.util.FeeUtil
+import com.samourai.sentinel.send.FeeUtil
 import com.samourai.wallet.util.PrivKeyReader
 import com.samourai.wallet.util.TxUtil
+import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -73,7 +74,7 @@ import kotlin.math.ceil
 
 class SweepPrivKeyFragment(private val privKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
 
-    private val scanPubKeyFragment = ScanPubKeyFragment()
+    private val scanPubKeyFragment = ScanPubKeyFragment(privKey)
     private var newPubKeyListener: ((pubKey: PubKeyModel?) -> Unit)? = null
     private val chooseCollectionFragment = ChooseCollectionFragment()
     private val choosePubkeyFragment = ChoosePubkeyFragment()
@@ -121,7 +122,15 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                     view.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress).visibility = View.VISIBLE
                     view.findViewById<NestedScrollView>(R.id.sweepPreveiewScrollView).visibility = View.GONE
                     Handler(Looper.getMainLooper()).postDelayed({
-                        if (response != "TX_ID_NOT_FOUND") {
+                        if (response == null) {
+                            Toast.makeText(
+                                context,
+                                "Error broadcasting transaction",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            dismiss()
+                        }
+                        else if (response != "TX_ID_NOT_FOUND") {
                             if (isAdded && activity != null) {
                                 val bottomSheet = SuccessfulBottomSheet(
                                     "Sweep Successful",
@@ -263,7 +272,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 }
 
 
-class ScanPubKeyFragment : Fragment() {
+class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
 
     private lateinit var  mCodeScanner: QRScanner;
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
@@ -277,6 +286,9 @@ class ScanPubKeyFragment : Fragment() {
         this.onScan = callback
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        if (privKey.isNotEmpty())
+            view.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.VISIBLE
+
         view.findViewById<Button>(R.id.pastePubKey).text = "Paste Private Key"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
         mCodeScanner.setLifeCycleOwner(this)
@@ -330,6 +342,10 @@ class ChooseCollectionFragment : Fragment() {
 
     private var _binding: ContentCollectionSelectBinding? = null
     private val binding get() = _binding!!
+    private val HARDENED = 2147483648
+    private val POSTMIX_ACC = 2147483646L
+    private val PREMIX_ACC = 2147483645L
+    private val BADBANK_ACC = 2147483644L
 
 
     override fun onCreateView(
@@ -357,10 +373,27 @@ class ChooseCollectionFragment : Fragment() {
         }
     }
 
+    private fun containsOtherThanWhirlpoolAccounts(collection: PubKeyCollection): Boolean {
+        collection.pubs.forEach {
+            if (it.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(it.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+                    return true
+            }
+            else
+                return true
+        }
+        return false
+    }
+
     private fun setUpCollectionSelectList() {
 
         repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
-            collectionsAdapter.update(it)
+            val collections = it
+            val filteredCollections = ArrayList(collections.filter { containsOtherThanWhirlpoolAccounts(it) }.map { it }.toMutableList())
+            collectionsAdapter.update(filteredCollections)
         })
         collectionsAdapter.setLayoutType(CollectionsAdapter.Companion.LayoutType.STACKED)
         val linearLayoutManager = LinearLayoutManager(context)
@@ -390,6 +423,10 @@ class ChoosePubkeyFragment : Fragment() {
     private var _binding: ContentPubkeySelectBinding? = null
     private val binding get() = _binding!!
     private lateinit var selectedCollection: PubKeyCollection
+    private val HARDENED = 2147483648
+    private val POSTMIX_ACC = 2147483646L
+    private val PREMIX_ACC = 2147483645L
+    private val BADBANK_ACC = 2147483644L
 
 
     override fun onCreateView(
@@ -420,10 +457,21 @@ class ChoosePubkeyFragment : Fragment() {
         setUpCollectionSelectList()
     }
 
+    private fun isPubDifferentThanWhirlpool(pubkey: PubKeyModel): Boolean {
+        return if (pubkey.type != AddressTypes.ADDRESS) {
+            val xpub = XPUB(pubkey.pubKey)
+            xpub.decode()
+            val account = xpub.child + HARDENED
+            (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+        } else
+            true
+    }
     private fun setUpCollectionSelectList() {
 
         repository.collectionsLiveData.observe(viewLifecycleOwner) {
-            pubkeysAdapter.update(repository.findById(selectedCollection.id)!!.pubs)
+            val collectionPubs = repository.findById(selectedCollection.id)!!.pubs
+            val filteredPubs = ArrayList(collectionPubs.filter { isPubDifferentThanWhirlpool(it) }.map { it }.toMutableList())
+            pubkeysAdapter.update(filteredPubs)
         }
 
         pubkeysAdapter.setLayoutType(PubkeysAdapter.Companion.LayoutType.STACKED)
@@ -507,7 +555,7 @@ class PreviewFragment : Fragment() {
             val totalValue = UnspentOutput.sumValue(utxoList)
             val address: String? = bipFormat.getToAddress(privKeyReader.key, privKeyReader.params)
             var feePerKb = MathUtils.lerp(feeLow.toFloat(), feeHigh.toFloat(), feeRange ?: 0f).coerceAtLeast(1f)
-            var fee: Long = computeFee(bipFormat, utxoList, feePerKb.div(1000.0).toLong())
+            var fee: Long = computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong())
             var amount = totalValue - fee
             //Check if the amount too low for a tx or miner fee is high
             if (amount == 0L || fee > totalValue || amount <= SamouraiWalletConst.bDust.toLong()) {
@@ -696,7 +744,8 @@ class PreviewFragment : Fragment() {
                 pct = feeMed / value
                 nbBlocks = ceil(pct * 6.0).toInt()
             }
-            binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
+
+            //binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
             if (nbBlocks > 50) {
                 binding.feeSelector.estBlockTime.text = "50+ blocks"
             }
@@ -705,6 +754,7 @@ class PreviewFragment : Fragment() {
             binding.feeSelector.totalMinerFee.text =
                 computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong()).toString()
             feeRange = sliderVal
+            view?.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress)?.visibility = View.GONE
         }
         binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
         binding.feeSelector.totalMinerFee.text =
@@ -716,6 +766,7 @@ class PreviewFragment : Fragment() {
             return
         }
         val sliderValue: Float = binding.feeSelector.feeSlider.value / binding.feeSelector.feeSlider.valueTo
+        binding.feeSelector.selectedFeeRate.text = "${selectedFee.div(1000)} sats/b"
         val sliderInPercentage = sliderValue * 100
         if (sliderInPercentage < 33) {
             binding.feeSelector.selectedFeeRateLayman.setText(R.string.low)
@@ -737,7 +788,7 @@ class PreviewFragment : Fragment() {
         } else {
             inputsP2PKH = unspentOutputs.size
         }
-        return FeeUtil.getInstance().estimatedFeeSegwit(inputsP2PKH, inputsP2SH_P2WPKH, inputsP2WPKH, 1, 0, feePerB)
+        return FeeUtil.getInstance().calculateFee(FeeUtil.getInstance().estimatedSizeSegwit(inputsP2PKH, inputsP2SH_P2WPKH, inputsP2WPKH, 1), feePerB)
     }
 
     private fun getBipFormatSupplier(bipFormat: BipFormat?): BipFormatSupplier {
