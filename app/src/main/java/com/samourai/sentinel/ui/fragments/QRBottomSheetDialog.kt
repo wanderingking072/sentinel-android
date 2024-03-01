@@ -79,7 +79,7 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
         }
 
         rightArrow.setOnClickListener {
-            if (qrToolbar.title.equals("Deposit BIP84")) {
+            if (qrToolbar.title.equals("Deposit") || qrToolbar.title.equals("Deposit BIP84")) {
                 qrToolbar.title = "Deposit BIP49"
                 qrTextView.text = collection!!.pubs[5].pubKey
                 setQR(view, collection.pubs[5].pubKey)
@@ -97,7 +97,7 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
         }
 
         leftArrow.setOnClickListener {
-            if (qrToolbar.title.equals("Deposit BIP84")) {
+            if (qrToolbar.title.equals("Deposit") || qrToolbar.title.equals("Deposit BIP84")) {
                 qrToolbar.title = "Deposit BIP44"
                 qrTextView.text = collection!!.pubs[4].pubKey
                 setQR(view, collection.pubs[4].pubKey)
