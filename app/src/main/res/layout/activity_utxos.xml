@@ -27,7 +27,10 @@
             app:tabTextAppearance="@android:style/TextAppearance.Widget.TabWidget"
             android:layout_height="wrap_content"
             app:layout_scrollFlags="snap"
-            app:tabMode="scrollable" />
+            app:tabMode="scrollable"
+            android:background="@color/mpm_black"
+            app:tabTextColor="@color/text_primary"
+            app:tabSelectedTextColor="@color/accent" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

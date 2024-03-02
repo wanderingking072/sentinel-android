@@ -31,6 +31,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -403,8 +404,11 @@ class ReceiveFragment : Fragment() {
 
     private fun setUpToolBar() {
         (activity as SentinelActivity).setSupportActionBar(toolbar)
+        (activity as SentinelActivity).window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.mpm_black)
+        (activity as SentinelActivity).window.navigationBarColor = ContextCompat.getColor(requireContext(), R.color.grey_homeActivity)
         (activity as SentinelActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.title = collection.collectionLabel
+        toolbar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.mpm_black))
     }
 
 

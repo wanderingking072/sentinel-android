@@ -68,6 +68,7 @@ class TransactionsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.mpm_black)
+        requireActivity().window.navigationBarColor = ContextCompat.getColor(requireContext(), R.color.grey_homeActivity)
 
         initViewModel()
 
@@ -78,6 +79,7 @@ class TransactionsFragment : Fragment() {
         transactionsViewModel.setCollection(collection)
 
         binding.txViewPager.adapter = CollectionPubKeysViewpager(this.activity, collection)
+        binding.txViewPager.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.grey_homeActivity))
         binding.txViewPager.offscreenPageLimit = 5
 
         TabLayoutMediator(binding.tabLayout, binding.txViewPager) { tab, position ->

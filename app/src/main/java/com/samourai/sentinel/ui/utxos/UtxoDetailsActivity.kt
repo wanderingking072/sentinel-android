@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
@@ -13,6 +14,7 @@ import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ActivityUtxoDetailsBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.util.UtxoMetaUtil
+import org.koin.java.KoinJavaComponent.bind
 import org.koin.java.KoinJavaComponent.inject
 import java.text.DecimalFormat
 
@@ -35,6 +37,8 @@ class UtxoDetailsActivity : SentinelActivity() {
         val view = binding.root
         setContentView(view)
         setSupportActionBar(findViewById(R.id.toolbar))
+        window.statusBarColor = ContextCompat.getColor(this, R.color.mpm_black)
+        binding.toolbarUtxoActivity.setBackgroundColor(ContextCompat.getColor(this, R.color.mpm_black))
         val addressTextView = binding.utxoDetailsAddress
         val amountTextView = binding.utxoDetailsAmount
         val statusTextView = binding.utxoDetailsSpendableStatus

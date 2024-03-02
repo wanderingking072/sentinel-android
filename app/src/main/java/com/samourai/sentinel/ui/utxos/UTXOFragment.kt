@@ -77,7 +77,7 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
         //For showing sections
         val active = Utxo(section = "Active")
         val blocked = Utxo(section = "Blocked")
-        val end = Utxo(section = "END")
+        val end = Utxo(section = "")
         val activeUtxo: ArrayList<Utxo> = arrayListOf()
         val blockedUtxo: ArrayList<Utxo> = arrayListOf()
 

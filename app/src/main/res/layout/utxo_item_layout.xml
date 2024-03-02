@@ -7,10 +7,10 @@
     android:layout_marginTop="6dp"
     android:layout_marginBottom="6dp"
     android:animateLayoutChanges="true"
-    android:background="@color/md_grey_900"
     android:clickable="true"
     android:focusable="true"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:backgroundTint="@color/grey_homeActivity">
 
     <TextView
         android:id="@+id/utxo_item_amount"

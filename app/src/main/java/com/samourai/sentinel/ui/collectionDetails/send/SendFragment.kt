@@ -252,7 +252,8 @@ class SendFragment : Fragment() {
         fragmentSpendBinding.fragmentBroadcastTx.unsignedTxToolbar.setNavigationOnClickListener {
             containerTransform(fragmentSpendBinding.composeBtn, fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView)
         }
-
+        fragmentSpendBinding.sendAppBar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.mpm_black))
+        (activity as SentinelActivity).window.navigationBarColor = ContextCompat.getColor(requireContext(), R.color.grey_homeActivity)
         fragmentSpendBinding.sendAppBar.setNavigationOnClickListener {
             requireActivity().onBackPressed()
         }

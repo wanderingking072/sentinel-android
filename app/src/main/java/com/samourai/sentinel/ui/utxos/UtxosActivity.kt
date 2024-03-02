@@ -2,6 +2,7 @@ package com.samourai.sentinel.ui.utxos
 
 import android.os.Bundle
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.viewpager.widget.ViewPager
@@ -56,12 +57,12 @@ class UtxosActivity : SentinelActivity() {
                             pubKeys[0].pubKey,
                             pubKeys[4].pubKey,
                             pubKeys[5].pubKey))
-                        .observe(this@UtxosActivity) { utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it))
+                        .observe(this@UtxosActivity) { utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                     }
                 }
                 else {
                     utxoViewModel.getUtxoByPubOnly(pubKeyModel.pubKey).observe(this@UtxosActivity) {
-                        utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it))
+                        utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                     }
                 }
             }
@@ -69,7 +70,7 @@ class UtxosActivity : SentinelActivity() {
         else {
             pubKeys.forEach { pubKeyModel ->
                 utxoViewModel.getUtxoByPubOnly(pubKeyModel.pubKey).observe(this@UtxosActivity) {
-                    utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it))
+                    utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                 }
             }
         }
@@ -79,6 +80,8 @@ class UtxosActivity : SentinelActivity() {
     private fun setUpToolbar() {
         setSupportActionBar(binding.toolbar)
         binding.toolbar.title = "Unspent outputs"
+        binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.mpm_black))
+        window.statusBarColor = ContextCompat.getColor(this, R.color.mpm_black)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
@@ -103,6 +106,7 @@ class UtxosActivity : SentinelActivity() {
 
     private fun setUpPager(utxoViewModel: UtxoActivityViewModel) {
         binding.tabLayout.setupWithViewPager(binding.pager)
+        binding.pager.setBackgroundColor( ContextCompat.getColor(this, R.color.grey_homeActivity))
         binding.pager.adapter = object : FragmentStatePagerAdapter(supportFragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
             override fun getCount(): Int {
                 return if (collection!!.isImportFromWallet)
@@ -143,22 +147,22 @@ class UtxosActivity : SentinelActivity() {
                                 pubKeys[0].pubKey,
                                 pubKeys[4].pubKey,
                                 pubKeys[5].pubKey)).observe(this@UtxosActivity) {
-                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                             }
                         }
                         1 -> {
                             utxoViewModel.getUtxoByPubOnly(pubKeys[1].pubKey).observe(this@UtxosActivity) {
-                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                             }
                         }
                         2 -> {
                             utxoViewModel.getUtxoByPubOnly(pubKeys[2].pubKey).observe(this@UtxosActivity) {
-                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                             }
                         }
                         3 -> {
                             utxoViewModel.getUtxoByPubOnly(pubKeys[3].pubKey).observe(this@UtxosActivity) {
-                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                             }
                         }
                     }
@@ -166,7 +170,7 @@ class UtxosActivity : SentinelActivity() {
                 }
                 else {
                     utxoViewModel.getUtxoByPubOnly(pubKeys[position].pubKey).observe(this@UtxosActivity) {
-                        utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                        utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                     }
                 }
             }
