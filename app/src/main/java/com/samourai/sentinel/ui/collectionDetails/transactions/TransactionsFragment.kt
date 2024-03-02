@@ -206,32 +206,34 @@ class TransactionsFragment : Fragment() {
             binding.collectionBalanceFiat.text = getFiatBalance(finalBalance, exchangeRateRepository.getRateLive().value)
             binding.collectionBalanceBtc.text = df.format(finalBalance.div(1e8)) + " BTC"
         }
-        if (pubkeyIndex != -1) {
-            var blockedUtxoBalanceSum = 0L
-            val blockedUtxos =
-                UtxoMetaUtil.getBlockedAssociatedWithPubKey(collection.pubs[pubkeyIndex].pubKey)
-            blockedUtxos.forEach { utxo ->
-                blockedUtxoBalanceSum += utxo.amount
-            }
-            val balance = collection.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
-            binding.collectionBalanceFiat.text = getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
-            binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
-        }
         else {
-            //Handle "All" tab
-            var blockedUtxosBalanceSum = 0L
-            collection.pubs.forEach { pubKeyModel ->
-                val blockedUtxos1 =
-                    UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
-                blockedUtxos1.forEach { blockedUtxo ->
-                    blockedUtxosBalanceSum += blockedUtxo.amount
+            if (pubkeyIndex != -1) {
+                var blockedUtxoBalanceSum = 0L
+                val blockedUtxos =
+                    UtxoMetaUtil.getBlockedAssociatedWithPubKey(collection.pubs[pubkeyIndex].pubKey)
+                blockedUtxos.forEach { utxo ->
+                    blockedUtxoBalanceSum += utxo.amount
                 }
+                val balance = collection.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
+                binding.collectionBalanceFiat.text =
+                    getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
+                binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+            } else {
+                //Handle "All" tab
+                var blockedUtxosBalanceSum = 0L
+                collection.pubs.forEach { pubKeyModel ->
+                    val blockedUtxos1 =
+                        UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
+                    blockedUtxos1.forEach { blockedUtxo ->
+                        blockedUtxosBalanceSum += blockedUtxo.amount
+                    }
+                }
+                val balance = collection.balance - blockedUtxosBalanceSum
+                binding.collectionBalanceFiat.text =
+                    getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
+                binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
             }
-            val balance = collection.balance - blockedUtxosBalanceSum
-            binding.collectionBalanceFiat.text = getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
-            binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
         }
-
     }
 
     private fun getFiatBalance(balance: Long?, rate: ExchangeRateRepository.Rate?): String {

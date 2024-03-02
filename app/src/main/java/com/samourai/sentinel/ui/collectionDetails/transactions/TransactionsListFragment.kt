@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.data.db.dao.TxDao
 import com.samourai.sentinel.data.repository.TransactionsRepository
@@ -41,6 +42,14 @@ class TransactionsListFragment(
     private val prefs: PrefsUtil by KoinJavaComponent.inject(PrefsUtil::class.java)
 
     class TransactionsViewModel(val pubKeyCollection: PubKeyCollection, val position: Int) : ViewModel() {
+        private fun getPubKeyModelByLabel(label: String): PubKeyModel {
+            pubKeyCollection.pubs.forEach {
+                if (it.label == label)
+                    return it
+            }
+            return pubKeyCollection.pubs[0]
+        }
+
         private val txDao: TxDao by KoinJavaComponent.inject(TxDao::class.java)
         val txLiveData: LiveData<PagedList<Tx>> = if (position == 0)
             LivePagedListBuilder(
@@ -49,9 +58,9 @@ class TransactionsListFragment(
         else if (pubKeyCollection.isImportFromWallet && position == 1)
             LivePagedListBuilder(
                 txDao.getPaginatedTx(pubKeyCollection.id,
-                    listOf(pubKeyCollection.pubs[0].pubKey,
-                        pubKeyCollection.pubs[4].pubKey,
-                        pubKeyCollection.pubs[5].pubKey)), 12
+                    listOf(getPubKeyModelByLabel("Deposit BIP84").pubKey,
+                        getPubKeyModelByLabel("Deposit BIP49").pubKey,
+                        getPubKeyModelByLabel("Deposit BIP44").pubKey)), 12
             ).build()
         else LivePagedListBuilder(
             txDao.getPaginatedTx(pubKeyCollection.id, pubKeyCollection.pubs[position - 1].pubKey), 12
@@ -75,7 +84,6 @@ class TransactionsListFragment(
 
 
     private val transactionViewModel: TransactionsViewModel by viewModels(factoryProducer = { TransactionsViewModel.getFactory(collection, position) })
-
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_transactions_segement, container, false)

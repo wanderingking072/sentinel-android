@@ -49,14 +49,22 @@ class UtxosActivity : SentinelActivity() {
         }
     }
 
+    private fun getPubKeyModelByLabel(label: String): PubKeyModel {
+        collection!!.pubs.forEach {
+            if (it.label == label)
+                return it
+        }
+        return collection!!.pubs[0]
+    }
+
     private fun listenChanges(utxoViewModel: UtxoActivityViewModel) {
         if (collection!!.isImportFromWallet) {
             pubKeys.forEach { pubKeyModel ->
                 if (pubKeys.indexOf(pubKeyModel) == 0) {
                     utxoViewModel.getUtxoByPubOnly(listOf(
-                            pubKeys[0].pubKey,
-                            pubKeys[4].pubKey,
-                            pubKeys[5].pubKey))
+                        getPubKeyModelByLabel("Deposit BIP84").pubKey,
+                        getPubKeyModelByLabel("Deposit BIP49").pubKey,
+                        getPubKeyModelByLabel("Deposit BIP44").pubKey))
                         .observe(this@UtxosActivity) { utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
                     }
                 }

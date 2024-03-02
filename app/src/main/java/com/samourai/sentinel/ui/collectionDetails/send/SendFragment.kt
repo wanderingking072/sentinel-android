@@ -62,7 +62,6 @@ import java.text.DecimalFormat
 import java.util.*
 import kotlin.math.ceil
 
-
 class SendFragment : Fragment() {
 
     private var isBTCEditing = false
@@ -631,11 +630,11 @@ class SendFragment : Fragment() {
         if (mCollection!!.isImportFromWallet && pub.label == "Deposit") {
             var blockedUtxoBalanceSum = 0L
             val totalBalance =
-                mCollection!!.pubs[0].balance + mCollection!!.pubs[4].balance + mCollection!!.pubs[5].balance
+                getPubKeyModelByLabel("Deposit BIP84").balance + getPubKeyModelByLabel("Deposit BIP44").balance + getPubKeyModelByLabel("Deposit BIP49").balance
             val depositPubs = listOf(
-                mCollection!!.pubs[0].pubKey,
-                mCollection!!.pubs[4].pubKey,
-                mCollection!!.pubs[5].pubKey
+                getPubKeyModelByLabel("Deposit BIP84").pubKey,
+                getPubKeyModelByLabel("Deposit BIP49").pubKey,
+                getPubKeyModelByLabel("Deposit BIP44").pubKey
             )
             depositPubs.forEach {
                 val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKey(it)
