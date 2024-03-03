@@ -45,7 +45,7 @@ class TransactionComposer {
     private var psbt: PSBT? = null
     private var balance: Long = 0L
     private var selectedUtxos: ArrayList<UTXO> = arrayListOf()
-    private var selectPubKeyModel: PubKeyModel? = null;
+    private var selectPubKeyModel: List<PubKeyModel?> = listOf();
     private var address: String = ""
     private var amount: Double = 0.0
     private var selectedFee = 0L;
@@ -65,7 +65,7 @@ class TransactionComposer {
         return minerFeeChannel
     }
 
-    fun setPubKey(selectPubKeyModel: PubKeyModel) {
+    fun setPubKey(selectPubKeyModel: List<PubKeyModel>) {
         this.selectPubKeyModel = selectPubKeyModel
     }
 
@@ -89,13 +89,13 @@ class TransactionComposer {
             var change: Long
             var fee: BigInteger? = BigInteger.ZERO
 
-            val xpub = XPUB(this.selectPubKeyModel!!.pubKey)
+            val xpub = XPUB(this.selectPubKeyModel[0]!!.pubKey)
             xpub.decode()
             val accountIdx = (xpub.child + HARDENED)
 
             val utxos: ArrayList<UTXO> = arrayListOf();
             for (utxoCoin in inputUtxos) {
-                if (utxoCoin.pubKey != selectPubKeyModel?.pubKey) {
+                if (!selectPubKeyModel.any{it!!.pubKey == utxoCoin.pubKey}) {
                     continue
                 } else {
                     val u = UTXO()
@@ -164,7 +164,7 @@ class TransactionComposer {
             change = (totalValueSelected - (amount + fee!!.toLong())).toLong()
 
             if (change > 0L && change < bDust.toLong()) {
-                throw ComposeException("Change is dust")
+                throw ComposeException("Change is dust 1")
             }
 
             val outpoints: MutableList<MyTransactionOutPoint?> = ArrayList()
@@ -202,7 +202,7 @@ class TransactionComposer {
             //                    Log.d("SendActivity", "change:" + change);
 
             if (change < 0L && change < bDust.toLong()) {
-                throw ComposeException("Change is dust")
+                throw ComposeException("Change is dust 2")
             }
             var changeType = "P2PKH"
             if (FormatsUtilGeneric.getInstance().isValidBech32(address))
@@ -238,9 +238,9 @@ class TransactionComposer {
             val networkParameters = SentinelState.getNetworkParam();
             val type = if (networkParameters is MainNetParams) 0 else 1
 
-            val purpose = selectPubKeyModel?.getPurpose();
+            val purpose = selectPubKeyModel[0]?.getPurpose();
             val data =
-                if (selectPubKeyModel?.fingerPrint != null) selectPubKeyModel?.fingerPrint?.toCharArray() else "00000000".toCharArray()
+                if (selectPubKeyModel[0]?.fingerPrint != null) selectPubKeyModel[0]?.fingerPrint?.toCharArray() else "00000000".toCharArray()
 
             /*
         psbt!!.addOutput(
@@ -399,8 +399,9 @@ class TransactionComposer {
     }
 
     private fun getAccount(): HD_Account? {
-        val pubKey = this.selectPubKeyModel;
-        return when (this.selectPubKeyModel?.type) {
+        //TODO: check what this method is used for and if we can make selectPubkeyModel a list of deposit pubs
+        val pubKey = this.selectPubKeyModel[0];
+        return when (this.selectPubKeyModel[0]?.type) {
             AddressTypes.BIP44 -> {
                 return HD_Account(SentinelState.getNetworkParam(), pubKey?.pubKey, "", 0);
             }
@@ -418,11 +419,11 @@ class TransactionComposer {
     }
 
     private fun getNextChangeAddress(accountIdx: Long = 0L, toAddrType: String = ""): String? {
-        val pubKey = this.selectPubKeyModel;
+        val pubKey = this.selectPubKeyModel[0];
         changeIndex = pubKey?.change_index!!
         val account = getAccount()
 
-        return when (this.selectPubKeyModel?.type) {
+        return when (this.selectPubKeyModel[0]?.type) {
             AddressTypes.BIP44 -> {
                 val address = account?.change?.getAddressAt(changeIndex!!)
                 changeECKey = address?.ecKey
