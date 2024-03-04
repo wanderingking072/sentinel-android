@@ -315,9 +315,9 @@ class TransactionComposer {
                         val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
                         val chainIndex = path.split("/".toRegex()).toTypedArray()[1].toInt()
                         val eckeyInput = if (chainIndex == 1) {
-                            getAccount()?.change?.getAddressAt(addressIndex)?.ecKey
+                            getAccount(input.pubKey)?.change?.getAddressAt(addressIndex)?.ecKey
                         } else {
-                            getAccount()?.receive?.getAddressAt(addressIndex)?.ecKey
+                            getAccount(input.pubKey)?.receive?.getAddressAt(addressIndex)?.ecKey
                         }
 
                         if (purpose == 84 && FormatsUtil.isValidBech32(input.addr!!)) {
@@ -398,18 +398,20 @@ class TransactionComposer {
         }
     }
 
-    private fun getAccount(): HD_Account? {
+    private fun getAccount(pubkeyStr: String? = null): HD_Account? {
         //TODO: check what this method is used for and if we can make selectPubkeyModel a list of deposit pubs
-        val pubKey = this.selectPubKeyModel[0];
+        var pubKey = this.selectPubKeyModel[0]?.pubKey;
+        if (pubkeyStr != null)
+            pubKey = pubkeyStr
         return when (this.selectPubKeyModel[0]?.type) {
             AddressTypes.BIP44 -> {
-                return HD_Account(SentinelState.getNetworkParam(), pubKey?.pubKey, "", 0);
+                return HD_Account(SentinelState.getNetworkParam(), pubKey, "", 0);
             }
             AddressTypes.BIP49 -> {
-                return HD_Account(SentinelState.getNetworkParam(), pubKey?.pubKey, "", 0)
+                return HD_Account(SentinelState.getNetworkParam(), pubKey, "", 0)
             }
             AddressTypes.BIP84 -> {
-                return HD_Account(SentinelState.getNetworkParam(), pubKey?.pubKey, "", 0)
+                return HD_Account(SentinelState.getNetworkParam(), pubKey, "", 0)
             }
             AddressTypes.ADDRESS -> {
                 return null;
