@@ -480,6 +480,8 @@ class ChoosePubkeyFragment : Fragment() {
     private val POSTMIX_ACC = 2147483646L
     private val PREMIX_ACC = 2147483645L
     private val BADBANK_ACC = 2147483644L
+    private val SWAPS_REFUND = 2147483642L
+    private val SWAPS_ASB = 2147483641L
 
 
     override fun onCreateView(
@@ -510,12 +512,13 @@ class ChoosePubkeyFragment : Fragment() {
         setUpCollectionSelectList()
     }
 
-    private fun isPubDifferentThanWhirlpool(pubkey: PubKeyModel): Boolean {
+    private fun isPubAllowedToReceive(pubkey: PubKeyModel): Boolean {
         return if (pubkey.type != AddressTypes.ADDRESS) {
             val xpub = XPUB(pubkey.pubKey)
             xpub.decode()
             val account = xpub.child + HARDENED
-            (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC)
+            (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC &&
+                    account != SWAPS_ASB && account != SWAPS_REFUND)
         } else
             true
     }
@@ -523,7 +526,7 @@ class ChoosePubkeyFragment : Fragment() {
 
         repository.collectionsLiveData.observe(viewLifecycleOwner) {
             val collectionPubs = repository.findById(selectedCollection.id)!!.pubs
-            val filteredPubs = ArrayList(collectionPubs.filter { isPubDifferentThanWhirlpool(it) }.map { it }.toMutableList())
+            val filteredPubs = ArrayList(collectionPubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList())
             pubkeysAdapter.update(filteredPubs)
         }
 
