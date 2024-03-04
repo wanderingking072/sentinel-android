@@ -13,17 +13,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.transition.TransitionManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
@@ -64,6 +62,8 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
         val qrTextView = view.findViewById<TextView>(R.id.qrTextView);
         val qRImage = view.findViewById<ShapeableImageView>(R.id.imgQrCode);
 
+        dialog?.window?.navigationBarColor = ContextCompat.getColor(requireContext(), R.color.grey_homeActivity)
+
         if (collection != null && collection.isImportFromWallet) {
             val layoutParams = qRImage.layoutParams as ConstraintLayout.LayoutParams
             val newMarginEnd = (80 * resources.displayMetrics.density).toInt()
@@ -75,11 +75,14 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
         }
 
         title?.let {
-            qrToolbar.title = it
+            if (collection!!.isImportFromWallet && it.equals("Deposit"))
+                qrToolbar.title = "Deposit BIP84"
+            else
+                qrToolbar.title = it
         }
 
         rightArrow.setOnClickListener {
-            if (qrToolbar.title.equals("Deposit") || qrToolbar.title.equals("Deposit BIP84")) {
+            if (qrToolbar.title.equals("Deposit BIP84")) {
                 qrToolbar.title = "Deposit BIP49"
                 qrTextView.text = collection!!.pubs[5].pubKey
                 setQR(view, collection.pubs[5].pubKey)
@@ -97,7 +100,7 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
         }
 
         leftArrow.setOnClickListener {
-            if (qrToolbar.title.equals("Deposit") || qrToolbar.title.equals("Deposit BIP84")) {
+            if (qrToolbar.title.equals("Deposit BIP84")) {
                 qrToolbar.title = "Deposit BIP44"
                 qrTextView.text = collection!!.pubs[4].pubKey
                 setQR(view, collection.pubs[4].pubKey)

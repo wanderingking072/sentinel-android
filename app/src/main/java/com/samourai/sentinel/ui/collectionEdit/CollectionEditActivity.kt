@@ -318,16 +318,6 @@ class CollectionEditActivity : SentinelActivity() {
             )
         }
 
-        fun  viewPubKey(pubKeyModel: PubKeyModel){
-            val dialog =  QRBottomSheetDialog(
-                pubKeyModel.pubKey,
-                pubKeyModel.label,
-                pubKeyModel.label,
-                secure = prefs.displaySecure!!
-            )
-            dialog.show(supportFragmentManager, dialog.tag)
-        }
-
         val items =
             if (viewModel.getCollection().value!!.isImportFromWallet)
                 arrayListOf("View Master Fingerprint","Delete")

@@ -38,6 +38,7 @@ class UtxoDetailsActivity : SentinelActivity() {
         setContentView(view)
         setSupportActionBar(findViewById(R.id.toolbar))
         window.statusBarColor = ContextCompat.getColor(this, R.color.mpm_black)
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.grey_homeActivity)
         binding.toolbarUtxoActivity.setBackgroundColor(ContextCompat.getColor(this, R.color.mpm_black))
         val addressTextView = binding.utxoDetailsAddress
         val amountTextView = binding.utxoDetailsAmount

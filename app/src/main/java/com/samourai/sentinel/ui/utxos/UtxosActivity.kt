@@ -90,6 +90,7 @@ class UtxosActivity : SentinelActivity() {
         binding.toolbar.title = "Unspent outputs"
         binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.mpm_black))
         window.statusBarColor = ContextCompat.getColor(this, R.color.mpm_black)
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.grey_homeActivity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
