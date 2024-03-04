@@ -130,6 +130,13 @@ class SendFragment : Fragment() {
             setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
         }
 
+        fragmentSpendBinding.fragmentComposeTx.textView12.setOnClickListener {
+            viewModel.setAmount(availableBalance.div(1e8))
+            setBtcEdit(decimalFormatBTC.format(availableBalance.div(1e8)).toString())
+            val fiatRate = availableBalance.div(1e8).times(rate.rate)
+            setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
+        }
+
         watchAddressAndAmount()
 
         fragmentSpendBinding.toEditText.setEndIconOnClickListener {
@@ -533,8 +540,16 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.threshold = items.size
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
             val selectPubKeyModel = pubKeySelector.pubs[newIndex-1]
-            viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
-            transactionComposer.setPubKey(selectPubKeyModel)
+            viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner, mCollection!!)
+            if (mCollection!!.isImportFromWallet) {
+                transactionComposer.setPubKey(listOf(
+                    getPubKeyModelByLabel("Deposit BIP84"),
+                    getPubKeyModelByLabel("Deposit BIP49"),
+                    getPubKeyModelByLabel("Deposit BIP44")
+                ))
+            } else {
+                transactionComposer.setPubKey(listOf(selectPubKeyModel))
+            }
             setBalance(mCollection!!.pubs[newIndex-1])
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(mCollection!!.pubs.get(newIndex-1).label, false)
 
@@ -600,9 +615,17 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
                 val selectPubKeyModel = getPubKeyModelByLabel(items[index])
-                viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
-                transactionComposer.setPubKey(selectPubKeyModel)
+                viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner, mCollection!!)
 
+                if (mCollection!!.isImportFromWallet) {
+                    transactionComposer.setPubKey(listOf(
+                        getPubKeyModelByLabel("Deposit BIP84"),
+                        getPubKeyModelByLabel("Deposit BIP49"),
+                        getPubKeyModelByLabel("Deposit BIP44")
+                    ))
+                } else {
+                    transactionComposer.setPubKey(listOf(selectPubKeyModel))
+                }
                 setBalance(getPubKeyModelByLabel(items[index]))
 
                 view?.isEnabled = true
@@ -613,7 +636,9 @@ class SendFragment : Fragment() {
                 return
             }
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.first(), false)
-            viewModel.setPublicKey(getPubKeyModelByLabel(items[0]), viewLifecycleOwner)
+            viewModel.setPublicKey(getPubKeyModelByLabel(items[0]), viewLifecycleOwner,
+                mCollection!!
+            )
         }
     }
 
