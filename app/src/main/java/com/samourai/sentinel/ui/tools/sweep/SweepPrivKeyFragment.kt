@@ -32,7 +32,9 @@ import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
+import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
+import com.samourai.sentinel.data.repository.TransactionsRepository
 import com.samourai.sentinel.databinding.ContentCollectionSelectBinding
 import com.samourai.sentinel.databinding.ContentPubkeySelectBinding
 import com.samourai.sentinel.databinding.ContentSweepPreviewBinding
@@ -61,12 +63,14 @@ import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.bitcoinj.core.Transaction
 import org.koin.java.KoinJavaComponent
+import timber.log.Timber
 import java.math.BigInteger
 import java.text.DecimalFormat
 import kotlin.math.ceil
@@ -84,6 +88,16 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
     var privKeyReader: PrivKeyReader? = null
     private var _binding: FragmentBottomsheetViewPagerBinding? = null
     private val binding get() = _binding!!
+
+    private val exchangeRateRepository: ExchangeRateRepository by KoinJavaComponent.inject(
+        ExchangeRateRepository::class.java
+    )
+    private val repository: CollectionRepository by KoinJavaComponent.inject(CollectionRepository::class.java)
+    private val transactionsRepository: TransactionsRepository by KoinJavaComponent.inject(
+        TransactionsRepository::class.java
+    )
+    private var netWorkJobs: ArrayList<Job?> = arrayListOf()
+    private val feeRepository: FeeRepository by KoinJavaComponent.inject(FeeRepository::class.java)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -132,6 +146,45 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                         }
                         else if (response != "TX_ID_NOT_FOUND") {
                             if (isAdded && activity != null) {
+                                try {
+                                    exchangeRateRepository.fetch()
+                                    repository.pubKeyCollections.forEach {
+
+                                        val job = apiScope.launch {
+                                            try {
+                                                transactionsRepository.fetchFromServer(it)
+                                            } catch (e: Exception) {
+                                                Timber.e(e)
+                                                throw  CancellationException(e.message)
+                                            }
+                                        }
+                                        netWorkJobs.add(job)
+                                    }
+                                    val job = apiScope.launch {
+                                        try {
+                                            feeRepository.getDynamicFees()
+                                        } catch (e: Exception) {
+                                            Timber.e(e)
+                                            throw  CancellationException(e.message)
+                                        }
+                                    }
+                                    netWorkJobs.add(job)
+
+                                    if (netWorkJobs.isNotEmpty()) {
+                                        //Save last sync time to prefs
+                                        netWorkJobs[netWorkJobs.lastIndex]?.let {
+                                            it.invokeOnCompletion { error ->
+                                                if (error != null) {
+                                                    Timber.e(error)
+                                                    return@invokeOnCompletion
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (ex: Exception) {
+                                    Timber.e(ex)
+                                }
+
                                 val bottomSheet = SuccessfulBottomSheet(
                                     "Sweep Successful",
                                     response!!,
