@@ -130,6 +130,13 @@ class SendFragment : Fragment() {
             setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
         }
 
+        fragmentSpendBinding.fragmentComposeTx.textView12.setOnClickListener {
+            viewModel.setAmount(availableBalance.div(1e8))
+            setBtcEdit(decimalFormatBTC.format(availableBalance.div(1e8)).toString())
+            val fiatRate = availableBalance.div(1e8).times(rate.rate)
+            setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
+        }
+
         watchAddressAndAmount()
 
         fragmentSpendBinding.toEditText.setEndIconOnClickListener {
