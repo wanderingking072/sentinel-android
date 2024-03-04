@@ -54,7 +54,7 @@ import com.samourai.wallet.segwit.SegwitAddress
 import com.samourai.wallet.send.MyTransactionOutPoint
 import com.samourai.wallet.send.SendFactoryGeneric
 import com.samourai.wallet.send.beans.SweepPreview
-import com.samourai.sentinel.send.FeeUtil
+import com.samourai.wallet.util.FeeUtil
 import com.samourai.wallet.util.PrivKeyReader
 import com.samourai.wallet.util.TxUtil
 import com.samourai.wallet.util.XPUB
@@ -785,10 +785,13 @@ class PreviewFragment : Fragment() {
             inputsP2SH_P2WPKH = unspentOutputs.size
         } else if (bipFormat === BIP_FORMAT.SEGWIT_NATIVE) {
             inputsP2WPKH = unspentOutputs.size
+        } else if (bipFormat === BIP_FORMAT.TAPROOT) {
+            inputsP2WPKH = unspentOutputs.size
         } else {
             inputsP2PKH = unspentOutputs.size
         }
-        return FeeUtil.getInstance().calculateFee(FeeUtil.getInstance().estimatedSizeSegwit(inputsP2PKH, inputsP2SH_P2WPKH, inputsP2WPKH, 1), feePerB)
+
+        return FeeUtil.getInstance().estimatedFeeSegwit(inputsP2PKH, inputsP2SH_P2WPKH, inputsP2WPKH, 1, 0, feePerB)
     }
 
     private fun getBipFormatSupplier(bipFormat: BipFormat?): BipFormatSupplier {
