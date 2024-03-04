@@ -448,6 +448,7 @@ class ReceiveFragment : Fragment() {
             pubKeyDropDown.setAdapter(adapter)
             pubKeyDropDown.threshold = 50
             pubKeyDropDown.setText(items.first(), false)
+            pubKeyIndex = collection.pubs.indexOf(getPubKeyModelByLabel(items.first()))
             pubKeyDropDown.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
                 pubKeyIndex = collection.pubs.indexOf(getPubKeyModelByLabel(pubsShownInDropdown[index].label))
                 generateQR()
