@@ -132,7 +132,7 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
 
         qrDialogCopyToClipBoard.setOnClickListener {
             val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText(clipboardLabel ?: title, qrData)
+            val clip = ClipData.newPlainText(clipboardLabel ?: title, qrTextView.text)
             clipboard.setPrimaryClip(clip)
             Toast.makeText(requireContext(), R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
             this.dismiss()
