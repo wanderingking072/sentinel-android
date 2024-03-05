@@ -75,7 +75,7 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
         }
 
         title?.let {
-            if (collection!!.isImportFromWallet && it.equals("Deposit"))
+            if (collection != null && collection.isImportFromWallet && it.equals("Deposit"))
                 qrToolbar.title = "Deposit BIP84"
             else
                 qrToolbar.title = it
