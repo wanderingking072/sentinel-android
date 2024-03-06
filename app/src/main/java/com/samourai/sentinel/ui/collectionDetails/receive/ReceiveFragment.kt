@@ -200,6 +200,12 @@ class ReceiveFragment : Fragment() {
     }
 
 
+    override fun onResume() {
+        super.onResume()
+        if (collection.isImportFromWallet)
+            populateSpinner()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
