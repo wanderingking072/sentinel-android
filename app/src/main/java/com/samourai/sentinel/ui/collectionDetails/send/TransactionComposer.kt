@@ -91,7 +91,7 @@ class TransactionComposer {
 
             val xpub = XPUB(this.selectPubKeyModel[0]!!.pubKey)
             xpub.decode()
-            val accountIdx = (xpub.child + HARDENED)
+            val accountIdx1 = (xpub.child + HARDENED)
 
             val utxos: ArrayList<UTXO> = arrayListOf();
             for (utxoCoin in inputUtxos) {
@@ -210,7 +210,7 @@ class TransactionComposer {
             else if (Address.fromBase58(SentinelState.getNetworkParam(), address).isP2SHAddress)
                 changeType = "P2SH"
 
-            val changeAddress = getNextChangeAddress(accountIdx, changeType)
+            val changeAddress = getNextChangeAddress(accountIdx1, changeType)
                 ?: throw ComposeException("Change address is invalid");
             receivers[changeAddress] = BigInteger.valueOf(change)
 
@@ -228,7 +228,7 @@ class TransactionComposer {
 
             val transaction = try {
                 SendFactory.getInstance()
-                    .makeTransaction(accountIdx.toInt(), outPoints, receivers)
+                    .makeTransaction(accountIdx1.toInt(), outPoints, receivers)
             } catch (e: Exception) {
                 throw ComposeException("Unable to create tx")
             }
@@ -238,7 +238,7 @@ class TransactionComposer {
             val networkParameters = SentinelState.getNetworkParam();
             val type = if (networkParameters is MainNetParams) 0 else 1
 
-            val purpose = selectPubKeyModel[0]?.getPurpose();
+            val purpose1 = selectPubKeyModel[0]?.getPurpose();
             val data =
                 if (selectPubKeyModel[0]?.fingerPrint != null) selectPubKeyModel[0]?.fingerPrint?.toCharArray() else "00000000".toCharArray()
 
@@ -273,7 +273,7 @@ class TransactionComposer {
                 changeECKey!!.getPubKey(),
                 PSBT.writeBIP32Derivation(
                     Hex.decodeHex(data),
-                    purpose!!,
+                    purpose1!!,
                     type,
                     getAccount()!!.id,
                     1,
@@ -301,7 +301,7 @@ class TransactionComposer {
             psbt?.addGlobalXpubRecord(
                 PSBT.deserializeXPUB(getAccount()?.xpubstr()),
                 Hex.decodeHex(data),
-                purpose,
+                purpose1,
                 type,
                 getAccount()!!.id
             );
@@ -310,7 +310,11 @@ class TransactionComposer {
             for (outPoint in outPoints) {
                 for (input in inputUtxos) {
                     if (input.txHash == outPoint.hash.toString() && outPoint.txOutputN == input.txOutputN) {
-                        val accountIdx = (xpub.child + HARDENED)
+                        val inputXpub = XPUB(input.pubKey)
+                        inputXpub.decode()
+                        val accountIdx = (inputXpub.child + HARDENED)
+                        val purpose = selectPubKeyModel.filter { it?.pubKey.equals(input.pubKey) }[0]?.getPurpose()!!
+
                         val path: String = input.path;
                         val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
                         val chainIndex = path.split("/".toRegex()).toTypedArray()[1].toInt()
