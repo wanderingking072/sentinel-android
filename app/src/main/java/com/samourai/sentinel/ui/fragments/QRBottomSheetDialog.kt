@@ -29,6 +29,7 @@ import com.google.zxing.client.android.Contents
 import com.google.zxing.client.android.encode.QRCodeEncoder
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.AppUtil
 import java.io.File
@@ -84,36 +85,36 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
         rightArrow.setOnClickListener {
             if (qrToolbar.title.equals("Deposit BIP84")) {
                 qrToolbar.title = "Deposit BIP49"
-                qrTextView.text = collection!!.pubs[5].pubKey
-                setQR(view, collection.pubs[5].pubKey)
+                qrTextView.text = getPubKeyModelByLabel("Deposit BIP49").pubKey
+                setQR(view,  getPubKeyModelByLabel("Deposit BIP49").pubKey)
             }
             else if (qrToolbar.title.equals("Deposit BIP49")) {
                 qrToolbar.title = "Deposit BIP44"
-                qrTextView.text = collection!!.pubs[4].pubKey
-                setQR(view, collection.pubs[4].pubKey)
+                qrTextView.text =  getPubKeyModelByLabel("Deposit BIP44").pubKey
+                setQR(view,  getPubKeyModelByLabel("Deposit BIP44").pubKey)
             }
             else if (qrToolbar.title.equals("Deposit BIP44")) {
                 qrToolbar.title = "Deposit BIP84"
-                qrTextView.text = collection!!.pubs[0].pubKey
-                setQR(view, collection.pubs[0].pubKey)
+                qrTextView.text =  getPubKeyModelByLabel("Deposit BIP84").pubKey
+                setQR(view,  getPubKeyModelByLabel("Deposit BIP84").pubKey)
             }
         }
 
         leftArrow.setOnClickListener {
             if (qrToolbar.title.equals("Deposit BIP84")) {
                 qrToolbar.title = "Deposit BIP44"
-                qrTextView.text = collection!!.pubs[4].pubKey
-                setQR(view, collection.pubs[4].pubKey)
+                qrTextView.text =  getPubKeyModelByLabel("Deposit BIP44").pubKey
+                setQR(view,  getPubKeyModelByLabel("Deposit BIP44").pubKey)
             }
             else if (qrToolbar.title.equals("Deposit BIP49")) {
                 qrToolbar.title = "Deposit BIP84"
-                qrTextView.text = collection!!.pubs[0].pubKey
-                setQR(view, collection.pubs[0].pubKey)
+                qrTextView.text =  getPubKeyModelByLabel("Deposit BIP84").pubKey
+                setQR(view,  getPubKeyModelByLabel("Deposit BIP89").pubKey)
             }
             else if (qrToolbar.title.equals("Deposit BIP44")) {
                 qrToolbar.title = "Deposit BIP49"
-                qrTextView.text = collection!!.pubs[5].pubKey
-                setQR(view, collection.pubs[5].pubKey)
+                qrTextView.text =  getPubKeyModelByLabel("Deposit BIP49").pubKey
+                setQR(view,  getPubKeyModelByLabel("Deposit BIP49").pubKey)
             }
         }
 
@@ -175,6 +176,14 @@ class QRBottomSheetDialog(val qrData: String, val title: String? = "", val clipb
             }
             dismiss()
         }
+    }
+
+    private fun getPubKeyModelByLabel(label: String): PubKeyModel {
+        collection?.pubs?.forEach {
+            if (it.label == label)
+                return it
+        }
+        return collection!!.pubs[0]
     }
 
     fun setQR(view: View, qrData: String) {
