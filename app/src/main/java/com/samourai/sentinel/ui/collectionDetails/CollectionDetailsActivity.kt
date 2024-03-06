@@ -292,7 +292,10 @@ class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTab
         else {
             binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
             binding.bottomNav.getMenuItem(0)?.setEnabled(true)
+            binding.bottomNav.getMenuItem(2)?.setIcon(R.drawable.ic_baseline_sent_24)
+            binding.bottomNav.getMenuItem(2)?.setEnabled(true)
             isTabWhirlpoolPub = false
+            isTabPremix = false
         }
     }
 }

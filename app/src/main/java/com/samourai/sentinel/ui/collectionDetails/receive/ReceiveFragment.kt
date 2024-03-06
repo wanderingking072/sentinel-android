@@ -609,7 +609,7 @@ class ReceiveFragment : Fragment() {
             pubKeyDropDown.inputType = InputType.TYPE_NULL
             pubKeyDropDown.setAdapter(adapter)
             pubKeyDropDown.setText(items[newIndex-1], false)
-            pubKeyIndex = index-1
+            pubKeyIndex = newIndex-1
             generateQR()
             tvPath.text = getPath()
         }
