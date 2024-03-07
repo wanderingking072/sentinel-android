@@ -24,12 +24,6 @@ import timber.log.Timber
 import java.math.BigInteger
 import java.text.NumberFormat
 import java.util.Locale
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.List
-import kotlin.collections.arrayListOf
-import kotlin.collections.filter
-import kotlin.collections.hashMapOf
 import kotlin.collections.set
 
 class SendViewModel : ViewModel() {
@@ -44,7 +38,6 @@ class SendViewModel : ViewModel() {
     private var transactionComposer = TransactionComposer()
     private val utxoDao: UtxoDao by inject(UtxoDao::class.java)
     private var receivers: HashMap<String, BigInteger> = hashMapOf()
-
 
     private val _psbt = MutableLiveData("")
     val psbtLive: LiveData<String> = _psbt
@@ -101,8 +94,6 @@ class SendViewModel : ViewModel() {
     }
 
     private fun prepareSpend(): Boolean {
-
-
         selectedUtxos.clear()
 
         if (address.isBlank() || address.isEmpty()) {
@@ -138,6 +129,9 @@ class SendViewModel : ViewModel() {
                         _validSpend.postValue(isValid)
                     }
                 } catch (e: Exception) {
+                    viewModelScope.launch(Dispatchers.Main) {
+                        _validSpend.postValue(false)
+                    }
                     println("Exception: " + e)
                 }
             } catch (ex: TransactionComposer.ComposeException) {
