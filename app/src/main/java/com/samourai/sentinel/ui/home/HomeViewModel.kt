@@ -10,6 +10,7 @@ import com.samourai.sentinel.data.repository.TransactionsRepository
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.UtxoMetaUtil
 import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -32,7 +33,6 @@ class HomeViewModel : ViewModel() {
     private val balance: MutableLiveData<Long> = MutableLiveData()
     private var netWorkJobs: ArrayList<Job?> = arrayListOf()
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java);
-    private val balanceFiat: MutableLiveData<String> = MutableLiveData()
 
     init {
         load()
@@ -163,13 +163,22 @@ class HomeViewModel : ViewModel() {
         if (repository.collectionsLiveData.value!!.size == 0) {
             balance.postValue(0L)
         }
-        repository.collectionsLiveData.value?.let { pubkeys ->
-            if (pubkeys.isEmpty()) {
+        repository.collectionsLiveData.value?.let { collections ->
+            if (collections.isEmpty()) {
                 return
             }
             try {
-                val total = pubkeys.map { it.balance }.reduce { acc, l -> acc + l }
-                balance.postValue(total)
+                val pubkeysList:MutableList<String> = mutableListOf()
+                collections.forEach { collection ->
+                    collection.pubs.forEach{ pubkey ->
+                        pubkeysList.add(pubkey.pubKey)
+                    }
+                }
+
+                val totalAmount = collections.map { it.balance }.reduce { acc, l -> acc + l }
+                val totalBlocked = UtxoMetaUtil.getBlockedAssociatedWithPubKeyList(pubkeysList).map { it.amount }.reduce { acc, l -> acc + l }
+
+                balance.postValue(totalAmount - totalBlocked)
             } catch (e: Exception) {
                 Timber.e(e)
             }

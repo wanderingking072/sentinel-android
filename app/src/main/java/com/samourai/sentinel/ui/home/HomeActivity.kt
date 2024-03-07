@@ -349,23 +349,7 @@ class HomeActivity : SentinelActivity() {
     }
 
     private fun updateBalance(it: Long) {
-        var blockedUtxosBalanceSum = 0L
-
-        for (i in 0..collectionsAdapter.getCollectionList().size-1){
-            collectionsAdapter.setBalance(i)
-        }
-        collectionsAdapter.getCollectionList().forEach{collection ->
-            collection.pubs.forEach { pubKeyModel ->
-                val blockedUtxos1 =
-                    UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
-                blockedUtxos1.forEach { blockedUtxo ->
-                    blockedUtxosBalanceSum += blockedUtxo.amount
-                }
-            }
-        }
-        val balance = it - blockedUtxosBalanceSum
-
-        binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(balance)} BTC"
+        binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(it)} BTC"
     }
 
     private fun updateFiat(it: String) {
