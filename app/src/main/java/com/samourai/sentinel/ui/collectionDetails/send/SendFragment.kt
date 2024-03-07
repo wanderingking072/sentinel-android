@@ -442,6 +442,11 @@ class SendFragment : Fragment() {
                 setBtcEdit("")
                 return
             }
+            if (amount <= 0) {
+                fragmentSpendBinding.composeBtn.alpha = 0.6f
+                fragmentSpendBinding.composeBtn.isEnabled = false
+                return
+            }
             val fiatRate = btc.times(rate.rate)
             setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
             viewModel.setAmount(amount)
