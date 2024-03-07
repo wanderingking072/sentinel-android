@@ -290,7 +290,7 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
                 }
                 R.id.utxo_details_action_spendable -> {
                     utxos.filter { utxo -> utxo.selected }.forEachIndexed { _, utxo ->
-                        UtxoMetaUtil.remove(utxo)
+                        UtxoMetaUtil.remove(utxo.txHash!!, utxo.txOutputN!!)
                     }
                     utxos.forEach { utxo -> utxo.selected = false }
                     updateList()

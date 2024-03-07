@@ -14,6 +14,7 @@ import com.samourai.sentinel.data.db.dao.TxDao
 import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.ui.utils.logThreadInfo
+import com.samourai.sentinel.util.UtxoMetaUtil
 import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
@@ -204,6 +205,7 @@ class TransactionsRepository {
 
 
     private fun saveUtxos(utxos: ArrayList<Utxo>, collectionId: String) = apiScope.launch {
+        val collection = collectionRepository.findById(collectionId)
         withContext(Dispatchers.IO) {
             utxoDao.getUTXObyCollectionAsList(collectionId)
                 .forEach {
@@ -214,6 +216,16 @@ class TransactionsRepository {
                         if (it.txOutputN != null && it.txHash != null) {
                             utxoDao.delete(it.txHash!!, it.txOutputN!!)
                         }
+                    }
+                }
+
+            UtxoMetaUtil.getBlockedAssociatedWithPubKeyList(collection!!.pubs.map { it.pubKey }.toList())
+                .forEach {
+                    val isExist =
+                        utxos.find { utxo -> (utxo.txHash == it.hash && it.txOutputN == utxo.txOutputN) }
+                    //if utxos is not present in the new list it will be removed from the Blocked UTXOs List
+                    if(isExist == null){
+                        UtxoMetaUtil.remove(it.hash, it.txOutputN)
                     }
                 }
             utxos.forEach {

@@ -14,7 +14,7 @@ import timber.log.Timber
 object UtxoMetaUtil {
 
     data class UtxoState(val hash: String,
-                         val index: Int,
+                         val txOutputN: Int,
                          val associatedPub: String,
                          val amount: Long)
 
@@ -42,7 +42,7 @@ object UtxoMetaUtil {
 
     fun has(hash: String, index: Int): Boolean {
         val key = "${hash}-${index}"
-        return utxoBlockState.containsKey(key)
+        return utxoBlockState.values.find { utxo -> (utxo.hash == hash && utxo.txOutputN == index) } != null
     }
 
     fun has(utxo: Utxo): Boolean {
@@ -54,10 +54,14 @@ object UtxoMetaUtil {
         return utxoBlockState.values.filter { it.associatedPub == pubKey }
     }
 
-    fun remove(utxo: Utxo) {
-        val key = "${utxo.txHash}-${utxo.txOutputN}"
-        if (utxoBlockState.containsKey(key)) {
-            utxoBlockState.remove(key)
+    fun getBlockedAssociatedWithPubKeyList(pubKeys: List<String>): Collection<UtxoState> {
+        return utxoBlockState.values.filter { it.associatedPub in pubKeys }
+    }
+
+    fun remove(txHash: String, txOutputN: Int) {
+        val toRemove = utxoBlockState.filterValues { it.hash == txHash && it.txOutputN == txOutputN }.keys
+        if (toRemove.size == 1) {
+            utxoBlockState.remove(toRemove.first())
             write()
         }
     }
