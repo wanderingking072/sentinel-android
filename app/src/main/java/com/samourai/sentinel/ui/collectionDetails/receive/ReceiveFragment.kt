@@ -342,16 +342,17 @@ class ReceiveFragment : Fragment() {
     }
 
     fun getPath(): String {
+        val newPubkeys = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList()
         var path = "m/"
 
-        if (collection.pubs.size == 0) {
+        if (newPubkeys.size == 0) {
             return ""
         }
 
-        if (collection.pubs[pubKeyIndex].type == AddressTypes.ADDRESS) {
-            return collection.pubs[pubKeyIndex].pubKey
+        if (newPubkeys[pubKeyIndex].type == AddressTypes.ADDRESS) {
+            return newPubkeys[pubKeyIndex].pubKey
         }
-        val pubKey = collection.pubs[pubKeyIndex]
+        val pubKey = newPubkeys[pubKeyIndex]
         val xpub = XPUB(pubKey.pubKey)
         xpub.decode()
 
@@ -367,17 +368,19 @@ class ReceiveFragment : Fragment() {
 
 
     fun getAddress(): String {
-        if (collection.pubs.size == 0) {
+        val newPubkeys = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList()
+
+        if (newPubkeys.size == 0) {
             return ""
         }
 
-        if (collection.pubs[pubKeyIndex].type == AddressTypes.ADDRESS) {
-            return collection.pubs[pubKeyIndex].pubKey
+        if (newPubkeys[pubKeyIndex].type == AddressTypes.ADDRESS) {
+            return newPubkeys[pubKeyIndex].pubKey
         }
-        val pubKey = collection.pubs[pubKeyIndex]
-        val accountIndex = collection.pubs[pubKeyIndex].account_index
+        val pubKey = newPubkeys[pubKeyIndex]
+        val accountIndex = newPubkeys[pubKeyIndex].account_index
 
-        return when (collection.pubs[pubKeyIndex].type) {
+        return when (newPubkeys[pubKeyIndex].type) {
             AddressTypes.BIP44 -> {
                 val account = HD_Account(SentinelState.getNetworkParam(), pubKey.pubKey, "", 0)
                 account.getChain(0).addrIdx = accountIndex
@@ -401,7 +404,7 @@ class ReceiveFragment : Fragment() {
                 segwitAddress.bech32AsString
             }
             AddressTypes.ADDRESS -> {
-                collection.pubs[pubKeyIndex].pubKey
+                newPubkeys[pubKeyIndex].pubKey
             }
             else -> ""
         }
@@ -454,9 +457,9 @@ class ReceiveFragment : Fragment() {
             pubKeyDropDown.setAdapter(adapter)
             pubKeyDropDown.threshold = 50
             pubKeyDropDown.setText(items.first(), false)
-            pubKeyIndex = collection.pubs.indexOf(getPubKeyModelByLabel(items.first()))
+            pubKeyIndex = newPubkeys.indexOf(getPubKeyModelByLabel(items.first()))
             pubKeyDropDown.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
-                pubKeyIndex = collection.pubs.indexOf(getPubKeyModelByLabel(pubsShownInDropdown[index].label))
+                pubKeyIndex = index
                 generateQR()
                 tvPath.text = getPath()
             }
