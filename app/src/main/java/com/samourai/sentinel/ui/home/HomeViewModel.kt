@@ -175,8 +175,15 @@ class HomeViewModel : ViewModel() {
                     }
                 }
 
+                val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKeyList(pubkeysList)
+
                 val totalAmount = collections.map { it.balance }.reduce { acc, l -> acc + l }
-                val totalBlocked = UtxoMetaUtil.getBlockedAssociatedWithPubKeyList(pubkeysList).map { it.amount }.reduce { acc, l -> acc + l }
+
+                val totalBlocked =
+                    if (blockedUtxos.size > 0)
+                        blockedUtxos.map { it.amount }.reduce { acc, l -> acc + l }
+                    else
+                        0
 
                 balance.postValue(totalAmount - totalBlocked)
             } catch (e: Exception) {
