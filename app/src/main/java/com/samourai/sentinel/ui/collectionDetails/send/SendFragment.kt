@@ -546,7 +546,7 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
             val selectPubKeyModel = pubKeySelector.pubs[newIndex-1]
             viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner, mCollection!!)
-            if (mCollection!!.isImportFromWallet) {
+            if (mCollection!!.isImportFromWallet && selectPubKeyModel.label.equals("Deposit")) {
                 transactionComposer.setPubKey(listOf(
                     getPubKeyModelByLabel("Deposit BIP84"),
                     getPubKeyModelByLabel("Deposit BIP49"),
@@ -622,7 +622,7 @@ class SendFragment : Fragment() {
                 val selectPubKeyModel = getPubKeyModelByLabel(items[index])
                 viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner, mCollection!!)
 
-                if (mCollection!!.isImportFromWallet) {
+                if (mCollection!!.isImportFromWallet && selectPubKeyModel.label.equals("Deposit")) {
                     transactionComposer.setPubKey(listOf(
                         getPubKeyModelByLabel("Deposit BIP84"),
                         getPubKeyModelByLabel("Deposit BIP49"),
