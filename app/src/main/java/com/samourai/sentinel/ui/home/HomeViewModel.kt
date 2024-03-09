@@ -51,10 +51,20 @@ class HomeViewModel : ViewModel() {
     }
 
     fun getCollections(): LiveData<ArrayList<PubKeyCollection>> {
-        return repository.collectionsLiveData.map {
-            updateBalance()
-            it
+        val collectionsLiveData = repository.collectionsLiveData
+        val resultLiveData = MediatorLiveData<ArrayList<PubKeyCollection>>()
+
+        resultLiveData.addSource(collectionsLiveData) { collections ->
+            apiScope.launch {
+                collections.forEach {
+                    transactionsRepository.fetchUTXOS(it.id)
+                }
+
+                resultLiveData.postValue(collections)
+                updateBalance()
+            }
         }
+        return resultLiveData
     }
 
     fun getBalance(): LiveData<Long> {
@@ -102,7 +112,6 @@ class HomeViewModel : ViewModel() {
                             errorMessage.postValue("${error.message}")
                             return@invokeOnCompletion
                         }
-                        updateBalance()
                         prefsUtil.lastSynced = System.currentTimeMillis()
                     }
                 }

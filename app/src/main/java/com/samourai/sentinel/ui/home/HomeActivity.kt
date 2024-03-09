@@ -80,6 +80,8 @@ class HomeActivity : SentinelActivity() {
         }
 
         val model: HomeViewModel by viewModels()
+        UtxoMetaUtil.read()
+
         if (SentinelState.isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.OFF) {
             SentinelTorManager.start()
             prefsUtil.enableTor = true

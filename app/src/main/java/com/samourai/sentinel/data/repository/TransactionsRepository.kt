@@ -245,4 +245,63 @@ class TransactionsRepository {
     suspend fun fetchFromServer(collection: PubKeyCollection) {
         return this.fetchFromServer(collection.id)
     }
-}
+
+    suspend fun fetchUTXOS(collectionId: String) {
+        try {
+            val collection = collectionRepository.findById(collectionId) ?: return
+            val utxos: ArrayList<Utxo> = arrayListOf();
+            val jobs: ArrayList<Deferred<Response>> = arrayListOf()
+            collection.pubs.forEach {
+                val item = apiScope.async {
+                    apiService.getWallet(it.pubKey)
+                }
+                jobs.add(item);
+            }
+            apiScope.launch(Dispatchers.Main) {
+                loading.postValue(true)
+            }
+
+            jobs.forEach { job ->
+                val index = jobs.indexOf(job)
+                loadingCollectionId = collectionId
+                try {
+                    val res = jobs[index].await()
+                    res.body?.let { it ->
+                        val resString = it.string()
+                        val pubKeyAssociated = collection.pubs[index]
+                        val response: WalletResponse = fromJSON<WalletResponse>(resString)!!
+
+                        response.unspent_outputs?.let {
+                            val list = response.unspent_outputs.toMutableList().map {
+                                it.pubKey = pubKeyAssociated.pubKey
+                                it.idx = "${it.txHash}:${it.txOutputN}"
+                                it.collectionId = collectionId
+                                if (it.xpub != null) {
+                                    it.path = it.xpub?.path!!
+                                }
+                                it
+                            }.toList()
+                            utxos.addAll(list)
+                        }
+                    }
+                } catch (e: Exception) {throw e}
+            }
+
+            withContext(Dispatchers.IO) {
+                utxoDao.deleteByCollection(collectionId)
+            }
+            apiScope.launch(Dispatchers.Main) {
+                loading.postValue(false)
+            }
+            saveUtxos(utxos, collectionId)
+        } catch (e: Exception) {
+            if (!e.message?.lowercase()!!.contains("unable to resolve host")
+                && !e.message?.lowercase()!!.contains("standalonecoroutine was cancelled")) {
+                apiScope.launch(Dispatchers.Main) {
+                    loading.postValue(false)
+                }
+            }
+            throw  e
+        }
+    }
+    }
