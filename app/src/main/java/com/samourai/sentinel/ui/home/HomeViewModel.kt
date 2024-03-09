@@ -102,6 +102,7 @@ class HomeViewModel : ViewModel() {
                             errorMessage.postValue("${error.message}")
                             return@invokeOnCompletion
                         }
+                        updateBalance()
                         prefsUtil.lastSynced = System.currentTimeMillis()
                     }
                 }
