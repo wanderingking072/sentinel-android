@@ -98,7 +98,7 @@ class HomeActivity : SentinelActivity() {
 
         setUpCollectionList()
 
-        model.getCollections().observe(this, {
+        model.getCollections(this).observe(this, {
             if (it.isNotEmpty())
                 binding.welcomeMessage.visibility = View.GONE
             else

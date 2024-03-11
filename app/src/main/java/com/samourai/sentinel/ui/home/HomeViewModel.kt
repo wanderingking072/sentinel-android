@@ -1,12 +1,17 @@
 package com.samourai.sentinel.ui.home
 
+import android.provider.Telephony.Mms.Sent
 import androidx.lifecycle.*
 import com.samourai.sentinel.api.ApiService
+import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
+import com.samourai.sentinel.service.WebSocketService
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.MonetaryUtil
@@ -50,20 +55,38 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun getCollections(): LiveData<ArrayList<PubKeyCollection>> {
+    fun getCollections(viewLifecycleOwner: LifecycleOwner): LiveData<ArrayList<PubKeyCollection>> {
         val collectionsLiveData = repository.collectionsLiveData
         val resultLiveData = MediatorLiveData<ArrayList<PubKeyCollection>>()
 
-        resultLiveData.addSource(collectionsLiveData) { collections ->
-            apiScope.launch {
-                collections.forEach {
-                    transactionsRepository.fetchUTXOS(it.id)
-                }
+        if (SentinelState.isTorRequired()) {
+            SentinelTorManager.getTorStateLiveData().observe(viewLifecycleOwner) {
+                if (it.state == EnumTorState.ON) {
+                    resultLiveData.addSource(collectionsLiveData) { collections ->
+                        apiScope.launch {
+                            collections.forEach {
+                                transactionsRepository.fetchUTXOS(it.id)
+                            }
 
-                resultLiveData.postValue(collections)
-                updateBalance()
+                            resultLiveData.postValue(collections)
+                            updateBalance()
+                        }
+                    }
+                }
+            }
+        } else {
+            resultLiveData.addSource(collectionsLiveData) { collections ->
+                apiScope.launch {
+                    collections.forEach {
+                        transactionsRepository.fetchUTXOS(it.id)
+                    }
+
+                    resultLiveData.postValue(collections)
+                    updateBalance()
+                }
             }
         }
+
         return resultLiveData
     }
 
