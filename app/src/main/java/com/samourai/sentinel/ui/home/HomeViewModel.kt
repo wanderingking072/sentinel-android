@@ -59,34 +59,17 @@ class HomeViewModel : ViewModel() {
         val collectionsLiveData = repository.collectionsLiveData
         val resultLiveData = MediatorLiveData<ArrayList<PubKeyCollection>>()
 
-        if (SentinelState.isTorRequired()) {
-            SentinelTorManager.getTorStateLiveData().observe(viewLifecycleOwner) {
-                if (it.state == EnumTorState.ON) {
-                    resultLiveData.addSource(collectionsLiveData) { collections ->
-                        apiScope.launch {
-                            collections.forEach {
-                                transactionsRepository.fetchUTXOS(it.id)
-                            }
-
-                            resultLiveData.postValue(collections)
-                            updateBalance()
-                        }
-                    }
-                }
-            }
-        } else {
-            resultLiveData.addSource(collectionsLiveData) { collections ->
-                apiScope.launch {
-                    collections.forEach {
+        resultLiveData.addSource(collectionsLiveData) { collections ->
+            apiScope.launch {
+                collections.forEach {
+                    if (SentinelTorManager.getTorState().state == EnumTorState.ON)
                         transactionsRepository.fetchUTXOS(it.id)
-                    }
-
-                    resultLiveData.postValue(collections)
-                    updateBalance()
                 }
+
+                resultLiveData.postValue(collections)
+                updateBalance()
             }
         }
-
         return resultLiveData
     }
 
