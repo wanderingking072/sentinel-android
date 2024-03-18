@@ -151,12 +151,12 @@ class ReceiveFragment : Fragment() {
                 when (position) {
                     1 -> {
                         //BIP 49
-                        pubKeyIndex = 5
+                        pubKeyIndex = 2
                     }
 
                     2 -> {
                         //BIP 44
-                        pubKeyIndex = 4
+                        pubKeyIndex = 1
                     }
 
                     else -> {
