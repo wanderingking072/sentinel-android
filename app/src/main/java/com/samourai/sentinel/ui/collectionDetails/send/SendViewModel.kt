@@ -66,7 +66,7 @@ class SendViewModel : ViewModel() {
         lifecycleOwner: LifecycleOwner,
         mCollection: PubKeyCollection
     ) {
-        if (mCollection.isImportFromWallet) {
+        if (mCollection.isImportFromWallet && pubKeyModel.label.equals("Deposit")) {
             transactionComposer.setPubKey(listOf(
                 getPubKeyModelByLabel("Deposit BIP84", mCollection),
                 getPubKeyModelByLabel("Deposit BIP49", mCollection),
