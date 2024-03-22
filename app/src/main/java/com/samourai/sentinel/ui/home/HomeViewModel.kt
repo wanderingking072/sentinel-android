@@ -61,6 +61,7 @@ class HomeViewModel : ViewModel() {
 
         resultLiveData.addSource(collectionsLiveData) { collections ->
             apiScope.launch {
+                transactionsRepository.loading.postValue(true)
                 collections.forEach {
                     if (!SentinelState.isTorRequired() || SentinelTorManager.getTorState().state == EnumTorState.ON) {
                         transactionsRepository.fetchUTXOS(it.id)
@@ -69,6 +70,7 @@ class HomeViewModel : ViewModel() {
                 }
                 updateBalance()
                 resultLiveData.postValue(collections)
+                transactionsRepository.loading.postValue(false)
             }
         }
         return resultLiveData

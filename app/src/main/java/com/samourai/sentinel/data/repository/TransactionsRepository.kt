@@ -46,7 +46,7 @@ class TransactionsRepository {
     private val apiService: ApiService by inject(ApiService::class.java)
     private val collectionRepository: CollectionRepository by inject(CollectionRepository::class.java)
     private val feeRepository: FeeRepository by inject(FeeRepository::class.java)
-    private val loading: MutableLiveData<Boolean> = MutableLiveData(false)
+    val loading: MutableLiveData<Boolean> = MutableLiveData(false)
 
     //track currently loading collection
     var loadingCollectionId = ""
@@ -257,9 +257,6 @@ class TransactionsRepository {
                 }
                 jobs.add(item);
             }
-            apiScope.launch(Dispatchers.Main) {
-                loading.postValue(true)
-            }
 
             jobs.forEach { job ->
                 val index = jobs.indexOf(job)
@@ -290,17 +287,9 @@ class TransactionsRepository {
             withContext(Dispatchers.IO) {
                 utxoDao.deleteByCollection(collectionId)
             }
-            apiScope.launch(Dispatchers.Main) {
-                loading.postValue(false)
-            }
+
             saveUtxos(utxos, collectionId)
         } catch (e: Exception) {
-            if (!e.message?.lowercase()!!.contains("unable to resolve host")
-                && !e.message?.lowercase()!!.contains("standalonecoroutine was cancelled")) {
-                apiScope.launch(Dispatchers.Main) {
-                    loading.postValue(false)
-                }
-            }
             throw  e
         }
     }
