@@ -163,6 +163,8 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
 
         private val diffCallBack = object : DiffUtil.ItemCallback<Utxo>() {
             override fun areItemsTheSame(oldItem: Utxo, newItem: Utxo): Boolean {
+                if (oldItem.section != null && newItem.section != null)
+                    return false
                 return newItem.txHash == oldItem.txHash && newItem.txOutputN == newItem.txOutputN
             }
 
