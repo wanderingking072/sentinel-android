@@ -1,6 +1,5 @@
 package com.samourai.sentinel.ui.home
 
-import android.provider.Telephony.Mms.Sent
 import androidx.lifecycle.*
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
@@ -9,7 +8,6 @@ import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
-import com.samourai.sentinel.service.WebSocketService
 import com.samourai.sentinel.tor.EnumTorState
 import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
@@ -55,22 +53,21 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun getCollections(viewLifecycleOwner: LifecycleOwner): LiveData<ArrayList<PubKeyCollection>> {
+    fun getCollections(): LiveData<ArrayList<PubKeyCollection>> {
         val collectionsLiveData = repository.collectionsLiveData
         val resultLiveData = MediatorLiveData<ArrayList<PubKeyCollection>>()
 
         resultLiveData.addSource(collectionsLiveData) { collections ->
             apiScope.launch {
-                transactionsRepository.loading.postValue(true)
+                transactionsRepository.loading.postValue(transactionsRepository.loading.value?.apply { add(true) })
                 collections.forEach {
                     if (!SentinelState.isTorRequired() || SentinelTorManager.getTorState().state == EnumTorState.ON) {
                         transactionsRepository.fetchUTXOS(it.id)
                         updateBalance()
                     }
                 }
-                updateBalance()
                 resultLiveData.postValue(collections)
-                transactionsRepository.loading.postValue(false)
+                transactionsRepository.loading.postValue(transactionsRepository.loading.value?.apply { remove(true) })
             }
         }
         return resultLiveData
@@ -135,7 +132,7 @@ class HomeViewModel : ViewModel() {
         return errorMessage
     }
 
-    fun loading(): LiveData<Boolean> {
+    fun loading(): LiveData<MutableList<Boolean>> {
         return transactionsRepository.loadingState()
     }
 

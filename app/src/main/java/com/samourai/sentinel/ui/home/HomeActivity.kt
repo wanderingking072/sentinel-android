@@ -98,7 +98,7 @@ class HomeActivity : SentinelActivity() {
 
         setUpCollectionList()
 
-        model.getCollections(this).observe(this, {
+        model.getCollections().observe(this, {
             if (it.isNotEmpty())
                 binding.welcomeMessage.visibility = View.GONE
             else
@@ -132,7 +132,7 @@ class HomeActivity : SentinelActivity() {
         }
 
         model.loading().observe(this) {
-            binding.swipeRefreshCollection.isRefreshing = it
+            binding.swipeRefreshCollection.isRefreshing = it.contains(true) || it.isNotEmpty()
         }
         model.getErrorMessage().observe(this) {
             if (it != "null" &&  SentinelTorManager.getTorState().state != EnumTorState.STARTING) {

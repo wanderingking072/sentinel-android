@@ -312,20 +312,23 @@ open class ApiService {
              * Intercept current request and add apiKey if needed
              * for more please refer https://code.samourai.io/dojo/samourai-dojo/-/blob/master/doc/POST_auth_login.md#authentication
              */
-            if (!excludeApiKey)
-                builder.addInterceptor(Interceptor { chain ->
-                    val original = chain.request()
-                    val newBuilder = original.newBuilder()
-                    if (!authToken.isNullOrEmpty() && SentinelState.isDojoEnabled()) {
-                        newBuilder.url(
-                            original.url.newBuilder()
-                                .addQueryParameter("at", authToken)
-                                .build()
-                        )
-                    }
-                    val request = newBuilder.build()
-                    chain.proceed(request)
-                })
+            if (!excludeApiKey) {
+                try {
+                    builder.addInterceptor(Interceptor { chain ->
+                        val original = chain.request()
+                        val newBuilder = original.newBuilder()
+                        if (!authToken.isNullOrEmpty() && SentinelState.isDojoEnabled()) {
+                            newBuilder.url(
+                                original.url.newBuilder()
+                                    .addQueryParameter("at", authToken)
+                                    .build()
+                            )
+                        }
+                        val request = newBuilder.build()
+                        chain.proceed(request)
+                    })
+                } catch (_:Exception) {}
+            }
             return builder.build()
         }
 

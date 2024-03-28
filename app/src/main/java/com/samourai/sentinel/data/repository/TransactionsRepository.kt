@@ -46,7 +46,7 @@ class TransactionsRepository {
     private val apiService: ApiService by inject(ApiService::class.java)
     private val collectionRepository: CollectionRepository by inject(CollectionRepository::class.java)
     private val feeRepository: FeeRepository by inject(FeeRepository::class.java)
-    val loading: MutableLiveData<Boolean> = MutableLiveData(false)
+    val loading: MutableLiveData<MutableList<Boolean>> = MutableLiveData(mutableListOf())
 
     //track currently loading collection
     var loadingCollectionId = ""
@@ -73,7 +73,7 @@ class TransactionsRepository {
                 jobs.add(item);
             }
             apiScope.launch(Dispatchers.Main) {
-                loading.postValue(true)
+                loading.value = loading.value?.apply { add(true) }
             }
 
             jobs.forEach { job ->
@@ -151,7 +151,7 @@ class TransactionsRepository {
                 }
             }
             apiScope.launch(Dispatchers.Main) {
-                loading.postValue(false)
+                loading.value = loading.value?.apply { remove(true) }
             }
 
             withContext(Dispatchers.IO) {
@@ -165,7 +165,7 @@ class TransactionsRepository {
             if (!e.message?.lowercase()!!.contains("unable to resolve host")
                 && !e.message?.lowercase()!!.contains("standalonecoroutine was cancelled")) {
                     apiScope.launch(Dispatchers.Main) {
-                        loading.postValue(false)
+                        loading.value = loading.value?.apply { remove(true) }
                     }
             }
 
@@ -191,7 +191,7 @@ class TransactionsRepository {
         return transactions
     }
 
-    fun loadingState(): LiveData<Boolean> {
+    fun loadingState(): LiveData<MutableList<Boolean>> {
         return loading
     }
 
