@@ -404,7 +404,7 @@ class SendFragment : Fragment() {
 
     private fun watchAddressAndAmount() {
         fragmentSpendBinding.fiatEditTextLayout.hint = exchangeRateRepository.getRateLive().value?.currency
-        fragmentSpendBinding.fiatEditText.addTextChangedListener { onFiatValueChange(it.toString(), fragmentSpendBinding.btcEditText.toString()) }
+        fragmentSpendBinding.fiatEditText.addTextChangedListener { onFiatValueChange(it.toString()) }
         fragmentSpendBinding.btcEditText.addTextChangedListener { onBtcValueChanged(it.toString()) }
         fragmentSpendBinding.btcAddress.addTextChangedListener {
             if (it.toString().isNotEmpty()) {
@@ -456,20 +456,21 @@ class SendFragment : Fragment() {
         }
     }
 
-    private fun onFiatValueChange(fiatString: String, btcString: String) {
+    private fun onFiatValueChange(fiatString: String) {
+        val ungroupedFiat = fiatString.replace((DecimalFormat.getInstance() as DecimalFormat).decimalFormatSymbols.groupingSeparator.toString(), "")
         if (isFiatEditing) {
             return
         }
-        if (fiatString.contains(".") && fiatString.split(".")[1].length > 2) {
-            setFiatEdit(fiatString.dropLast(1))
+        if (ungroupedFiat.contains(".") && ungroupedFiat.split(".")[1].length > 2) {
+            setFiatEdit(ungroupedFiat.dropLast(1))
             return
         }
         try {
-            if (fiatString.isEmpty()) {
+            if (ungroupedFiat.isEmpty()) {
                 setBtcEdit("")
                 setFiatEdit("")
             }
-            val fiat: Double = fiatString.toDouble()
+            val fiat: Double = ungroupedFiat.toDouble()
             val btcRate = (1 / rate.rate.toFloat()) * fiat.toFloat()
             if (btcRate > 21000000.0) {
                 setBtcEdit("")
@@ -477,7 +478,7 @@ class SendFragment : Fragment() {
                 return
             }
 
-            if (fiatString.get(fiatString.lastIndex).equals('.'))
+            if (ungroupedFiat.get(ungroupedFiat.lastIndex).equals('.'))
                 setFiatEdit(DecimalFormat.getNumberInstance().format(fiat) + ".")
             else
                 setFiatEdit(DecimalFormat.getNumberInstance().format(fiat))
