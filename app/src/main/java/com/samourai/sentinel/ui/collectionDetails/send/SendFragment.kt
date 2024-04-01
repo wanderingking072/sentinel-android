@@ -469,6 +469,8 @@ class SendFragment : Fragment() {
             if (ungroupedFiat.isEmpty()) {
                 setBtcEdit("")
                 setFiatEdit("")
+                fragmentSpendBinding.composeBtn.alpha = 0.6f
+                fragmentSpendBinding.composeBtn.isEnabled = false
             }
             val fiat: Double = ungroupedFiat.toDouble()
             val btcRate = (1 / rate.rate.toFloat()) * fiat.toFloat()
