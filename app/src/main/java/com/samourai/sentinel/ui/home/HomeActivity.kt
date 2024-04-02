@@ -272,6 +272,7 @@ class HomeActivity : SentinelActivity() {
             this.confirm(label = "Choose network",
                     positiveText = "Mainnet",
                     negativeText = "Testnet",
+                    isCancelable = false,
                     onConfirm = { confirm ->
                         prefsUtil.firstRun = false
                         if (!confirm) {
