@@ -87,7 +87,7 @@ public class PinEntryView extends FrameLayout implements View.OnClickListener {
         tback = view.findViewById(R.id.tback);
         tback.setOnClickListener(view1 -> {
             hapticFeedBack();
-            pinLen = pinLen--;
+            pinLen--;
 
             if (clearListener != null) {
                 clearListener.onPinClear(KeyClearTypes.CLEAR);
@@ -110,10 +110,9 @@ public class PinEntryView extends FrameLayout implements View.OnClickListener {
         hapticFeedBack();
         if (pinLen <= (AccessFactory.MAX_PIN_LENGTH - 1)) {
             if (this.entryListener != null) {
-                if (((Button) view).getText().toString().length() < AccessFactory.MAX_PIN_LENGTH)
-                    entryListener.onPinEntered(((Button) view).getText().toString(), view);
+                entryListener.onPinEntered(((Button) view).getText().toString(), view);
             }
-            pinLen = pinLen++;
+            pinLen++;
         }
     }
 
