@@ -61,11 +61,14 @@ class HomeViewModel : ViewModel() {
             apiScope.launch {
                 transactionsRepository.loading.postValue(transactionsRepository.loading.value?.apply { add(true) })
                 collections.forEach {
-                    if (!SentinelState.isTorRequired() || SentinelTorManager.getTorState().state == EnumTorState.ON) {
+                    if ((!SentinelState.isTorRequired() && !SentinelState.hasAppJustStarted)
+                        || SentinelTorManager.getTorState().state == EnumTorState.ON) {
                         transactionsRepository.fetchUTXOS(it.id)
                         updateBalance()
                     }
                 }
+                updateBalance()
+                SentinelState.hasAppJustStarted = false
                 resultLiveData.postValue(collections)
                 transactionsRepository.loading.postValue(transactionsRepository.loading.value?.apply { remove(true) })
             }

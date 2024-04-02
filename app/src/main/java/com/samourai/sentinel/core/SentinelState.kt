@@ -41,6 +41,7 @@ class SentinelState {
         private var mainNetParams: NetworkParameters? = NetworkParameters.fromID(NetworkParameters.ID_MAINNET)
         private var networkParams: NetworkParameters? = mainNetParams
         var checkedClipBoard: Boolean = false
+        var hasAppJustStarted: Boolean = true
 
         var blockHeight: LatestBlock? = null
         private var isOffline = false
