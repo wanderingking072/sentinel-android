@@ -203,7 +203,7 @@ class HomeActivity : SentinelActivity() {
                     isTitle = true
                 }
                 item {
-                    label = "\tTools"
+                    label = getString(R.string.tools_top_menu)
                     icon = R.drawable.ic_tools
                     iconSize = 18
                     hasNestedItems
@@ -216,7 +216,7 @@ class HomeActivity : SentinelActivity() {
             }
             section {
                 item {
-                    label = "\tSettings"
+                    label = getString(R.string.settings_pop_menu)
                     icon = R.drawable.ic_cog
                     iconSize = 18
                     callback = {
@@ -226,7 +226,7 @@ class HomeActivity : SentinelActivity() {
                     }
                 }
                 item {
-                    label = "\tExit"
+                    label = getString(R.string.exit)
                     iconSize = 18
                     iconColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)
                     labelColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)

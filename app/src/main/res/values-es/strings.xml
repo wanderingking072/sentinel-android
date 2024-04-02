@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sentinel_can_organize">Sentinel puede organizar y rastrear muchas claves públicas diferentes, como direcciones bitcoin o claves públicas extendidas. Tu lista de claves está vacía. Añade tu primera clave pública para empezar a rastrearla con Sentinel</string>
+    <string name="new_home_button">Añadir</string>
+    <string name="tools_top_menu">\tÚtiles</string>
+    <string name="action_settings">Ajustes</string>
+    <string name="exit">\tSalir</string>
+    <string name="settings_pop_menu">\tAjustes</string>
+    <string name="network_val">Red</string>
+    <string name="connections_val">Conexiones</string>
+    <string name="tor_routing_val">Enrutamiento Tor</string>
+    <string name="disabled_val">Desactivado</string>
+    <string name="Enabled">Activado</string>
+    <string name="enable">Activar</string>
+    <string name="renew">RENOVAR</string>
+    <string name="disable_val">Desactivar</string>
+    <string name="disable_dojo">Cambiar/Borrar</string>
+    <string name="loading">cargando...</string>
+    <string name="tor_initializing">Inicializando Tor</string>
+
+    <string name="kmp_tor_action_restart">Reiniciando Tor…</string>
+    <string name="kmp_tor_action_start">Iniciando Tor…</string>
+    <string name="kmp_tor_action_stop">Deteniendo Tor…</string>
+    <string name="kmp_tor_bootstrapped">Bootstrapped</string>
+    <string name="kmp_tor_newnym_no_network">Sin conexión. No se puede soliticar una nueva identidad</string>
+    <string name="kmp_tor_newnym_rate_limited">Limitando petición de nueva identidad por %ds</string>
+    <string name="kmp_tor_newnym_success">Has cambiado de identidad en Tor!</string>
+    <string name="kmp_tor_notification_action_newnym">Nueva Identidad</string>
+    <string name="kmp_tor_notification_action_restart">Reiniciar Tor</string>
+    <string name="kmp_tor_notification_action_stop">Detener Tor</string>
+    <string name="kmp_tor_tor_state_off">Tor: Off</string>
+    <string name="kmp_tor_tor_state_on">Tor: On</string>
+    <string name="kmp_tor_tor_state_starting">Tor: Iniciandose</string>
+    <string name="kmp_tor_tor_state_stopping">Tor: Deteniendose</string>
+    <string name="kmp_tor_waiting_on_network">Sin Conexión. Esperando…</string>
+
+    <string name="permission_alert_dialog_title_camera">Pidiendo permiso para la cámara</string>
+    <string name="permission_dialog_message_camera">Sentinel necesita acceso a la cámara para escanear códigos QR.</string>
+    <string name="permission_alert_dialog_title_notifications">Pidiendo permisos para notificaciones</string>
+    <string name="permission_dialog_message_notifications">Sentinel necesita acceso a las notificaciones para mostrar el estado de Tor y transacciones entrantes.</string>
+
+    <string name="dojo_headline">Conecta Sentinel con tu Dojo</string>
+    <string name="powering_sentinel">Conectarte a tu propio Dojo ofrece el mejor nivel de privacidad e independencia para interactuar con la red de Bitcoin.</string>
+    <string name="plug_and_play_full_bitcoin_node_automatically">- Enchufar y Disfrutar\n\n- Servicio de Tor configurado automáticamente\n\n- Independencia de los servidores de Samourai</string>
+    <string name="connect_to_existing_dojo">Conectarse a Dojo</string>
+    <string name="dojo_scan_instruction">Escanea el QR/Pega las credenciales de Dojo</string>
+    <string name="enter_details_manually">Introducir credenciales manualmente</string>
+    <string name="enter_dojo_details_manually">Introducir Credenciales de Dojo</string>
+    <string name="dojo_onion_address">Dirección Onion de Dojo</string>
+    <string name="api_key">Clave API</string>
+    <string name="connect">Conectarse</string>
+    <string name="network_activity">Red</string>
+    <string name="sweep_private_key_tools_menu">Barrer Clave Privada</string>
+    <string name="sweep_tools_menu_summary">Introduce una clave privada y transfiere los fondos \na tu siguiente dirección bitcoin</string>
+    <string name="broadcast_signed_transaction_tools_menu">Retransmitir Transacción Firmada</string>
+    <string name="broadcast_tools_menu_summary">Transmite cualquier transacción firmada provista en formato hexadecimal</string>
+
+</resources>

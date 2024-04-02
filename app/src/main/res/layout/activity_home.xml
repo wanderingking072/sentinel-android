@@ -78,9 +78,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:textColor="#9A9A9A"
-            android:text="Sentinel can organize and track many different \npublic keys such as bitcoin addresses or extended \npublic keys
-\n\nYour watch list is empty. Add your first public key to begin tracking with Sentinel
-" />
+            android:text="@string/sentinel_can_organize" />
     </androidx.core.widget.NestedScrollView>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -111,7 +109,7 @@
         android:layout_margin="@dimen/fab_margin"
         android:elevation="0dp"
         android:paddingHorizontal="54dp"
-        android:text="New"
+        android:text="@string/new_home_button"
         android:textColor="@color/white"
         app:backgroundTint="@null"
         app:elevation="12dp"

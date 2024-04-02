@@ -7,15 +7,15 @@
         app:title="">
         <Preference
             app:icon="@drawable/ic_broom"
-            android:summary="Enter a private key and sweep any funds to\nyour next bitcoin address"
+            android:summary="@string/sweep_tools_menu_summary"
             app:key="sweep"
-            app:title="Sweep Private Key" />
+            app:title="@string/sweep_private_key_tools_menu" />
 
         <Preference
             app:icon="@drawable/ic_broadcast_transaction"
-            android:summary="Broadcast any signed transaction supplied in hex format"
+            android:summary="@string/broadcast_tools_menu_summary"
             app:key="broadcastTx"
-            app:title="Broadcast Signed Transaction" />
+            app:title="@string/broadcast_signed_transaction_tools_menu" />
 
 
     </PreferenceCategory>

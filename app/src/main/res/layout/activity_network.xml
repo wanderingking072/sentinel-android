@@ -40,7 +40,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="8dp"
-            android:text="Connections"
+            android:text="@string/connections_val"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -129,7 +129,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:layout_weight=".5"
-                    android:text="Disable"
+                    android:text="@string/disable_val"
                     android:textColor="#6eb8c5" />
 
                 <ImageView
@@ -157,7 +157,7 @@
                         android:id="@+id/network_data_status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Disabled" />
+                        android:text="@string/disabled_val" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -194,7 +194,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tor Routing       "
+                        android:text="@string/tor_routing_val"
                         android:textColor="@color/white"
                         android:textStyle="bold" />
 
@@ -202,7 +202,7 @@
                         android:id="@+id/network_tor_status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Disabled" />
+                        android:text="@string/disabled_val" />
                 </LinearLayout>
 
 
@@ -225,7 +225,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1.2"
-                    android:text="Disable"
+                    android:text="@string/disable_val"
                     android:textColor="#6eb8c5" />
 
             </LinearLayout>
@@ -271,7 +271,7 @@
                         android:id="@+id/network_dojo_status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Disabled" />
+                        android:text="@string/disabled_val" />
                 </LinearLayout>
 
                 <Button
@@ -281,7 +281,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:layout_weight=".4"
-                    android:text="Disable"
+                    android:text="@string/disable_val"
                     android:textColor="#6eb8c5" />
             </LinearLayout>
 

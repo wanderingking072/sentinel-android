@@ -308,6 +308,25 @@
     <string name="request_amount">Request Amount</string>
     <string name="path">Path</string>
     <string name="advanced">Advanced</string>
-
+    <string name="sentinel_can_organize">Sentinel can organize and track many different \npublic keys such as bitcoin addresses or extended \npublic keys \n\nYour watch list is empty. Add your first public key to begin tracking with Sentinel</string>
+    <string name="new_home_button">New</string>
+    <string name="tools_top_menu">\tTools</string>
+    <string name="exit">\tExit</string>
+    <string name="settings_pop_menu">\tSettings</string>
+    <string name="network_val">Network</string>
+    <string name="connections_val">Connections</string>
+    <string name="tor_routing_val">Tor Routing</string>
+    <string name="disabled_val">Disabled</string>
+    <string name="disable_val">Disable</string>
+    <string name="enter_details_manually">Enter Details Manually</string>
+    <string name="enter_dojo_details_manually">Enter Dojo Details Manually</string>
+    <string name="dojo_onion_address">Dojo Onion Address</string>
+    <string name="api_key">API Key</string>
+    <string name="connect">Connect</string>
+    <string name="network_activity">Network</string>
+    <string name="sweep_private_key_tools_menu">Sweep Private Key</string>
+    <string name="sweep_tools_menu_summary">Enter a private key and sweep any funds to\nyour next bitcoin address</string>
+    <string name="broadcast_signed_transaction_tools_menu">Broadcast Signed Transaction</string>
+    <string name="broadcast_tools_menu_summary">Broadcast any signed transaction supplied in hex format</string>
 
 </resources>

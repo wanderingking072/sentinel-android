@@ -23,7 +23,7 @@
             android:layout_marginTop="24dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp"
-            android:text="Enter Dojo Details Manually"
+            android:text="@string/enter_dojo_details_manually"
             android:textAlignment="textStart"
             android:textSize="18sp"
             app:layout_constraintBottom_toTopOf="@+id/guideline27"
@@ -99,7 +99,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                android:hint="Dojo Onion Address"
+                android:hint="@string/dojo_onion_address"
                 android:inputType="textUri"
                 android:textSize="14sp" />
 
@@ -108,7 +108,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="API Key"
+                android:hint="@string/api_key"
                 android:inputType="text"
                 android:maxLines="1"
                 android:textSize="14sp" />
@@ -126,7 +126,7 @@
                     style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Connect"
+                    android:text="@string/connect"
                     android:textAllCaps="false"
                     android:textColor="@color/text_primary" />
 

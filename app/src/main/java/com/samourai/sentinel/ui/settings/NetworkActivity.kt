@@ -64,7 +64,6 @@ class NetworkActivity : SentinelActivity() {
         dojoConnectionStatus = findViewById(R.id.network_dojo_status)
         torRenewBtn?.setOnClickListener {
             SentinelTorManager.newIdentity()
-            this.showFloatingSnackBar(findViewById(R.id.toolbarCollectionDetails), text = "Tor identity has been renewed")
         }
         setTorConnectionState(SentinelTorManager.getTorState().state)
         SentinelTorManager.getTorStateLiveData().observe(this, {
@@ -182,7 +181,7 @@ class NetworkActivity : SentinelActivity() {
             dojoButton?.text = getString(R.string.disable_dojo)
             dojoConnectionIcon!!.setColorFilter(activeColor)
         } else {
-            dojoConnectionStatus?.text = getString(R.string.disabled)
+            dojoConnectionStatus?.text = getString(R.string.disabled_val)
             dojoButton?.text = getString(R.string.enable)
             dojoConnectionIcon!!.setColorFilter(disabledColor)
         }
@@ -193,7 +192,7 @@ class NetworkActivity : SentinelActivity() {
             when (torState) {
 
                 EnumTorState.ON -> {
-                    torButton!!.text = getString(R.string.disable)
+                    torButton!!.text = getString(R.string.disable_val)
                     torButton!!.isEnabled = true
                     torConnectionIcon!!.setColorFilter(activeColor)
                     torConnectionStatus!!.text = getString(R.string.Enabled)
@@ -211,7 +210,7 @@ class NetworkActivity : SentinelActivity() {
                     torButton!!.text = getString(R.string.enable)
                     torButton!!.isEnabled = true
                     torConnectionIcon!!.setColorFilter(disabledColor)
-                    torConnectionStatus!!.text = getString(R.string.disabled)
+                    torConnectionStatus!!.text = getString(R.string.disabled_val)
                 }
             }
         }
