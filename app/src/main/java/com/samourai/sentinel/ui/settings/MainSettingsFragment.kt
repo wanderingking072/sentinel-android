@@ -245,6 +245,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                                     collectionRepository.reset()
                                     dojoUtility.clearDojo()
                                     prefsUtil.clearAll()
+                                    AccessFactory.getInstance(null).pin = null
                                     UtxoMetaUtil.clearAll()
                                     SentinelTorManager.stop()
                                 }
