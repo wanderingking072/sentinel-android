@@ -101,11 +101,16 @@ class ImportBackUpActivity : SentinelActivity() {
 
     private fun importAllXpubs() {
         apiScope.launch {
-            val pubKeyCollectionsCopy = ArrayList(repository.pubKeyCollections)
-            pubKeyCollectionsCopy.forEach { collection ->
-                collection.pubs.forEach { pub ->
-                    apiService.importXpub(pub.pubKey, "bip${pub.getPurpose()}")
+            try {
+                val pubKeyCollectionsCopy = ArrayList(repository.pubKeyCollections)
+                pubKeyCollectionsCopy.forEach { collection ->
+                    collection.pubs.forEach { pub ->
+                        apiService.importXpub(pub.pubKey, "bip${pub.getPurpose()}")
+                    }
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw CancellationException(e.message)
             }
         }
     }
