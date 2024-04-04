@@ -328,5 +328,18 @@
     <string name="sweep_tools_menu_summary">Enter a private key and sweep any funds to\nyour next bitcoin address</string>
     <string name="broadcast_signed_transaction_tools_menu">Broadcast Signed Transaction</string>
     <string name="broadcast_tools_menu_summary">Broadcast any signed transaction supplied in hex format</string>
+    <string name="paste_private_key">Paste Private Key</string>
+    <string name="select_collection">Select Collection</string>
+    <string name="choose_which_collection_to_receive_the_sweep_to">Choose which Collection to receive the sweep to</string>
+    <string name="select_public_key">Select public key</string>
+    <string name="choose_which_public_key_to_receive_the_sweep_to">Choose which public key to receive the sweep to</string>
+    <string name="sweep_preview">Sweep preview</string>
+    <string name="address_val">Address</string>
+    <string name="balance_of_unspent_output">Balance of unspent output</string>
+    <string name="sweep_to">Sweep to</string>
+    <string name="receive_address">Receive address</string>
+    <string name="transaction_priority">Transaction Priority</string>
+    <string name="sweep_val">Sweep</string>
+    <string name="sweep_successful">Sweep Successful</string>
 
 </resources>

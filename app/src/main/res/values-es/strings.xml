@@ -54,5 +54,21 @@
     <string name="sweep_tools_menu_summary">Introduce una clave privada y transfiere los fondos \na tu siguiente dirección bitcoin</string>
     <string name="broadcast_signed_transaction_tools_menu">Retransmitir Transacción Firmada</string>
     <string name="broadcast_tools_menu_summary">Transmite cualquier transacción firmada provista en formato hexadecimal</string>
+    <string name="paste_private_key">Pegar Clave Privada</string>
+    <string name="select_collection">Selecciona colección</string>
+    <string name="choose_which_collection_to_receive_the_sweep_to">Elige en qué colección quieres recibirlo</string>
+    <string name="select_public_key">Selecciona llave pública</string>
+    <string name="choose_which_public_key_to_receive_the_sweep_to">Elige en qué llave pública quieres recibirlo</string>
+    <string name="sweep_preview">Resumen del barrido</string>
+    <string name="address_val">Dirección</string>
+    <string name="balance_of_unspent_output">Saldo del UTXO</string>
+    <string name="sweep_to">Recibiendo en</string>
+    <string name="receive_address">Dirección de recibo</string>
+    <string name="transaction_priority">Prioridad de la transacción</string>
+    <string name="total_miner_fee">Comisión de minería total</string>
+    <string name="estimated_wait_time">Tiempo de espera estimado</string>
+    <string name="sweep_val">Barrer</string>
+    <string name="sweep_successful">Barrido con éxito</string>
+
 
 </resources>

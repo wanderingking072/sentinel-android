@@ -194,11 +194,12 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                                 }
 
                                 val bottomSheet = SuccessfulBottomSheet(
-                                    "Sweep Successful",
+                                    getString(R.string.sweep_successful),
                                     response!!,
                                     onViewReady = {
                                         it.view
-                                    },)
+                                    },
+                                )
                                 bottomSheet.show(
                                     requireActivity().supportFragmentManager,
                                     bottomSheet.tag
@@ -453,7 +454,8 @@ class ChooseCollectionFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = ContentCollectionSelectBinding.inflate(inflater, container, false)
-        binding.textView15.text = "Choose which Collection to receive the sweep to"
+        binding.textView15.text =
+            getString(R.string.choose_which_collection_to_receive_the_sweep_to)
         val view = binding.root
         return view
     }
