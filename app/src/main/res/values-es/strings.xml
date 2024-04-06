@@ -69,6 +69,10 @@
     <string name="estimated_wait_time">Tiempo de espera estimado</string>
     <string name="sweep_val">Barrer</string>
     <string name="sweep_successful">Barrido con éxito</string>
+    <string name="broadcast_transaction_val">Retransimitir transacción</string>
+    <string name="scan">Escanear</string>
+    <string name="paste_val">Pegar</string>
+    <string name="import_val">Importar</string>
 
 
 </resources>

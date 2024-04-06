@@ -341,5 +341,8 @@
     <string name="transaction_priority">Transaction Priority</string>
     <string name="sweep_val">Sweep</string>
     <string name="sweep_successful">Sweep Successful</string>
+    <string name="broadcast_transaction_val">Broadcast transaction</string>
+    <string name="paste_val">Paste</string>
+    <string name="import_val">Import</string>
 
 </resources>
