@@ -70,30 +70,6 @@ class SentinelState {
                     readPrefs()
                 }
             })
-            runApiChecking()
-        }
-
-        private fun runApiChecking() {
-            //App will try to refresh balance every 3 minutes
-            //If the user refreshed a recently this wont be executed
-            countDownTimer = object : CountDownTimer(Long.MAX_VALUE, 360000) {
-                // This is called after every 3.5 min interval.
-                override fun onTick(millisUntilFinished: Long) {
-
-                    if (isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.ON) {
-                        refreshCollection()
-                    } else {
-                        if (!isTorRequired()) {
-                            refreshCollection()
-                        }
-                    }
-
-                }
-
-                override fun onFinish() {
-                    start()
-                }
-            }.start()
         }
 
         private fun refreshCollection() {
