@@ -10,6 +10,7 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.transition.TransitionManager
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialSharedAxis
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
@@ -125,10 +126,23 @@ class ImportBackUpActivity : SentinelActivity() {
     private fun decryptPayload() {
         when (importType) {
             ImportType.SENTINEL -> {
-                val payload = ExportImportUtil().decryptSentinel(
-                    payloadObject.toString(),
-                    binding.importPasswordInput.text.toString()
-                )
+                var payload: Triple<ArrayList<PubKeyCollection>?, JSONObject, JSONObject?>? = null
+                try {
+                    payload = ExportImportUtil().decryptSentinel(
+                        payloadObject.toString(),
+                        binding.importPasswordInput.text.toString()
+                    )
+                } catch (e: Exception) {
+                    this@ImportBackUpActivity.showFloatingSnackBar(
+                        binding.importPayloadTextView.parent as ViewGroup,
+                        text = "Incorrect password, please try again.",
+                        duration = Snackbar.LENGTH_SHORT
+                    )
+                }
+
+                if (payload == null)
+                    return
+
                 if (payload.second.get("pinEnabled").equals(true)) {
                     val fragmentManager = supportFragmentManager
                     val lockScreenDialog = LockScreenDialog(lockScreenMessage = "Enter pin code")
