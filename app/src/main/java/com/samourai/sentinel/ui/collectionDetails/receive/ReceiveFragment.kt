@@ -545,7 +545,7 @@ class ReceiveFragment : Fragment() {
                 if (editable.toString().length == 0) {
                     btcEditText.setText("0.00")
                     satEditText.setText("")
-                    btcEditText.addTextChangedListener(this)
+                    satEditText.addTextChangedListener(this)
                     btcEditText.addTextChangedListener(BTCWatcher)
                     return
                 }
