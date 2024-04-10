@@ -183,8 +183,6 @@ class HomeActivity : SentinelActivity() {
         } else {
             WebSocketService.start(applicationContext)
         }
-
-        checkClipBoard()
     }
 
     private fun showToolOptions(it: View) {
@@ -324,21 +322,6 @@ class HomeActivity : SentinelActivity() {
         }
     }
 
-    private fun checkClipBoard() {
-        val clipData = AndroidUtil.getClipBoardString(applicationContext)
-
-        if (clipData != null) {
-            val formatted = FormatsUtil.extractPublicKey(clipData)
-            if (FormatsUtil.isValidBitcoinAddress(formatted) || FormatsUtil.isValidXpub(formatted)) {
-                showFloatingSnackBar(binding.fab, text = "Public Key detected in clipboard", actionText = "Add", actionClick = {
-                    val bottomSheetFragment = AddNewPubKeyBottomSheet(formatted)
-                    bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)
-                })
-            }
-
-        }
-    }
-
     private fun showDojoSetUpBottomSheet() {
         val dojoConfigureBottomSheet = DojoConfigureBottomSheet()
         dojoConfigureBottomSheet.show(supportFragmentManager, dojoConfigureBottomSheet.tag)
@@ -388,7 +371,6 @@ class HomeActivity : SentinelActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!SentinelState.checkedClipBoard) {
-            checkClipBoard()
             SentinelState.checkedClipBoard = true
         }
     }
