@@ -201,7 +201,7 @@ class TransactionComposer {
             //
             //                    Log.d("SendActivity", "change:" + change);
 
-            if (change < 0L && change < bDust.toLong()) {
+            if (change < bDust.toLong()) {
                 throw ComposeException("Change is dust 2")
             }
             var changeType = "P2PKH"
