@@ -1,8 +1,10 @@
 package com.samourai.sentinel.ui.tools.sweep
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,8 +22,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.math.MathUtils
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.textfield.TextInputLayout
 import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
@@ -40,8 +45,10 @@ import com.samourai.sentinel.databinding.ContentPubkeySelectBinding
 import com.samourai.sentinel.databinding.ContentSweepPreviewBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.send.SuggestedFee
+import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.adapters.PubkeysAdapter
+import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
@@ -103,7 +110,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentBottomsheetViewPagerBinding.inflate(inflater, container, false)
         val view = binding.root
         return view
@@ -115,7 +122,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
         setUpViewPager()
 
-        scanPubKeyFragment.setOnScanListener {
+        scanPubKeyFragment.setOnPreviewButtonCall {
             validate(it)
             pubKeyString = it
         }
@@ -219,11 +226,10 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
         choosePubkeyFragment.setOnSelectListener {
             previewSweep.setSelectedPubkey(it!!)
-            binding.pager.setCurrentItem(3)
+            binding.pager.currentItem = 3
         }
 
         if (privKey.isNotEmpty()) {
-            validate(privKey)
             pubKeyString = privKey
         }
     }
@@ -327,34 +333,61 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
 class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
 
-    private lateinit var  mCodeScanner: QRScanner;
+    private lateinit var pasteBtn: Button
+    private lateinit var scanBtn: Button
+    private lateinit var startSweepBtn: Button
+    private lateinit var textPrivKey: TextInputLayout
     private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
-    private var onScan: (scanData: String) -> Unit = {}
+    private var onPreviewButtonCall: (scanData: String) -> Unit = {}
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.content_scan_layout, container, false)
+        return inflater.inflate(R.layout.scan_private_tool, container, false)
     }
 
-    fun setOnScanListener(callback: (scanData: String) -> Unit) {
-        this.onScan = callback
+    fun setOnPreviewButtonCall(callback: (scanData: String) -> Unit) {
+        this.onPreviewButtonCall = callback
     }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        if (privKey.isNotEmpty())
-            view.findViewById<CircularProgressIndicator>(R.id.sweepProgress)?.visibility = View.VISIBLE
 
-        view.findViewById<Button>(R.id.pastePubKey).text = "Paste Private Key"
-        mCodeScanner = view.findViewById(R.id.scannerViewXpub);
-        mCodeScanner.setLifeCycleOwner(this)
+        pasteBtn = view.findViewById(R.id.pastePrivKeyButton)
+        scanBtn = view.findViewById(R.id.scanPrivKey)
+        startSweepBtn = view.findViewById(R.id.sweepStartBtn)
+        textPrivKey = view.findViewById(R.id.textPrivateKey)
 
         val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        mCodeScanner.setQRDecodeListener {
-            GlobalScope.launch(Dispatchers.Main) {
-                mCodeScanner.stopScanner();
-                onScan(it)
+
+        startSweepBtn.alpha = 0.6f
+
+        if (privKey.isNotEmpty()) {
+            startSweepBtn.alpha = 1f
+            textPrivKey.editText!!.setText(privKey)
+        }
+
+        startSweepBtn.setOnClickListener {
+            if (startSweepBtn.alpha == 1f)
+                onPreviewButtonCall(textPrivKey.editText!!.text.toString())
+        }
+
+        scanBtn.setOnClickListener {
+            if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, appContext))
+                askCameraPermission()
+            else {
+                val camera = ScanPrivKeyFragment()
+                camera.show(requireFragmentManager(), "scanner_tag")
+                camera.setOnScanListener {
+                    if (PrivKeyReader(it.trim(), SentinelState.getNetworkParam()).format != null)
+                        startSweepBtn.alpha = 1f
+                    else
+                        startSweepBtn.alpha = 0.6f
+
+                    textPrivKey.editText!!.setText(it)
+                    camera.dismiss()
+                }
             }
         }
 
-        view.findViewById<Button>(R.id.pastePubKey).setOnClickListener {
+        pasteBtn.setOnClickListener {
             when {
                 !clipboard.hasPrimaryClip() -> {
                     Toast.makeText(context, "Private key not found in clipboard", Toast.LENGTH_SHORT).show()
@@ -362,7 +395,8 @@ class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
                 else -> {
                     try {
                         val item = clipboard.primaryClip?.getItemAt(0)
-                        onScan(item?.text.toString())
+                        textPrivKey.editText!!.setText(item?.text.toString())
+                        startSweepBtn.alpha = 1f
                     } catch (e: Exception) {
                         Toast.makeText(context, "Error parsing private key", Toast.LENGTH_SHORT).show()
                     }
@@ -373,16 +407,22 @@ class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
 
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, appContext)) {
-            mCodeScanner?.startScanner()
-        }
-    }
-
-    override fun onPause() {
-        mCodeScanner?.stopScanner()
-        super.onPause()
+    fun askCameraPermission() {
+        MaterialAlertDialogBuilder(appContext)
+            .setTitle(resources.getString(R.string.permission_alert_dialog_title_camera))
+            .setMessage(resources.getString(R.string.permission_dialog_message_camera))
+            .setNegativeButton(resources.getString(R.string.no)) { _, _ ->
+                val bottomSheetFragment = AddNewPubKeyBottomSheet()
+                bottomSheetFragment.show(requireFragmentManager(), bottomSheetFragment.tag)
+            }
+            .setPositiveButton(resources.getString(R.string.yes)) { _, _ ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(arrayOf(Manifest.permission.CAMERA),
+                        SentinelActivity.CAMERA_PERMISSION
+                    )
+                }
+            }
+            .show()
     }
 
 }
@@ -488,7 +528,7 @@ class ChoosePubkeyFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = ContentPubkeySelectBinding.inflate(inflater, container, false)
         val view = binding.root
         return view
@@ -574,7 +614,7 @@ class PreviewFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = ContentSweepPreviewBinding.inflate(inflater, container, false)
         val view = binding.root
 
@@ -627,8 +667,8 @@ class PreviewFragment : Fragment() {
             receivers[receiveAddress] = sweepPreview.amount
             val outpoints: MutableCollection<MyTransactionOutPoint> = mutableListOf()
             sweepPreview.utxos
-                .map { unspentOutput: UnspentOutput -> unspentOutput.computeOutpoint(params) }.toCollection(outpoints);
-            val bipFormatSupplier: BipFormatSupplier = getBipFormatSupplier(bipFormat);
+                .map { unspentOutput: UnspentOutput -> unspentOutput.computeOutpoint(params) }.toCollection(outpoints)
+            val bipFormatSupplier: BipFormatSupplier = getBipFormatSupplier(bipFormat)
             val tr = createTransaction(receivers, outpoints, bipFormatSupplier, rbfOptin, blockHeight)
             transaction = TransactionForSweepHelper.signTransactionForSweep(tr, sweepPreview.privKey, params, bipFormatSupplier)
             try {
@@ -856,7 +896,7 @@ class PreviewFragment : Fragment() {
             return FidelityBondsTimelockedBipFormatSupplier.create(bipFormat as FidelityBondsTimelockedBipFormat?);
         }
          */
-        return BIP_FORMAT.PROVIDER;
+        return BIP_FORMAT.PROVIDER
     }
 
     fun setSelectedCollection(collection: PubKeyCollection) {
@@ -886,4 +926,46 @@ class FinishFragment : Fragment() {
             view.findViewById<TextView>(R.id.transactionID).text = hash
             return view
     }
+}
+
+class ScanPrivKeyFragment : BottomSheetDialogFragment() {
+
+    private lateinit var  mCodeScanner: QRScanner;
+    private val appContext: Context by KoinJavaComponent.inject(Context::class.java)
+    private var onScan: (scanData: String) -> Unit = {}
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.content_scan_layout, container, false)
+    }
+
+    fun setOnScanListener(callback: (scanData: String) -> Unit) {
+        this.onScan = callback
+    }
+
+
+    @SuppressLint("RestrictedApi")
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.findViewById<Button>(R.id.pastePubKey).alpha = 0f
+        mCodeScanner = view.findViewById(R.id.scannerViewXpub);
+        mCodeScanner.setLifeCycleOwner(this)
+
+        mCodeScanner.setQRDecodeListener {
+            GlobalScope.launch(Dispatchers.Main) {
+                onScan(it)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, appContext)) {
+            mCodeScanner.startScanner()
+        }
+    }
+
+    override fun onPause() {
+        mCodeScanner.stopScanner()
+        super.onPause()
+    }
+
 }
