@@ -53,6 +53,7 @@ import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.ui.views.SuccessfulBottomSheet
+import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.apiScope
 import com.samourai.wallet.SamouraiWalletConst
 import com.samourai.wallet.api.backend.beans.UnspentOutput
@@ -757,7 +758,7 @@ class PreviewFragment : Fragment() {
         binding.receiveAddress.text = getAddress(selectedPubkey)
         binding.collectionAndPubkey.text = "${selectCollection.collectionLabel}, ${selectedPubkey.label}"
         binding.fromAddress.text = this.utxoList.get(0).addr
-        binding.amount.text = "${UnspentOutput.sumValue(utxoList).div(1e8)} BTC"
+        binding.amount.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(UnspentOutput.sumValue(utxoList))} BTC"
     }
 
     private fun setUpFee() {
