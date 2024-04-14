@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="new_version_message">Vítejte v aplikaci Sentinel\n\nSentinel je bitcoin peněženka zobrazující pouze pohyb na účtech. Sentinel neumí odesílat bitcoiny. Naskenujte jakýkoliv XPUB a Sentinel ho bude hlídat, upozorňovat na nové příchozí transakce a umožní vytváření nových adres pro přijímání bitcoinů.\n\nSentinel je nejjednodušší a nejbezpečnější cesta pro udržování přehledu a přijímání plateb do vaší cold storage peněženky.\n\nSentinel neumí odesílat bitcoiny z peněženky, a privátní klíče nejsou nikdy ukládány v jakékoliv podobě v aplikaci Sentinel.</string>
+    <string name="new_version_message">Vítejte v aplikaci Sentinel\n\nSentinel je bitcoinová peněženka pouze pro vklady. Sentinel neumí odesílat bitcoiny. Naskenujte jakýkoliv XPUB a Sentinel ho bude hlídat, upozorňovat na nové příchozí transakce a umožní vytváření nových adres pro přijímání bitcoinů.\n\nSentinel je nejjednodušší a nejbezpečnější cesta pro udržování přehledu o platbách a pro přijímání plateb do vaší cold storage peněženky.\n\nSentinel neumí odesílat bitcoiny z peněženky a privátní klíče nejsou nikdy v aplikaci Sentinel ukládány v jakékoliv podobě.</string>
 
-    <string name="decrypting_bip38">Dešifrování BIP38 hesla. Chvíli strpení...</string>
+    <string name="decrypting_bip38">Dešifruje se heslo BIP38. Čekejte prosím…</string>
 
+    <string name="app_title">Sentinel</string>
     <string name="action_send">Odeslat</string>
     <string name="action_stealth_send">Tajné odeslání</string>
     <string name="action_receive">Přijmout</string>
     <string name="action_tx">Transakce</string>
     <string name="action_settings">Nastavení</string>
-    <string name="action_sweep">Vybrat cold storage</string>
 
     <string name="about_us">O aplikaci Sentinel</string>
     <string name="about_title">O nás</string>
@@ -20,16 +20,25 @@
 
     <string name="options_cat_prefs">Nastavení</string>
     <string name="options_cat_wallet">Vlastní peněženka</string>
+    <string name="options_cat_offline">Offline transakce</string>
     <string name="options_cat_other">Sentinel</string>
 
     <string name="options_currency">Pouliční cena</string>
-    <string name="options_currency2">Fiat cena z localbitcoins.com.</string>
+    <string name="options_currency2">Fiat cena z vybrané směnárny.</string>
     <string name="options_blockexplorer">Prohlížeč bloků</string>
-    <string name="options_blockexplorer2">Prohlížeč bloků použitý pro zobrazování detailů transakcí.</string>
+    <string name="options_blockexplorer2">Prohlížeč bloků použitý pro zobrazování podrobností o transakcích.</string>
     <string name="options_export">Exportovat peněženku</string>
     <string name="options_export2">Exportuje peněženku a metadata.</string>
     <string name="options_restore">Obnovit peněženku</string>
     <string name="options_restore2">Obnoví peněženku a metadata ze zálohy.</string>
+    <string name="options_haptic">Haptická odezva</string>
+    <string name="options_haptic_2">Haptická odezva zlepšuje interakce a zprostředkovává užitečné informace uživatelům prostřednictvím hmatu.</string>
+
+    <string-array name="address_types">
+        <item>Segwit nativní (bech32)</item>
+        <item>Segwit kompatibilní (P2SH)</item>
+        <item>Legacy (P2PKH)</item>
+    </string-array>
 
     <string name="timeline_today">Dnes</string>
     <string name="timeline_yesterday">Včera</string>
@@ -39,49 +48,51 @@
     <string name="you_sent">Odesláno</string>
 
     <string name="copied_to_clipboard">Zkopírováno do schránky</string>
-    <string name="send_payment_code">Odeslat kód platby</string>
+    <string name="send_payment_code">Odeslat platební kód</string>
 
-    <string name="ask_you_sure_exit">Opravdu chcete ukončit Sentinel?</string>
+    <string name="ask_you_sure_exit">Opravdu chcete ukončit aplikaci Sentinel?</string>
     <string name="yes">Ano</string>
     <string name="no">Ne</string>
 
-    <string name="pin_5_8">Zadejte prosím PIN kód dlouhý 5 až 8 znaků. Tento PIN budete potřebovat pro přístup k aplikaci Sentinel na tomto přístroji.</string>
-    <string name="pin_5_8_confirm">Potvrďte prosím 5-8 znaků PIN kódu</string>
-    <string name="pin_error">Chyba Pin kódu</string>
-    <string name="no_internet">Internetové připojení není dostupné. Zkuste prosím znovu.</string>
-    <string name="bip38_pw">BIP38 heslo</string>
+    <string name="pin_5_8">Zvolte si PIN kód dlouhý 5 až 8 znaků. Tento PIN budete potřebovat pro přístup do aplikace Sentinel na tomto zařízení.</string>
+    <string name="pin_5_8_confirm">Potvrďte prosím PIN kód o 5–8 znacích</string>
+    <string name="pin_error">Chyba PIN kódu</string>
+    <string name="no_internet">Internetové připojení není dostupné. Zkuste to prosím znovu.</string>
+    <string name="bip38_pw">Heslo BIP38</string>
     <string name="bip38_pw_error">Chyba BIP38 hesla</string>
-    <string name="please_select">Vyberte prosím...</string>
-    <string name="pin_enter">Zadat PIN kód</string>
-    <string name="please_wait">Chvíli strpení...</string>
-    <string name="wallet_restored_ko">Chyba obnovení peněženky.</string>
+    <string name="please_select">Vyberte prosím…</string>
+    <string name="pin_enter">Zadejte PIN kód</string>
+    <string name="please_wait">Čekejte prosím…</string>
+    <string name="wallet_restored_ko">Chyba při obnovování peněženky.</string>
 
     <string name="address_used_previously">Tato přijímací adresa již byla v minulosti použita.</string>
 
     <string name="scan">Skenovat</string>
     <string name="manual">Ručně</string>
 
-    <string name="tx_ok">Transakce zaslána</string>
+    <string name="tx_ok">Transakce odeslána</string>
 
     <string name="invalid_amount">Neplatná částka</string>
 
-    <string name="receive_address_to_clipboard">Kopírovat tuto adresu příjemce do schránky? Pokud zkopírováno, může být zviditelněno jiným aplikacím.</string>
-    <string name="receive_address_to_share">Sdílet tuto přijímací adresu? Pokud sdíleno, může být načteno jinými aplikacemi.</string>
+    <string name="receive_address_to_clipboard">Zkopírovat tuto adresu pro přijetí do schránky? Po zkopírování může být viditelná pro ostatní aplikace.</string>
+    <string name="receive_address_to_share">Sdílet tuto adresu pro přijetí? Pokud bude sdílena, může být viditelná pro ostatní aplikace.</string>
     <string name="sure_to_delete">Opravdu chcete smazat tento záznam?</string>
 
-    <string name="enter_xpub">Zadat XPUB nebo bitcoin adresu.</string>
-    <string name="xpub_error">Došlo k chybě vytváření peněženky ze zadaných XPUB/bitcoin adres. Zkuste prosím znovu.</string>
+    <string name="enter_xpub">Zadejte XPUB nebo bitcoinovou adresu.</string>
+    <string name="xpub_error">Při vytváření peněženky ze zadaných XPUBů / bitcoinových adres došlo k chybě. Zkuste to prosím znovu.</string>
 
-    <string name="create_pin">Vytvořit PIN kód</string>
-    <string name="confirm_pin">Potvrďit PIN kód</string>
-    <string name="entering_stealth">Aplikuje se PIN kód. Chvíli strpení.</string>
+    <string name="create_pin">Zvolte PIN kód</string>
+    <string name="confirm_pin">Potvrďte PIN kód</string>
+    <string name="entering_stealth">Aplikuje se PIN kód. Čekejte prosím.</string>
 
-    <string name="error_activating_stealth">Chyba aktivace tajného spouštění. Pokud chyba přetrvá, přeinstalujte Sentinel.</string>
+    <string name="error_activating_stealth">Chyba aktivace tajného spouštění. Pokud chyba přetrvá, přeinstalujte aplikaci Sentinel.</string>
 
-    <string name="options_scramble_pin">Promíchat PIN klávesnici</string>
-    <string name="options_scramble_pin2">Použít promíchanou numerickou klávesnici pro Sentinel.</string>
+    <string name="options_scramble_pin">Náhodně rozmístit tlačítka pro zadání PINu</string>
+    <string name="options_scramble_pin2">Použít náhodné rozmístění tlačítek numerické klávesnice pro přístup do aplikace Sentinel.</string>
     <string name="options_pin">Uživatelský PIN kód</string>
-    <string name="options_pin2">Uživatelský PIN kód pro vstup do aplikace Sentinel.</string>
+    <string name="options_pin2">Uživatelský PIN kód pro přístup do aplikace Sentinel.</string>
+    <string name="options_broadcast_hex">Odeslat hex transakce</string>
+    <string name="options_broadcast_hex2">Odeslat podepsanou transakci dodanou v hex formátu.</string>
 
     <string name="watchlist">Sledování</string>
     <string name="deposit">Vklad</string>
@@ -90,19 +101,213 @@
     <string name="new_account">Nový účet</string>
 
     <string name="total_title">Celkem</string>
-    <string name="deposit_into">Vklad do...</string>
+    <string name="deposit_into">Vklad do…</string>
 
     <string name="password">Heslo</string>
     <string name="confirm_password">Potvrdit heslo</string>
     <string name="invalid_password">Zadejte heslo obsahující alespoň 6 znaků.</string>
     <string name="export_to_clipboard">Exportovat do schránky</string>
-    <string name="export_to_email">Exportovat do emailu</string>
-    <string name="error_password">Navrhovaná hesla se neshodují. Zkuste prosím znovu.</string>
-    <string name="encryption_error">Došlo k chybě při šifrování zálohy peněženky. Zkuste prosím znovu.</string>
-    <string name="encrypted_backup">Šifrovaná data peněženky</string>
-    <string name="decryption_error">Došlo k chybě při dešifrování zálohy peněženky. Zkuste prosím znovu.</string>
-    <string name="restore_wallet_from_backup">Obnovit peněženku ze zálohy</string>
+    <string name="export_to_email">Exportovat do e-mailu</string>
+    <string name="error_password">Navrhovaná hesla se neshodují. Zkuste to prosím znovu.</string>
+    <string name="encryption_error">Během zašifrovávání zálohy peněženky došlo k chybě. Zkuste to prosím znovu.</string>
+    <string name="encrypted_backup">Zašifrovaná data peněženky</string>
+    <string name="decryption_error">Během dešifrování zálohy peněženky došlo k chybě. Zkuste to prosím znovu.</string>
+    <string name="restore_wallet_from_backup">Obnovit peněženku ze zálohy peněženky</string>
 
-    <string name="choose_email_client">Vybrat emailového klienta:</string>
+    <string name="choose_email_client">Vybrat e-mailového klienta:</string>
+
+    <string name="bip32_account">Účet BIP32</string>
+    <string name="bip44_account">Účet BIP44/49</string>
+    <string name="bip49_account">Účet BIP49</string>
+    <string name="bip84_account">Účet BIP84</string>
+    <string name="base58_error">Nerozpoznaný formát</string>
+    <string name="invalid_entry">Neplatný XPUB nebo bitcoinová adresa</string>
+
+    <string name="unknown_xpub">Hloubka XPUB</string>
+
+    <string name="action_sweep">Sweepnout soukromý klíč</string>
+    <string name="enter_privkey">Zadejte soukromý klíč</string>
+    <string name="cannot_recognize_privkey">Nelze rozpoznat soukromý klíč</string>
+    <string name="cannot_sweep_privkey">Chyba během sweepování soukromého klíče</string>
+    <string name="pushtx_returns_null">Utracení selhalo. Server vrátil hodnotu null.</string>
+
+    <string name="xpub_add_ok">XPUB byl úspěšně přidán</string>
+    <string name="xpub_add_ko">Přidání XPUBu selhalo</string>
+
+    <string name="select_bitcoin_address1">Bitcoinová adresa</string>
+    <string name="select_bitcoin_address2">jednotlivá bitcoinová adresa</string>
+
+    <string name="select_bip44_xpub1">Bitcoinová peněženka</string>
+    <string name="select_bip44_xpub2">bitcoinová peněženka prostřednictvím XPUB (BIP44)</string>
+
+    <string name="select_bip49_xpub1">Bitcoinová peněženka Segwit</string>
+    <string name="select_bip49_xpub2">bitcoinová peněženka prostřednictvím Segwit YPUB/ZPUB (BIP49/84)</string>
+
+    <string name="track_new">Sledovat nový…</string>
+    <string name="received_bitcoin">Přijaté bitcoiny</string>
+
+    <string name="bitcoin_address">bitcoinová adresa</string>
+    <string name="bech32_address">bitcoinová adresa bech32</string>
+
+    <string name="start">Začít</string>
+    <string name="get_started">Začít</string>
+    <string name="add_first_address">Přidejte jakoukoliv bitcoinovou adresu nebo XPUB a aplikace Sentinel bude aktivována</string>
+
+    <string name="tx_length_error">Samourai neumí zpracovat transakce větší než 100 KB. Zkuste prosím transakci rozdělit.</string>
+    <string name="tx_hex">Hex transakce</string>
+    <string name="enter_tx_hex">Zadejte transakci v hex formátu</string>
+    <string name="broadcast_transaction">Odeslat transakci</string>
+    <string name="address">Adresa</string>
+
+    <string name="select_network">Vyberte síť…</string>
+    <string name="MainNet">MainNet</string>
+    <string name="TestNet">TestNet</string>
+
+    <string name="permission_alert_dialog_title_camera">Žádost o povolení fotoaparátu</string>
+    <string name="permission_dialog_message_camera">Aplikace Sentinel potřebuje přístup k fotoaparátu, aby mohla skenovat QR kódy.</string>
+
+    <string name="permission_alert_dialog_title_notifications">Žádost o povolení oznámení</string>
+    <string name="permission_dialog_message_notifications">Aplikace Sentinel potřebuje přístup k oznámením, aby mohla zobrazovat stav sítě Tor a příchozí transakce.</string>
+
+    <string name="is_offline">Samourai je offline</string>
+    <string name="history_will_be_updated">Historie zůstatků a transakcí nebude aktualizována, dokud nebude navázáno funkční datové připojení</string>
+    <string name="you_received_s">Obdržel(a) jste</string>
+    <string name="paynym_follow_message">Tento poplatek pokrývá náklady na vytvoření zvláštního typu transakce na blockchainu. Díky tomu je PayNym decentralizovaný</string>
+    <string name="paynym_follow_fee_message">Za započetí následování kontaktu bude účtován jednorázový poplatek za připojení</string>
+    <string name="initializing_tor">Inicializace Tor…</string>
+    <string name="renew">OBNOVIT</string>
+    <string name="in_offline_mode">Aplikace Sentinel je v režimu offline.</string>
+    <string name="dojo_headline">Napájejte Sentinel vaším Dojo</string>
+    <string name="preorder">Předobjednat</string>
+    <string name="plug_and_play_full_bitcoin_node_automatically">- Plug and Play\n\n- Automaticky nakonfigurovaná skrytá služba Tor\n\n- Nezávislost na serverech Samourai</string>
+    <string name="connect_to_existing_dojo">Připojte se ke stávajícímu Dojo</string>
+    <string name="dojo_connect_instruction">Pokud již máte úplný uzel Dojo nebo nebo \nprovozujete bezplatný a open source software Dojo \nna vlastním hardware, naskenujte párovací QR kód \numístěný na Ovládacím panelu údržby Dojo</string>
+    <string name="powering_sentinel">Připojení k vlastnímu plnohodnotnému uzlu Dojo nabízí nejlepší úroveň soukromí a nezávislosti při interakci s bitcoinovou sítí.</string>
+    <string name="disable">Zakázat</string>
+    <string name="disable_dojo">Změnit/Zakázat</string>
+    <string name="Enabled">Povoleno</string>
+    <string name="loading">načítání…</string>
+    <string name="tor_initializing">Inicializace Tor</string>
+    <string name="enable">Povolit</string>
+    <string name="disabled">Zakázáno</string>
+    <string name="action_utxo_amounts">Zobrazit částky podle typu adresy</string>
+    <string name="status">Stav</string>
+    <string name="address_type">Typ adresy</string>
+    <string name="txid_to_clipboard">Zkopírovat ID této transakce do schránky? Po zkopírování může být viditelné pro ostatní aplikace.</string>
+
+    <string name="this_utxo_is_marked_as_spendable">Toto UTXO je označeno jako utratitelné</string>
+    <string name="this_utxo_is_marked_as_blocked">Toto UTXO je označeno jako zablokované</string>
+
+    <string name="refresh">Obnovit</string>
+    <string name="selection_contains_blocked_utxo">Váš výběr obsahuje zablokované UTXOs. Odeberte je prosím a zkuste to znovu.</string>
+    <string name="dust">DROBNÉ TRANSAKCE</string>
+    <string name="active">Aktivní</string>
+    <string name="do_not_spend">Neutrácet</string>
+    <string name="spendable">Utratitelné</string>
+    <string name="blocked">Zablokované</string>
+
+    <string name="ricochet_hops_msg">Dodatečné skoky mezi vaší peněženkou a konečným cílem pro zvýšenou zaměnitelnost</string>
+    <string name="create_an_on_demand_coinjoin_transaction_for_enhanced_privacy_and_surveillance_protection">Vytvořte transakci CoinJoin na vyžádání pro zvýšenou ochranu soukromí a pro ochranu před sledováním</string>
+    <string name="review_transaction">PŘEHLED TRANSAKCE</string>
+
+    <string name="stowaway">Stowaway</string>
+    <string name="stonewall">Stonewall</string>
+    <string name="urgent">Urgentní</string>
+    <string name="normal">Normální</string>
+    <string name="low">Nízký</string>
+    <string name="ricochet_nlocktime_ok">Váš rozložený Ricochet byl předán k odeslání. Počkejte prosím, než výška bloku umožní odeslání všech transakcí v sérii.</string>
+    <string name="ricochet_nlocktime_ko">Váš rozložený Ricochet nemohl být předán k odeslání. Zkuste to prosím znovu.</string>
+
+    <string name="unrecognized_cahoots">Nerozpoznaný #Cahoots</string>
+    <string name="cannot_compose_cahoots">Nelze složit #Cahoots</string>
+    <string name="start_stowaway">Začít Stowaway jako utrácející</string>
+    <string name="start_stonewall">Začít STONEWALL jako utrácející</string>
+    <string name="amount_sats">Zadejte částku v sats</string>
+    <string name="zero_bits">0 bits</string>
+    <string name="not_available">N/A</string>
+    <string name="show_tx">Zobrazit transakci</string>
+    <string name="unrecognized_step">Nerozpoznaný #Cahoots krok</string>
+    <string name="cannot_process_stowaway">Nelze zpracovat Stowaway</string>
+    <string name="cannot_process_stonewall">Nelze zpracovat STONEWALL</string>
+    <string name="cannot_process_cahoots">Nelze zpracovat #Cahoots</string>
+    <string name="total_available_amount">Celkový dostupný zůstatek</string>
+
+    <string name="insufficient_funds">Nedostatek prostředků</string>
+    <string name="invalid_address">Nesprávná adresa</string>
+    <string name="amount">Částka</string>
+
+
+    <string name="to">Na</string>
+    <string name="destination">Adresa nebo platební kanál</string>
+    <string name="cannot_select_utxo">Nelze vybrat neutracené výstupy</string>
+    <string name="do_not_repeat_sent_to">Označte políčko, jestli nechcete upozorňovat na opakované odesílání na tuto adresu.</string>
+    <string name="options_utxo">Zobrazit neutracené výstupy</string>
+    <string name="current_fee_selection">Váš poplatek je nastavený na:</string>
+    <string name="current_hi_fee_value">Současný vyšší poplatek:</string>
+    <string name="current_mid_fee_value">Současný normální poplatek:</string>
+    <string name="current_lo_fee_value">Současný nízký poplatek:</string>
+    <string name="slash_sat">sat/b</string>
+    <string name="set_sat">Nastavte si vlastní poplatek v sat/b.</string>
+    <string name="custom_fee_too_low">Vlastní poplatek je příliš nízký.</string>
+    <string name="custom_fee_too_high">Vlastní poplatek je příliš vysoký.</string>
+    <string name="change_is_dust">Zůstatek z této transakce představuje příliš malé množství drobných. Zkuste to znovu a buď upravte utrácenou částku nebo utraťte celý zůstatek.</string>
+
+
+    <string name="error_bip126_output">Chyba při určování výstupní adresy</string>
+    <string name="error_change_output">Chyba při určování change adresy</string>
+    <string name="title_activity_home">Domů</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="next">Další</string>
+    <string name="previous">Předchozí</string>
+
+    <string name="title_activity_collection_details">MainActivity</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Zprávy</string>
+    <string name="sync_header">Synchronizace</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Váš podpis</string>
+    <string name="reply_title">Výchozí akce odpovědi</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Pravidelně synchronizovat e-mail</string>
+    <string name="attachment_title">Stahovat příchozí přílohy</string>
+    <string name="attachment_summary_on">Automaticky stahovat přílohy z příchozích e-mailů</string>
+    <string name="attachment_summary_off">Stahovat přílohy pouze při ručním vyžádání</string>
+    <string name="pub_key_scan_instruction">Naskenujte QR kód / Vložte kód jakéhokoliv veřejného klíče jako třeba bitcoinu nebo rozšířeného veřejného klíče</string>
+    <string name="dojo_scan_instruction">Naskenujte QR kód / Vložte Dojo payload</string>
+    <string name="permission_denied">Přístup k fotoaparátu odepřen, udělte prosím přístup k fotoaparátu, aby bylo možné skenovat QR kódy.</string>
+    <string name="import_channel_name">Importovat oznámení</string>
+    <string name="import_channel_description">Zobrazí oznámení s průběhem postupu během importování veřejných klíčů</string>
+    <string name="confirm_exit">Potvrdit ukončení</string>
+    <string name="setting_summary_displaySecure">Považovat obsah okna za zabezpečený a zabránit jeho zobrazení na snímcích obrazovky nebo zobrazení na nezabezpečených obrazovkách</string>
+    <string name="server_config_instruction">Aplikace Sentinel nastaví servery Samourai jako výchozí koncový bod,\n Jestliže se chcete připojit k vlastnímu uzlu, zvolte prosím tuto možnost</string>
+    <string name="copy_to_clipboard">Kopírovat do schránky</string>
+    <string name="share_qr">Sdílet QR</string>
+    <string name="view_unspend_outputs">Zobrazit neutracené výstupy</string>
+    <string name="total_miner_fee">Celkový poplatek za těžbu</string>
+    <string name="estimated_wait_time">Odhadovaná doba čekání</string>
+    <string name="collection_name">Název sbírky</string>
+    <string name="add_another_public_key">Přidat další veřejný klíč</string>
+    <string name="public_keys">Veřejné klíče</string>
+    <string name="choose_export_opt">Zvolte možnost exportu</string>
+    <string name="options">Možnosti</string>
+    <string name="import_supports">Importovat zálohu Sentinel</string>
+    <string name="show_qr_code">ZOBRAZIT QR KÓD</string>
+    <string name="launch_qr_scanner">SPUSTIT QR SKENER</string>
+    <string name="compose_unsigned_transaction">Vytvořit nepodepsanou transakci</string>
+    <string name="step1">Krok 1</string>
+    <string name="step1_text">Zobrazte QR kód této nepodepsané transakce a naskenujte ji pomocí vaší peněženky</string>
+    <string name="step2">Krok 2</string>
+    <string name="step2_text">Naskenujte QR kód podepsané transakce, který vaše peněženka poskytne, pomocí aplikace Sentinel</string>
+    <string name="address_number1_bip44">Adresy začínající „1“ (BIP44)</string>
+    <string name="address_number3_bip49">Adresy začínající „3“ (BIP49)</string>
+    <string name="address_starting_bc_bip84">Adresy začínající „bc1q“ (BIP84)</string>
+    <string name="request_amount">Vyžádat částku</string>
+    <string name="path">Cesta</string>
+    <string name="advanced">Pokročilé</string>
+
 
 </resources>
