@@ -73,6 +73,7 @@
     <string name="scan">Escanear</string>
     <string name="paste_val">Pegar</string>
     <string name="import_val">Importar</string>
+    <string name="private_key_val">Clave Privada</string>
 
 
 </resources>

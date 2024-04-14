@@ -344,5 +344,6 @@
     <string name="broadcast_transaction_val">Broadcast transaction</string>
     <string name="paste_val">Paste</string>
     <string name="import_val">Import</string>
+    <string name="private_key_val">Private Key</string>
 
 </resources>
