@@ -360,7 +360,7 @@ class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
 
         startSweepBtn.alpha = 0.6f
 
-        if (privKey.isNotEmpty()) {
+        if (privKey.isNotEmpty() && isPrivateKey(privKey)) {
             startSweepBtn.alpha = 1f
             textPrivKey.editText!!.setText(privKey)
         }
@@ -377,7 +377,7 @@ class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
                 val camera = ScanPrivKeyFragment()
                 camera.show(requireFragmentManager(), "scanner_tag")
                 camera.setOnScanListener {
-                    if (PrivKeyReader(it.trim(), SentinelState.getNetworkParam()).format != null)
+                    if (isPrivateKey(it))
                         startSweepBtn.alpha = 1f
                     else
                         startSweepBtn.alpha = 0.6f
@@ -397,7 +397,8 @@ class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
                     try {
                         val item = clipboard.primaryClip?.getItemAt(0)
                         textPrivKey.editText!!.setText(item?.text.toString())
-                        startSweepBtn.alpha = 1f
+                        if (isPrivateKey(item?.text.toString()))
+                            startSweepBtn.alpha = 1f
                     } catch (e: Exception) {
                         Toast.makeText(context, "Error parsing private key", Toast.LENGTH_SHORT).show()
                     }
@@ -406,6 +407,10 @@ class ScanPubKeyFragment(private val privKey: String = "") : Fragment() {
             }
         }
 
+    }
+
+    fun isPrivateKey(payload: String): Boolean {
+        return PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null
     }
 
     fun askCameraPermission() {

@@ -25,7 +25,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/textPrivateKey"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
@@ -38,12 +38,12 @@
         android:layout_marginBottom="80dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline11">
 
-        <com.google.android.material.textfield.TextInputEditText
+        <EditText
             android:id="@+id/importPasswordInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="text" />
-
+            android:importantForAutofill="no"
+            android:maxLines="2"/>
     </com.google.android.material.textfield.TextInputLayout>
 
     <androidx.constraintlayout.widget.Guideline
