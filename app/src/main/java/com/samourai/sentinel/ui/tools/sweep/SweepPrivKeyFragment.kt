@@ -128,6 +128,10 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
             pubKeyString = it
         }
 
+        previewSweep.setOnChangePubkeyButton {
+            binding.pager.setCurrentItem(2, true)
+        }
+
         previewSweep.setOnSweepBtnTap {
             val hexTx = previewSweep.broadcastTx()
             var response: String? = null
@@ -222,7 +226,12 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
         chooseCollectionFragment.setOnSelectListener {
             choosePubkeyFragment.setSelectedCollection(it!!)
             previewSweep.setSelectedCollection(it)
-            binding.pager.setCurrentItem(2, true)
+            if (!it.isImportFromWallet)
+                binding.pager.setCurrentItem(2, true)
+            else {
+                previewSweep.setSelectedPubkey(it.pubs.get(0)) //get Deposit BIP84 pubkey by default
+                binding.pager.setCurrentItem(3, true)
+            }
         }
 
         choosePubkeyFragment.setOnSelectListener {
@@ -616,7 +625,7 @@ class PreviewFragment : Fragment() {
     private var selectedFee: Long = 1000L
 
     private var onSweepButton: () -> Unit = {}
-
+    private var onChangePubkeyButton: () -> Unit = {}
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -630,6 +639,15 @@ class PreviewFragment : Fragment() {
 
         setUpFee()
 
+        if (selectCollection.isImportFromWallet) {
+            binding.changePubkey.setOnClickListener {
+                onChangePubkeyButton()
+            }
+        }
+        else {
+            binding.changePubkey.visibility = View.GONE
+        }
+
         binding.sweepBtn.setOnClickListener {
             onSweepButton()
         }
@@ -639,6 +657,10 @@ class PreviewFragment : Fragment() {
 
     fun setOnSweepBtnTap(callback: () -> Unit) {
         this.onSweepButton = callback
+    }
+
+    fun setOnChangePubkeyButton(callback: () -> Unit) {
+        this.onChangePubkeyButton = callback
     }
 
     fun broadcastTx(): String? {
@@ -747,6 +769,11 @@ class PreviewFragment : Fragment() {
 
     fun setSelectedPubkey(pubkey: PubKeyModel) {
         this.selectedPubkey = pubkey
+    }
+
+    override fun onResume() {
+        super.onResume()
+        preparePreview()
     }
 
     fun setPrivKeyReader(privKeyReader: PrivKeyReader) {
