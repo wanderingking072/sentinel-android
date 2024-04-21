@@ -455,6 +455,7 @@ class ChooseCollectionFragment : Fragment() {
         _binding = ContentCollectionSelectBinding.inflate(inflater, container, false)
         binding.textView15.text = "Choose which Collection to receive the sweep to"
         val view = binding.root
+        binding.view3.visibility = View.INVISIBLE
         return view
     }
 
@@ -537,6 +538,7 @@ class ChoosePubkeyFragment : Fragment() {
     ): View {
         _binding = ContentPubkeySelectBinding.inflate(inflater, container, false)
         val view = binding.root
+        binding.view3.visibility = View.INVISIBLE
         return view
     }
 
