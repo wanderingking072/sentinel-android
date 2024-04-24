@@ -120,10 +120,6 @@ class SweepPrivKeyFragment(private val privKey: String = "", secure: Boolean = f
             binding.pager.setCurrentItem(2, true)
         }
 
-        previewBottomSheet.setOnSweepBtnTap {
-        }
-
-
         chooseCollectionFragment.setOnSelectListener {
             choosePubkeyFragment.setSelectedCollection(it!!)
             previewBottomSheet.setSelectedCollection(it)
@@ -520,7 +516,6 @@ class PreviewBottomSheet(private var selectedCollection: PubKeyCollection? = nul
 
     private var selectedFee: Long = 1000L
 
-    private var onSweepButton: () -> Unit = {}
     private var onChangePubkeyButton: () -> Unit = {}
 
     private val exchangeRateRepository: ExchangeRateRepository by KoinJavaComponent.inject(
@@ -655,10 +650,6 @@ class PreviewBottomSheet(private var selectedCollection: PubKeyCollection? = nul
         }
 
         return view
-    }
-
-    fun setOnSweepBtnTap(callback: () -> Unit) {
-        this.onSweepButton = callback
     }
 
     fun setOnChangePubkeyButton(callback: () -> Unit) {
