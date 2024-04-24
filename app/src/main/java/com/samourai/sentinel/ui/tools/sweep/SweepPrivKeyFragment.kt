@@ -13,12 +13,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.TextView
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -84,28 +86,16 @@ import java.text.DecimalFormat
 import kotlin.math.ceil
 
 
-class SweepPrivKeyFragment(private val privKey: String = "", private val secure: Boolean = false) : GenericBottomSheet(secure = secure) {
+class SweepPrivKeyFragment(private val privKey: String = "", secure: Boolean = false) : GenericBottomSheet(secure = secure) {
 
     private val scanPubKeyFragment = ScanPubKeyFragment(privKey)
-    private var newPubKeyListener: ((pubKey: PubKeyModel?) -> Unit)? = null
     private val chooseCollectionFragment = ChooseCollectionFragment()
     private val choosePubkeyFragment = ChoosePubkeyFragment()
-    private val previewSweep = PreviewFragment()
-    private val finishFragment = FinishFragment()
+    private val previewBottomSheet = PreviewBottomSheet()
     private var pubKeyString = ""
     var privKeyReader: PrivKeyReader? = null
     private var _binding: FragmentBottomsheetViewPagerBinding? = null
     private val binding get() = _binding!!
-
-    private val exchangeRateRepository: ExchangeRateRepository by KoinJavaComponent.inject(
-        ExchangeRateRepository::class.java
-    )
-    private val repository: CollectionRepository by KoinJavaComponent.inject(CollectionRepository::class.java)
-    private val transactionsRepository: TransactionsRepository by KoinJavaComponent.inject(
-        TransactionsRepository::class.java
-    )
-    private var netWorkJobs: ArrayList<Job?> = arrayListOf()
-    private val feeRepository: FeeRepository by KoinJavaComponent.inject(FeeRepository::class.java)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -118,9 +108,6 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
-
-
         setUpViewPager()
 
         scanPubKeyFragment.setOnPreviewButtonCall {
@@ -128,115 +115,31 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
             pubKeyString = it
         }
 
-        previewSweep.setOnChangePubkeyButton {
+        previewBottomSheet.setOnChangePubkeyButton {
+            previewBottomSheet.dismiss()
             binding.pager.setCurrentItem(2, true)
         }
 
-        previewSweep.setOnSweepBtnTap {
-            val hexTx = previewSweep.broadcastTx()
-            var response: String? = null
-            apiScope.launch {
-                runBlocking {
-                    try {
-                        response = apiService.broadcast(hexTx!!)
-                    } catch (e: Exception) {
-                        Log.d("SweepPrivateKey", "Error broadcasting tx: " + e)
-                    }
-                }
-                requireActivity().runOnUiThread {
-                    view.findViewById<ConstraintLayout>(R.id.sweepPreviewTitleLayout).visibility = View.GONE
-                    view.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress).visibility = View.VISIBLE
-                    view.findViewById<NestedScrollView>(R.id.sweepPreveiewScrollView).visibility = View.GONE
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        if (response == null) {
-                            Toast.makeText(
-                                context,
-                                "Error broadcasting transaction",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            dismiss()
-                        }
-                        else if (response != "TX_ID_NOT_FOUND") {
-                            if (isAdded && activity != null) {
-                                try {
-                                    exchangeRateRepository.fetch()
-                                    repository.pubKeyCollections.forEach {
-
-                                        val job = apiScope.launch {
-                                            try {
-                                                transactionsRepository.fetchFromServer(it)
-                                            } catch (e: Exception) {
-                                                Timber.e(e)
-                                                throw  CancellationException(e.message)
-                                            }
-                                        }
-                                        netWorkJobs.add(job)
-                                    }
-                                    val job = apiScope.launch {
-                                        try {
-                                            feeRepository.getDynamicFees()
-                                        } catch (e: Exception) {
-                                            Timber.e(e)
-                                            throw  CancellationException(e.message)
-                                        }
-                                    }
-                                    netWorkJobs.add(job)
-
-                                    if (netWorkJobs.isNotEmpty()) {
-                                        //Save last sync time to prefs
-                                        netWorkJobs[netWorkJobs.lastIndex]?.let {
-                                            it.invokeOnCompletion { error ->
-                                                if (error != null) {
-                                                    Timber.e(error)
-                                                    return@invokeOnCompletion
-                                                }
-                                            }
-                                        }
-                                    }
-                                } catch (ex: Exception) {
-                                    Timber.e(ex)
-                                }
-
-                                val bottomSheet = SuccessfulBottomSheet(
-                                    "Sweep Successful",
-                                    response!!,
-                                    onViewReady = {
-                                        it.view
-                                    },)
-                                bottomSheet.show(
-                                    requireActivity().supportFragmentManager,
-                                    bottomSheet.tag
-                                )
-                            }
-                        }
-                        else {
-                            Toast.makeText(
-                                context,
-                                "Error broadcasting transaction",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            dismiss()
-                        }
-                    }, 4000)
-                }
-            }
+        previewBottomSheet.setOnSweepBtnTap {
         }
 
 
         chooseCollectionFragment.setOnSelectListener {
             choosePubkeyFragment.setSelectedCollection(it!!)
-            previewSweep.setSelectedCollection(it)
+            previewBottomSheet.setSelectedCollection(it)
             if (!it.isImportFromWallet)
                 binding.pager.setCurrentItem(2, true)
             else {
-                previewSweep.setSelectedPubkey(it.pubs.get(0)) //get Deposit BIP84 pubkey by default
-                binding.pager.setCurrentItem(3, true)
+                this.dismiss()
+                previewBottomSheet.setSelectedPubkey(it.pubs.get(0))
+                previewBottomSheet.show(requireActivity().supportFragmentManager, previewBottomSheet.tag)
             }
         }
 
         choosePubkeyFragment.setOnSelectListener {
-            previewSweep.setSelectedPubkey(it!!)
-            binding.pager.currentItem = 3
+            this.dismiss()
+            previewBottomSheet.setSelectedPubkey(it!!)
+            previewBottomSheet.show(requireActivity().supportFragmentManager, previewBottomSheet.tag)
         }
 
         if (privKey.isNotEmpty()) {
@@ -253,7 +156,7 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
                 apiScope.launch {
                     withContext(Dispatchers.Default) {
                         findUTXOs()
-                        previewSweep.setPrivKeyReader(privKeyReader!!)
+                        previewBottomSheet.setPrivKeyReader(privKeyReader!!)
                     }
                 }
             }
@@ -278,8 +181,8 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
 
                     val items = apiCall.await()
                     if (items.isNotEmpty()) {
-                        previewSweep.setUTXOList(items)
-                        previewSweep.setBipFormat(it)
+                        previewBottomSheet.setUTXOList(items)
+                        previewBottomSheet.setBipFormat(it)
                         binding.pager.setCurrentItem(1, true)
                         foundUTXO = true
                     }
@@ -320,8 +223,6 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
         item.add(scanPubKeyFragment)
         item.add(chooseCollectionFragment)
         item.add(choosePubkeyFragment)
-        item.add(previewSweep)
-        item.add(finishFragment)
         binding.pager.adapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int {
                 return item.size
@@ -335,9 +236,6 @@ class SweepPrivKeyFragment(private val privKey: String = "", private val secure:
         binding.pager.isUserInputEnabled = false
     }
 
-    fun setPubKeyListener(listener: (pubKey: PubKeyModel?) -> Unit) {
-        newPubKeyListener = listener
-    }
 }
 
 
@@ -606,11 +504,9 @@ class ChoosePubkeyFragment : Fragment() {
 
 }
 
-class PreviewFragment : Fragment() {
+class PreviewBottomSheet(private var selectedCollection: PubKeyCollection? = null, private var selectedPubKey: PubKeyModel? = null) : GenericBottomSheet() {
     private var _binding: ContentSweepPreviewBinding? = null
     private val binding get() = _binding!!
-    private lateinit var selectedPubkey: PubKeyModel
-    private lateinit var selectCollection: PubKeyCollection
 
     private lateinit var utxoList: MutableList<UnspentOutput>
     private lateinit var bipFormat: BipFormat
@@ -627,6 +523,18 @@ class PreviewFragment : Fragment() {
     private var onSweepButton: () -> Unit = {}
     private var onChangePubkeyButton: () -> Unit = {}
 
+    private val exchangeRateRepository: ExchangeRateRepository by KoinJavaComponent.inject(
+        ExchangeRateRepository::class.java
+    )
+    private val repository: CollectionRepository by KoinJavaComponent.inject(CollectionRepository::class.java)
+    private val transactionsRepository: TransactionsRepository by KoinJavaComponent.inject(
+        TransactionsRepository::class.java
+    )
+    private var netWorkJobs: ArrayList<Job?> = arrayListOf()
+    val feeRepository: FeeRepository by KoinJavaComponent.inject(FeeRepository::class.java)
+    val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -635,11 +543,14 @@ class PreviewFragment : Fragment() {
         _binding = ContentSweepPreviewBinding.inflate(inflater, container, false)
         val view = binding.root
 
+        binding.sweepPreviewCircularProgress.visibility = View.GONE
+        binding.feeSelector.totalMinerFeeGroup.visibility = View.INVISIBLE
+
         preparePreview()
 
         setUpFee()
 
-        if (selectCollection.isImportFromWallet) {
+        if (selectedCollection!!.isImportFromWallet) {
             binding.changePubkey.setOnClickListener {
                 onChangePubkeyButton()
             }
@@ -649,7 +560,98 @@ class PreviewFragment : Fragment() {
         }
 
         binding.sweepBtn.setOnClickListener {
-            onSweepButton()
+            val hexTx = broadcastTx()
+            var response: String? = null
+            apiScope.launch {
+                runBlocking {
+                    try {
+                        response = apiService.broadcast(hexTx!!)
+                    } catch (e: Exception) {
+                        Log.d("SweepPrivateKey", "Error broadcasting tx: " + e)
+                    }
+                }
+
+                requireActivity().runOnUiThread {
+                    view.findViewById<ConstraintLayout>(R.id.sweepPreviewTitleLayout).visibility =
+                        View.GONE
+                    view.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress).visibility =
+                        View.VISIBLE
+                    view.findViewById<NestedScrollView>(R.id.sweepPreveiewScrollView).visibility =
+                        View.GONE
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (response == null) {
+                            Toast.makeText(
+                                context,
+                                "Error broadcasting transaction",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            dismiss()
+                        } else if (response != "TX_ID_NOT_FOUND") {
+                            if (isAdded && activity != null) {
+                                /*
+                                try {
+                                    exchangeRateRepository.fetch()
+                                    repository.pubKeyCollections.forEach {
+
+                                        val job = apiScope.launch {
+                                            try {
+                                                transactionsRepository.fetchFromServer(it)
+                                            } catch (e: Exception) {
+                                                Timber.e(e)
+                                                throw CancellationException(e.message)
+                                            }
+                                        }
+                                        netWorkJobs.add(job)
+                                    }
+                                    val job = apiScope.launch {
+                                        try {
+                                            feeRepository.getDynamicFees()
+                                        } catch (e: Exception) {
+                                            Timber.e(e)
+                                            throw CancellationException(e.message)
+                                        }
+                                    }
+                                    netWorkJobs.add(job)
+
+                                    if (netWorkJobs.isNotEmpty()) {
+                                        //Save last sync time to prefs
+                                        netWorkJobs[netWorkJobs.lastIndex]?.let {
+                                            it.invokeOnCompletion { error ->
+                                                if (error != null) {
+                                                    Timber.e(error)
+                                                    return@invokeOnCompletion
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (ex: Exception) {
+                                    Timber.e(ex)
+                                }
+                                 */
+                                dismiss()
+                                val bottomSheet = SuccessfulBottomSheet(
+                                    "Sweep Successful",
+                                    response!!,
+                                    onViewReady = {
+                                        it.view
+                                    },
+                                )
+                                bottomSheet.show(
+                                    requireActivity().supportFragmentManager,
+                                    bottomSheet.tag
+                                )
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Error broadcasting transaction",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            dismiss()
+                        }
+                    }, 4000)
+                }
+            }
         }
 
         return view
@@ -675,7 +677,7 @@ class PreviewFragment : Fragment() {
         }
         var transaction: Transaction? = null
         try {
-            val receiveAddress = getAddress(selectedPubkey)
+            val receiveAddress = getAddress(selectedPubKey!!)
             val rbfOptin = false //PrefsUtil.getInstance(context).getValue(PrefsUtil.RBF_OPT_IN, false)
             val blockHeight = SentinelState.blockHeight?.height ?: -1L
             val totalValue = UnspentOutput.sumValue(utxoList)
@@ -703,7 +705,7 @@ class PreviewFragment : Fragment() {
             transaction = TransactionForSweepHelper.signTransactionForSweep(tr, sweepPreview.privKey, params, bipFormatSupplier)
             try {
                 if (transaction != null) {
-                hexTx = TxUtil.getInstance().getTxHex(transaction)
+                    hexTx = TxUtil.getInstance().getTxHex(transaction)
                 }
             } catch (e: Exception) {
                 throw  CancellationException("pushTx : ${e.message}")
@@ -768,7 +770,7 @@ class PreviewFragment : Fragment() {
     }
 
     fun setSelectedPubkey(pubkey: PubKeyModel) {
-        this.selectedPubkey = pubkey
+        this.selectedPubKey = pubkey
     }
 
     override fun onResume() {
@@ -789,14 +791,13 @@ class PreviewFragment : Fragment() {
     }
 
     private fun preparePreview() {
-        binding.receiveAddress.text = getAddress(selectedPubkey)
-        binding.collectionAndPubkey.text = "${selectCollection.collectionLabel}, ${selectedPubkey.label}"
+        binding.receiveAddress.text = getAddress(selectedPubKey!!)
+        binding.collectionAndPubkey.text = "${selectedCollection!!.collectionLabel}, ${selectedPubKey!!.label}"
         binding.fromAddress.text = this.utxoList.get(0).addr
         binding.amount.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(UnspentOutput.sumValue(utxoList))} BTC"
     }
 
     private fun setUpFee() {
-        val feeRepository: FeeRepository by KoinJavaComponent.inject(FeeRepository::class.java)
         val decimalFormat = DecimalFormat("##.00")
         val multiplier = 10000
 //        FEE_TYPE = PrefsUtil.getInstance(this).getValue(PrefsUtil.CURRENT_FEE_TYPE, SendActivity.FEE_NORMAL)
@@ -814,7 +815,7 @@ class PreviewFragment : Fragment() {
         binding.feeSelector.feeSlider.valueFrom = 1F
         binding.feeSelector.feeSlider.setLabelFormatter { i: Float ->
             val value = (i + multiplier) / multiplier
-            val formatted = "${decimalFormat.format(value)} sats/b"
+            val formatted = "${decimalFormat.format(value)} sat/vB"
             binding.feeSelector.selectedFeeRate.text = formatted
             formatted
         }
@@ -853,7 +854,7 @@ class PreviewFragment : Fragment() {
         }
         binding.feeSelector.selectedFeeRateLayman.text = getString(R.string.normal)
         feeRepository.sanitizeFee()
-        binding.feeSelector.selectedFeeRate.text = ("$feeMed sats/b")
+        binding.feeSelector.selectedFeeRate.text = ("$feeMed sat/vB")
         binding.feeSelector.feeSlider.value = (feeMedSliderValue - multiplier + 1).toFloat()
         setFeeLabels()
         selectedFee =
@@ -882,14 +883,14 @@ class PreviewFragment : Fragment() {
             }
             setFeeLabels()
             selectedFee = (value * 1000).toLong()
-            binding.feeSelector.totalMinerFee.text =
-                computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong()).toString()
+            binding.totalMinerFee.text =
+                "${computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong())} sats"
             feeRange = sliderVal
             view?.findViewById<ConstraintLayout>(R.id.sweepPreviewCircularProgress)?.visibility = View.GONE
         }
         binding.feeSelector.estBlockTime.text = "$nbBlocks blocks"
-        binding.feeSelector.totalMinerFee.text =
-            computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong()).toString()
+        binding.totalMinerFee.text =
+            "${computeFee(bipFormat, utxoList, selectedFee.div(1000.0).toLong())} sats"
     }
 
     private fun setFeeLabels() {
@@ -897,7 +898,9 @@ class PreviewFragment : Fragment() {
             return
         }
         val sliderValue: Float = binding.feeSelector.feeSlider.value / binding.feeSelector.feeSlider.valueTo
-        binding.feeSelector.selectedFeeRate.text = "${selectedFee.div(1000)} sats/b"
+        val decimalFormat = DecimalFormat("##.00")
+        val feeValue = decimalFormat.format(binding.feeSelector.feeSlider.value.plus(10000).div(10000))
+        binding.feeSelector.selectedFeeRate.text = "${feeValue} sat/vB"
         val sliderInPercentage = sliderValue * 100
         if (sliderInPercentage < 33) {
             binding.feeSelector.selectedFeeRateLayman.setText(R.string.low)
@@ -935,33 +938,10 @@ class PreviewFragment : Fragment() {
     }
 
     fun setSelectedCollection(collection: PubKeyCollection) {
-        this.selectCollection = collection
+        this.selectedCollection = collection
     }
 }
 
-class FinishFragment : Fragment() {
-    private var isSuccess = false
-    private var hash = ""
-
-    fun setIsSuccess (isSuccess: Boolean) {
-        this.isSuccess = isSuccess
-    }
-
-    fun setHash(hash: String) {
-        this.hash = hash
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-         val view = inflater.inflate(R.layout.layout_success_bottom, container)
-            view.findViewById<TextView>(R.id.dialogTitle).text = "Sweep Success!"
-            view.findViewById<TextView>(R.id.transactionID).text = hash
-            return view
-    }
-}
 
 class ScanPrivKeyFragment : BottomSheetDialogFragment() {
 

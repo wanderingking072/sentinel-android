@@ -116,7 +116,7 @@
     <PreferenceCategory>
 
         <Preference
-                app:icon="@drawable/ic_reset"
+                app:icon="@drawable/ic_alert"
                 app:key="clear"
                 app:summary="Clear all collections and reset settings"
                 app:title="Erase all Sentinel data" />

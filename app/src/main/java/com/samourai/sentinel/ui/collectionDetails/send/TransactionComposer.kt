@@ -1,5 +1,7 @@
 package com.samourai.sentinel.ui.collectionDetails.send
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.core.SentinelState.Companion.bDust
@@ -26,6 +28,7 @@ import org.bitcoinj.core.Address
 import org.bitcoinj.core.ECKey
 import org.bitcoinj.params.MainNetParams
 import org.json.JSONObject
+import org.koin.ext.scope
 import org.koin.java.KoinJavaComponent
 import timber.log.Timber
 import java.math.BigInteger
@@ -56,6 +59,9 @@ class TransactionComposer {
     private var txData:String = ""
     private val HARDENED = 2147483648
     private val composeMutex = Mutex()
+
+    private val _minerFee = MutableLiveData(BigInteger.ZERO)
+    val minerFee: LiveData<BigInteger> = _minerFee
 
     fun setBalance(value: Long) {
         this.balance = value;
@@ -198,6 +204,8 @@ class TransactionComposer {
             }
 
             change = (totalValueSelected - (amount + fee.toLong())).toLong()
+            _minerFee.postValue(fee)
+            minerFeeChannel.send(fee.toLong())
             //
             //                    Log.d("SendActivity", "change:" + change);
 

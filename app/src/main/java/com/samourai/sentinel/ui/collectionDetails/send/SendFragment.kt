@@ -709,7 +709,7 @@ class SendFragment : Fragment() {
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.valueFrom = 1F
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.setLabelFormatter { i: Float ->
             val value = (i + multiplier) / multiplier
-            val formatted = "${decimalFormat.format(value)} sats/b"
+            val formatted = "${decimalFormat.format(value)} sat/vB"
             fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = formatted
             formatted
         }
@@ -748,7 +748,7 @@ class SendFragment : Fragment() {
         }
         fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRateLayman.text = getString(R.string.normal)
         feeRepository.sanitizeFee()
-        fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = ("$feeMed sats/b")
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = ("$feeMed sat/vB")
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value = (feeMedSliderValue - multiplier + 1).toFloat()
         setFeeLabels()
         viewModel.setFee(((fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value + multiplier) / multiplier)*1000)
