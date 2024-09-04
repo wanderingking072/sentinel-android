@@ -165,4 +165,3 @@ def getApiKey(key) {
 //    props.load(new FileInputStream(new File('samourai.api')))
     return props[key]
 }
-
