@@ -116,9 +116,15 @@ class NetworkActivity : SentinelActivity() {
         dojoUtility.clearDojo()
         setDojoStatus()
         if (prefsUtil.apiEndPoint.isNullOrEmpty()) {
+            if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
+                this.askCameraPermission()
+            } else {
+                showDojoSetUpBottomSheet()
+            }
+            /*
             this.confirm(label = "Choose server",
                     positiveText = "Connect to Dojo",
-                    negativeText = "Connect to Samourai’s server",
+                    //negativeText = "Connect to Samourai’s server",
                     isCancelable = false,
                     onConfirm = { confirm ->
                         if (confirm) {
@@ -152,6 +158,7 @@ class NetworkActivity : SentinelActivity() {
                             }
                         }
                     })
+             */
         }
     }
 

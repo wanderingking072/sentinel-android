@@ -138,7 +138,7 @@ class ExportImportUtil {
                 CharSequenceX(password),
                 AESUtil.DefaultPBKDF2Iterations
             )
-            val pubKeyCollection = PubKeyCollection(collectionLabel = "My Samourai Wallet", isImportFromWallet = true)
+            val pubKeyCollection = PubKeyCollection(collectionLabel = "My Wallet", isImportFromWallet = true)
             val json = JSONObject(decrypted)
 
 
