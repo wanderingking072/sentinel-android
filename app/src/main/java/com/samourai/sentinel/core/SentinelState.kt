@@ -104,7 +104,8 @@ class SentinelState {
 
 
         fun isTorRequired(): Boolean {
-            return dojoUtility.isDojoEnabled() || prefsUtil.enableTor!!
+            return true
+            //return dojoUtility.isDojoEnabled() || prefsUtil.enableTor!!
         }
 
         fun isDojoEnabled(): Boolean {
