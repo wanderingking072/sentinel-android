@@ -72,7 +72,7 @@ class SettingsActivity : SentinelActivity(),
         val args = pref.extras
         val fragment = supportFragmentManager.fragmentFactory.instantiate(
                 classLoader,
-                pref.fragment
+                pref.fragment!!
         ).apply {
             arguments = args
             setTargetFragment(caller, 0)

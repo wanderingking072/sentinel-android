@@ -23,6 +23,9 @@ interface TxDao {
     @Query("SELECT * from transactions WHERE collectionId=:collectionID  AND associatedPubKey=:associatedPubKey ORDER BY time DESC ,confirmations ASC ")
     fun getPaginatedTx(collectionID: String, associatedPubKey: String): DataSource.Factory<Int, Tx>
 
+    @Query("SELECT * FROM transactions WHERE collectionId=:collectionID AND associatedPubKey IN (:pubKeys)  ORDER BY time DESC ,confirmations ASC ")
+    fun getPaginatedTx(collectionID: String, pubKeys: List<String>): DataSource.Factory<Int, Tx>
+
     @Query("SELECT * from transactions WHERE collectionId=:collectionID AND associatedPubKey=:pubKey  ORDER BY time DESC LIMIT $TX_PAGE_SIZE")
     fun getAssociated(collectionID: String, pubKey: String): List<Tx>
 

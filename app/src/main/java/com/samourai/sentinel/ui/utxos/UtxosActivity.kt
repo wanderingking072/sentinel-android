@@ -2,6 +2,7 @@ package com.samourai.sentinel.ui.utxos
 
 import android.os.Bundle
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.viewpager.widget.ViewPager
@@ -48,19 +49,48 @@ class UtxosActivity : SentinelActivity() {
         }
     }
 
+    private fun getPubKeyModelByLabel(label: String): PubKeyModel {
+        collection!!.pubs.forEach {
+            if (it.label == label)
+                return it
+        }
+        return collection!!.pubs[0]
+    }
+
     private fun listenChanges(utxoViewModel: UtxoActivityViewModel) {
-        pubKeys.forEach { pubKeyModel ->
-            utxoViewModel.getUtxo(pubKeyModel.pubKey).observe(this@UtxosActivity) {
-                utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it))
+        if (collection!!.isImportFromWallet) {
+            pubKeys.forEach { pubKeyModel ->
+                if (pubKeys.indexOf(pubKeyModel) == 0) {
+                    utxoViewModel.getUtxoByPubOnly(listOf(
+                        getPubKeyModelByLabel("Deposit BIP84").pubKey,
+                        getPubKeyModelByLabel("Deposit BIP49").pubKey,
+                        getPubKeyModelByLabel("Deposit BIP44").pubKey))
+                        .observe(this@UtxosActivity) { utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
+                    }
+                }
+                else {
+                    utxoViewModel.getUtxoByPubOnly(pubKeyModel.pubKey).observe(this@UtxosActivity) {
+                        utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
+                    }
+                }
             }
         }
-
+        else {
+            pubKeys.forEach { pubKeyModel ->
+                utxoViewModel.getUtxoByPubOnly(pubKeyModel.pubKey).observe(this@UtxosActivity) {
+                    utxoFragments[pubKeyModel.pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
+                }
+            }
+        }
     }
 
 
     private fun setUpToolbar() {
         setSupportActionBar(binding.toolbar)
         binding.toolbar.title = "Unspent outputs"
+        binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.mpm_black))
+        window.statusBarColor = ContextCompat.getColor(this, R.color.mpm_black)
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.grey_homeActivity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
@@ -85,9 +115,13 @@ class UtxosActivity : SentinelActivity() {
 
     private fun setUpPager(utxoViewModel: UtxoActivityViewModel) {
         binding.tabLayout.setupWithViewPager(binding.pager)
+        binding.pager.setBackgroundColor( ContextCompat.getColor(this, R.color.grey_homeActivity))
         binding.pager.adapter = object : FragmentStatePagerAdapter(supportFragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
             override fun getCount(): Int {
-                return pubKeys.size
+                return if (collection!!.isImportFromWallet)
+                    pubKeys.size - 2
+                else
+                    return pubKeys.size
             }
 
             override fun getItem(position: Int): Fragment {
@@ -98,15 +132,55 @@ class UtxosActivity : SentinelActivity() {
             }
 
             override fun getPageTitle(position: Int): CharSequence {
-                return pubKeys[position].label
+                if (collection!!.isImportFromWallet) {
+                    when (position) {
+                        0 -> return "Deposit"
+                        1 -> return "Premix"
+                        2 -> return "Postmix"
+                        3 -> return "Badbank"
+                    }
+                    return pubKeys[position].label
+                }
+                else
+                    return pubKeys[position].label
             }
         }
         binding.pager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
 
             override fun onPageSelected(position: Int) {
-                utxoViewModel.getUtxo(pubKeys[position].pubKey).observe(this@UtxosActivity) {
-                    utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it))
+                if (collection!!.isImportFromWallet) {
+                    when (position) {
+                        0 -> {
+                            utxoViewModel.getUtxoByPubOnly(listOf(
+                                pubKeys[0].pubKey,
+                                pubKeys[4].pubKey,
+                                pubKeys[5].pubKey)).observe(this@UtxosActivity) {
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
+                            }
+                        }
+                        1 -> {
+                            utxoViewModel.getUtxoByPubOnly(pubKeys[1].pubKey).observe(this@UtxosActivity) {
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
+                            }
+                        }
+                        2 -> {
+                            utxoViewModel.getUtxoByPubOnly(pubKeys[2].pubKey).observe(this@UtxosActivity) {
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
+                            }
+                        }
+                        3 -> {
+                            utxoViewModel.getUtxoByPubOnly(pubKeys[3].pubKey).observe(this@UtxosActivity) {
+                                utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
+                            }
+                        }
+                    }
+
+                }
+                else {
+                    utxoViewModel.getUtxoByPubOnly(pubKeys[position].pubKey).observe(this@UtxosActivity) {
+                        utxoFragments[pubKeys[position].pubKey]?.setUtxos(ArrayList(it.sortedBy { it.value }))
+                    }
                 }
             }
 

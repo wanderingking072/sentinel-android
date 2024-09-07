@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/sweepPreviewTitleLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+
+    <TextView
+            android:id="@+id/textView2"
+            style="@style/TextAppearance.AppCompat.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="8dp"
+            android:text="Sweep Private Key"
+            android:textColor="@color/v3_white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.samourai.sentinel.widgets.CircleImageView
+            android:id="@+id/change_pubkey"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="10dp"
+            android:background="?selectableItemBackground"
+            android:src="@drawable/ic_cogs"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+<!--    -->
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/sweepPreveiewScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+
+            <TextView
+                android:id="@+id/textView6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:text="Sweep from"
+                android:textColor="@color/grey_accent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/fromAddress"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="8dp"
+                android:paddingTop="5dp"
+                android:text="bc1pzw2arl93wu4ykv0m8qgsmc3e00n5rcymnv8442tllveh6ac23zwsugzmgg"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@id/textView6"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@id/textView6"
+                app:layout_constraintTop_toTopOf="@id/textView6" />
+
+            <TextView
+                android:id="@+id/textView7"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:layout_marginEnd="8dp"
+                android:text="Balance of unspent output"
+                android:textColor="@color/grey_accent"
+                app:layout_constraintEnd_toEndOf="@id/fromAddress"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@id/fromAddress"
+                app:layout_constraintTop_toTopOf="@id/fromAddress" />
+
+            <TextView
+                android:id="@+id/amount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="16dp"
+                android:text="0.000057 BTC"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:paddingTop="5dp"
+                app:layout_constraintEnd_toEndOf="@id/textView7"
+                app:layout_constraintStart_toStartOf="@id/textView7"
+                app:layout_constraintTop_toTopOf="@id/textView7" />
+
+            <TextView
+                android:id="@+id/textView10"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="55dp"
+                android:text="Sweep to"
+                android:textColor="@color/grey_accent"
+                app:layout_constraintEnd_toEndOf="@id/amount"
+                app:layout_constraintStart_toStartOf="@id/amount"
+                app:layout_constraintTop_toTopOf="@id/amount" />
+
+            <TextView
+                android:id="@+id/collectionAndPubkey"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="16dp"
+                android:text="Collection Name 12, pubkey name"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:paddingTop="5dp"
+                app:layout_constraintEnd_toEndOf="@id/textView10"
+                app:layout_constraintStart_toStartOf="@id/textView10"
+                app:layout_constraintTop_toTopOf="@id/textView10" />
+
+            <TextView
+                android:id="@+id/textView9"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="30dp"
+                android:text="Receive address"
+                android:textColor="@color/grey_accent"
+                app:layout_constraintEnd_toEndOf="@id/collectionAndPubkey"
+                app:layout_constraintStart_toStartOf="@id/collectionAndPubkey"
+                app:layout_constraintTop_toTopOf="@id/collectionAndPubkey" />
+
+            <TextView
+                android:id="@+id/receiveAddress"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="16dp"
+                android:text="bc1pzw2arl93wu4ykv0m8qgsmc3e00n5rcymnv8442tllveh6ac23zwsugzmgg"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:paddingTop="5dp"
+                app:layout_constraintEnd_toEndOf="@id/textView9"
+                app:layout_constraintStart_toStartOf="@id/textView9"
+                app:layout_constraintTop_toTopOf="@id/textView9" />
+
+            <LinearLayout
+                android:id="@+id/total_miner_fee_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="@+id/textView9"
+                android:layout_marginTop="15dp"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@+id/receiveAddress"
+                app:layout_constraintTop_toBottomOf="@+id/receiveAddress"
+                app:layout_constraintVertical_bias="0.0">
+
+                <TextView
+                    android:id="@+id/total_fee_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/grey_accent"
+                    android:text="Cost of sweep transaction" />
+
+                <TextView
+                    android:id="@+id/totalMinerFee"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="2dp"
+                    android:text="0.00000258 BTC"
+                    android:textColor="@color/white"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <include
+                android:id="@+id/feeSelector"
+                layout="@layout/fee_selector"
+                android:layout_width="381dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:layout_marginStart="-15dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="@+id/textView9"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@+id/total_miner_fee_group"
+                app:layout_constraintTop_toBottomOf="@+id/total_miner_fee_group"
+                app:layout_constraintVertical_bias="0.0" />
+
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginTop="5dp"
+                android:gravity="center"
+                android:elevation="0dp"
+                android:id="@+id/sweepBtn"
+                android:paddingHorizontal="24dp"
+                android:text="Sweep"
+                android:theme="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/green_ui_2"
+                app:cornerRadius="12dp"
+                app:elevation="12dp"
+                app:iconTint="@color/white"
+                app:layout_constraintTop_toBottomOf="@+id/feeSelector"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginStart="11dp"
+                android:layout_marginEnd="11dp" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </androidx.core.widget.NestedScrollView>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/sweepPreviewCircularProgress"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/circularProgressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <ImageView
+            android:id="@+id/iconImageView"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_broom"
+            app:tint="@color/green_ui_2"
+            android:contentDescription=""
+            tools:ignore="ContentDescription"
+            app:layout_constraintTop_toTopOf="@+id/circularProgressBar"
+            app:layout_constraintStart_toStartOf="@+id/circularProgressBar"
+            app:layout_constraintEnd_toEndOf="@+id/circularProgressBar"
+            app:layout_constraintBottom_toBottomOf="@+id/circularProgressBar"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>

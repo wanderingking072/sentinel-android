@@ -5,24 +5,29 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.transition.TransitionManager
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialSharedAxis
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.api.ApiService
+import com.samourai.sentinel.core.access.AccessFactory
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ActivityImportBackUpBinding
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
+import com.samourai.sentinel.ui.views.LockScreenDialog
 import com.samourai.sentinel.util.ExportImportUtil
 import com.samourai.sentinel.util.apiScope
-import io.matthewnelson.topl_service.TorServiceController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -62,6 +67,8 @@ class ImportBackUpActivity : SentinelActivity() {
         setSupportActionBar(binding.toolbarImportActivity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.v3_background)
+
 
         binding.importChoosePayloadBtn.setOnClickListener {
             var intent = Intent(Intent.ACTION_GET_CONTENT)
@@ -95,10 +102,16 @@ class ImportBackUpActivity : SentinelActivity() {
 
     private fun importAllXpubs() {
         apiScope.launch {
-            repository.pubKeyCollections.forEach {
-                it.pubs.forEach {
-                    apiService.importXpub(it.pubKey, "bip${it.getPurpose()}")
+            try {
+                val pubKeyCollectionsCopy = ArrayList(repository.pubKeyCollections)
+                pubKeyCollectionsCopy.forEach { collection ->
+                    collection.pubs.forEach { pub ->
+                        apiService.importXpub(pub.pubKey, "bip${pub.getPurpose()}")
+                    }
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw CancellationException(e.message)
             }
         }
     }
@@ -113,67 +126,163 @@ class ImportBackUpActivity : SentinelActivity() {
     private fun decryptPayload() {
         when (importType) {
             ImportType.SENTINEL -> {
-                viewModel.viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        val payload = ExportImportUtil().decryptSentinel(
-                                payloadObject.toString(),
-                                binding.importPasswordInput.text.toString()
-                        )
-                        withContext(Dispatchers.Main) {
-                            binding.importPasswordInputLayout.visibility = View.INVISIBLE
-                            binding.importSentinelBackUpLayout.visibility = View.VISIBLE
-                            binding.importCollections.text =
-                                    "${binding.importCollections.text} (${payload.first?.size})"
-                        }
-                        if (binding.importCollections.isChecked) {
-                            payload.first?.let {
-                                ExportImportUtil().startImportCollections(
-                                        it,
-                                        binding.importClearExisting.isChecked
-                                )
-                            }
-                        }
-                        if (binding.importPrefs.isChecked) {
-                            payload.second.let { ExportImportUtil().importPrefs(it) }
-                        }
-                        if (binding.importDojo.isChecked) {
-                            if ((payload.second.getString("apiEndPointTor").equals(APIConfig.SAMOURAI_API_TOR)
-                                    && payload.second.getString("apiEndPoint").equals(APIConfig.SAMOURAI_API))
-                                ||
-                                (payload.second.getString("apiEndPointTor").equals(APIConfig.SAMOURAI_API_TOR_TESTNET)
-                                        && payload.second.getString("apiEndPoint").equals(APIConfig.SAMOURAI_API_TESTNET))) {
+                var payload: Triple<ArrayList<PubKeyCollection>?, JSONObject, JSONObject?>? = null
+                try {
+                    payload = ExportImportUtil().decryptSentinel(
+                        payloadObject.toString(),
+                        binding.importPasswordInput.text.toString()
+                    )
+                } catch (e: Exception) {
+                    this@ImportBackUpActivity.showFloatingSnackBar(
+                        binding.importPayloadTextView.parent as ViewGroup,
+                        text = "Incorrect password, please try again.",
+                        duration = Snackbar.LENGTH_SHORT
+                    )
+                }
 
-                            }
-                            else {
-                                TorServiceController.startTor()
-                                prefsUtil.enableTor = true
-                                payload.third?.let { ExportImportUtil().importDojo(it) }
-                                prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")
-                                prefsUtil.apiEndPoint = payload.second.getString("apiEndPoint")
+                if (payload == null)
+                    return
+
+                if (payload.second.get("pinEnabled").equals(true)) {
+                    val fragmentManager = supportFragmentManager
+                    val lockScreenDialog = LockScreenDialog(lockScreenMessage = "Enter pin code")
+                    val transaction = fragmentManager.beginTransaction()
+                    transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                    transaction.add(android.R.id.content, lockScreenDialog).commit()
+                    lockScreenDialog.setOnPinEntered {
+                        if (AccessFactory.getInstance(this).validateHash(it,
+                                payload.second.get("pinHash").toString()
+                            )) {
+                            AccessFactory.getInstance(this).pin = it
+                            lockScreenDialog.dismiss()
+
+                            viewModel.viewModelScope.launch(Dispatchers.IO) {
+                                try {
+                                    withContext(Dispatchers.Main) {
+                                        binding.importPasswordInputLayout.visibility = View.INVISIBLE
+                                        binding.importSentinelBackUpLayout.visibility = View.VISIBLE
+                                        binding.importCollections.text =
+                                            "${binding.importCollections.text} (${payload.first?.size})"
+                                    }
+
+                                    if (binding.importPrefs.isChecked) {
+                                        payload.second.let { ExportImportUtil().importPrefs(it) }
+                                    }
+
+                                    if (binding.importCollections.isChecked) {
+                                        payload.first?.let {
+                                            ExportImportUtil().startImportCollections(
+                                                it,
+                                                binding.importClearExisting.isChecked
+                                            )
+                                        }
+                                    }
+                                    if (binding.importDojo.isChecked) {
+                                        if ((payload.second.getString("apiEndPointTor").equals(APIConfig.SAMOURAI_API_TOR)
+                                                    && payload.second.getString("apiEndPoint").equals(APIConfig.SAMOURAI_API))
+                                            ||
+                                            (payload.second.getString("apiEndPointTor").equals(APIConfig.SAMOURAI_API_TOR_TESTNET)
+                                                    && payload.second.getString("apiEndPoint").equals(APIConfig.SAMOURAI_API_TESTNET))) {
+
+                                        }
+                                        else {
+                                            SentinelTorManager.start()
+                                            prefsUtil.enableTor = true
+                                            payload.third?.let { ExportImportUtil().importDojo(it) }
+                                            prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")
+                                            prefsUtil.apiEndPoint = payload.second.getString("apiEndPoint")
+                                        }
+                                    }
+                                    else {
+                                        importAllXpubs()
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    throw CancellationException(e.message)
+                                }
+                            }.invokeOnCompletion {
+                                if (it == null || it.toString().contains("Unable to resolve host")) {
+                                    requireRestart = true
+                                    showFloatingSnackBar(
+                                        binding.importPastePayloadBtn, "Successfully imported",
+                                        anchorView = binding.importStartBtn.id,
+                                        actionText = "restart"
+                                    )
+                                } else {
+                                    Timber.e(it)
+                                    showFloatingSnackBar(
+                                        binding.importPastePayloadBtn,
+                                        "Unable to decrypt. Wrong password",
+                                        anchorView = binding.importStartBtn.id
+                                    )
+                                }
                             }
                         }
                         else {
-                            importAllXpubs()
+                            lockScreenDialog.showError()
                         }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        throw CancellationException(e.message)
                     }
-                }.invokeOnCompletion {
-                    if (it == null || it.toString().contains("Unable to resolve host")) {
-                        requireRestart = true
-                        showFloatingSnackBar(
+                } else {
+                    viewModel.viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            withContext(Dispatchers.Main) {
+                                binding.importPasswordInputLayout.visibility = View.INVISIBLE
+                                binding.importSentinelBackUpLayout.visibility = View.VISIBLE
+                                binding.importCollections.text =
+                                    "${binding.importCollections.text} (${payload.first?.size})"
+                            }
+
+                            if (binding.importPrefs.isChecked) {
+                                payload.second.let { ExportImportUtil().importPrefs(it) }
+                            }
+
+                            if (binding.importCollections.isChecked) {
+                                payload.first?.let {
+                                    ExportImportUtil().startImportCollections(
+                                        it,
+                                        binding.importClearExisting.isChecked
+                                    )
+                                }
+                            }
+                            if (binding.importDojo.isChecked) {
+                                if ((payload.second.getString("apiEndPointTor").equals(APIConfig.SAMOURAI_API_TOR)
+                                            && payload.second.getString("apiEndPoint").equals(APIConfig.SAMOURAI_API))
+                                    ||
+                                    (payload.second.getString("apiEndPointTor").equals(APIConfig.SAMOURAI_API_TOR_TESTNET)
+                                            && payload.second.getString("apiEndPoint").equals(APIConfig.SAMOURAI_API_TESTNET))) {
+
+                                }
+                                else {
+                                    SentinelTorManager.start()
+                                    prefsUtil.enableTor = true
+                                    payload.third?.let { ExportImportUtil().importDojo(it) }
+                                    prefsUtil.apiEndPointTor = payload.second.getString("apiEndPointTor")
+                                    prefsUtil.apiEndPoint = payload.second.getString("apiEndPoint")
+                                }
+                            }
+                            else {
+                                importAllXpubs()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            throw CancellationException(e.message)
+                        }
+                    }.invokeOnCompletion {
+                        if (it == null || it.toString().contains("Unable to resolve host")) {
+                            requireRestart = true
+                            showFloatingSnackBar(
                                 binding.importPastePayloadBtn, "Successfully imported",
                                 anchorView = binding.importStartBtn.id,
                                 actionText = "restart"
-                        )
-                    } else {
-                        Timber.e(it)
-                        showFloatingSnackBar(
+                            )
+                        } else {
+                            Timber.e(it)
+                            showFloatingSnackBar(
                                 binding.importPastePayloadBtn,
                                 "Unable to decrypt. Wrong password",
                                 anchorView = binding.importStartBtn.id
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -220,28 +329,6 @@ class ImportBackUpActivity : SentinelActivity() {
             }
             else -> {
                 showFloatingSnackBar(binding.importPastePayloadBtn, "Please choose a valid Sentinel backup file")
-                /*
-                IMPORT FROM SAMOURAI BACKUP FILES
-                val payload = ExportImportUtil().decryptAndParseSamouraiPayload(
-                        payloadObject.toString(),
-                        binding.importPasswordInput.text.toString()
-                )
-                viewModel.viewModelScope.launch(Dispatchers.IO) {
-                    ExportImportUtil().startImportCollections(arrayListOf(payload), false)
-                }.invokeOnCompletion {
-                    if (it == null) {
-                        requireRestart = true
-                        showFloatingSnackBar(
-                                binding.importPastePayloadBtn,
-                                "Successfully imported",
-                                actionClick = { restart() },
-                                actionText = "restart"
-                        )
-                    } else {
-                        showFloatingSnackBar(binding.importPastePayloadBtn, "Error: ${it.message}")
-                    }
-                }
-                */
             }
         }
     }
@@ -266,7 +353,6 @@ class ImportBackUpActivity : SentinelActivity() {
                 withContext(Dispatchers.Main) {
                     binding.importPayloadTextView.text = "${binding.importPayloadTextView.text}${json.toString(2)}"
                     if (json.has("external") && json.has("payload")) {
-                        showFloatingSnackBar(binding.importPastePayloadBtn, "Please choose a valid Sentinel backup file")
                         payloadObject = json
                         importType = ImportType.SAMOURAI
                         showImportButton(false)

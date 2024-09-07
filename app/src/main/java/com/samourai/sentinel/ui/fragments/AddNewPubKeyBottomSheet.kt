@@ -26,12 +26,19 @@ import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.databinding.ContentChooseAddressTypeBinding
 import com.samourai.sentinel.databinding.ContentCollectionSelectBinding
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
+import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
 import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
+import com.samourai.sentinel.ui.home.HomeActivity
+import com.samourai.sentinel.ui.tools.sweep.SweepPrivKeyFragment
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
+import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.GenericBottomSheet
+import com.samourai.sentinel.ui.views.alertWithInput
+import com.samourai.sentinel.util.ExportImportUtil
 import com.samourai.sentinel.util.FormatsUtil
+import com.samourai.wallet.util.PrivKeyReader
 import com.samourai.wallet.util.XPUB
 import com.sparrowwallet.hummingbird.URDecoder
 import com.sparrowwallet.hummingbird.registry.CryptoAccount
@@ -40,6 +47,7 @@ import com.sparrowwallet.hummingbird.registry.RegistryType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bitcoinj.crypto.ChildNumber
 import org.bouncycastle.util.encoders.Hex
 import org.json.JSONObject
@@ -155,22 +163,33 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
         val type = FormatsUtil.getPubKeyType(payload)
         if (FormatsUtil.isValidBitcoinAddress(payload.trim()) || FormatsUtil.isValidXpub(payload)) {
             if (isPublicKeyTesnet(payload) && !SentinelState.isTestNet()) {
-                Toast.makeText(context, "Can't track Testnet public keys in Mainnet", Toast.LENGTH_LONG).show()
+                if (context != null)
+                    Toast.makeText(context, "Can't track Testnet public keys in Mainnet", Toast.LENGTH_LONG).show()
                 this.dismiss()
                 return
             }
             if (!isPublicKeyTesnet(payload) && SentinelState.isTestNet()) {
-                Toast.makeText(context, "Can't track Mainnet public keys in Testnet", Toast.LENGTH_LONG).show()
+                if (context != null)
+                    Toast.makeText(context, "Can't track Mainnet public keys in Testnet", Toast.LENGTH_LONG).show()
                 this.dismiss()
                 return
             }
         }
         when {
+            PrivKeyReader(payload.trim(), SentinelState.getNetworkParam()).format != null -> {
+                if (isAdded && activity != null) {
+                    this.dismiss()
+                    val bottomSheetFragment = SweepPrivKeyFragment(payload.trim(), secure)
+                    bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
+                }
+            }
+
             FormatsUtil.isValidBitcoinAddress(payload.trim()) -> {
                 if (newPubKeyListener != null) {
                     val pubKey = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())
                     newPubKeyListener?.let { it(pubKey) }
                     this.dismiss()
+                    newPubKeyListener = null
                     return
                 } else {
                     pubKeyModel = PubKeyModel(pubKey = payload, type = AddressTypes.ADDRESS, label = "Untitled", fingerPrint = scanPubKeyFragment.getFingerprint())
@@ -189,6 +208,13 @@ class AddNewPubKeyBottomSheet(private val pubKey: String = "", private val secur
                     binding.pager.post {
                         selectAddressTypeFragment.setType(type)
                     }
+                }
+            }
+            (JSONObject(payload.trim()).has("external") &&  JSONObject(payload.trim()).has("payload")) -> {
+                if (isAdded && activity != null) {
+                    this.dismiss()
+                    val bottomSheetFragment = WalletPairingFragment(payload.trim(), secure)
+                    bottomSheetFragment.show(requireActivity().supportFragmentManager, bottomSheetFragment.tag)
                 }
             }
             else -> {
@@ -249,14 +275,14 @@ class ScanPubKeyFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.findViewById<Button>(R.id.pastePubKey).text = "Paste Pubkey"
+        view.findViewById<Button>(R.id.pastePubKey).text = "Paste"
         mCodeScanner = view.findViewById(R.id.scannerViewXpub);
         mCodeScanner.setLifeCycleOwner(this)
 
         val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         mCodeScanner.setQRDecodeListener {
             GlobalScope.launch(Dispatchers.Main) {
-                mCodeScanner.stopScanner();
+                mCodeScanner.stopScanner()
                 onScan(it)
             }
         }
@@ -491,8 +517,15 @@ class ChooseCollectionFragment : Fragment() {
     }
 
     private fun setUpCollectionSelectList() {
-
         repository.collectionsLiveData.observe(viewLifecycleOwner, Observer {
+            val iterator = it.iterator()
+
+            while (iterator.hasNext()) {
+                val collection = iterator.next()
+                if (collection.isImportFromWallet)
+                    iterator.remove()
+            }
+
             collectionsAdapter.update(it)
         })
         collectionsAdapter.setLayoutType(CollectionsAdapter.Companion.LayoutType.STACKED)

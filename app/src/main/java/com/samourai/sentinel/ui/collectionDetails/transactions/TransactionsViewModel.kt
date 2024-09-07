@@ -26,7 +26,6 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
     private val message = MutableLiveData<String>()
     private val balance = MutableLiveData<Long>(0L)
     private lateinit var collection: PubKeyCollection
-    private val loading: MutableLiveData<Boolean> = MutableLiveData(false)
 
     private var netWorkRequestJob: Job? = null;
 
@@ -78,17 +77,6 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
     }
 
 
-    fun getLoadingState(): LiveData<Boolean> {
-        return transactionsRepository.loadingState()
-                .map {
-                    if (it) {
-                        transactionsRepository.loadingCollectionId == collection.id
-                    } else {
-                        false
-                    }
-                }
-    }
-
     private fun getFiatBalance(balance: Long?, rate: ExchangeRateRepository.Rate?): String {
         if (rate != null) {
             balance?.let {
@@ -116,13 +104,9 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
         // if a pending or an active network request is being processed we will cancel and request a new one
         // this will ensure only one request takes place at a time
         if (netWorkRequestJob != null && netWorkRequestJob?.isActive!!) {
-            if (loading.value!!) {
-                loading.postValue(false)
-            }
             netWorkRequestJob?.cancel(CancellationException("User Canceled Request"))
         }
         try {
-            loading.postValue(true)
             try {
                 netWorkRequestJob = apiScope.launch(Dispatchers.IO) {
                     try {
@@ -135,14 +119,12 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
                     if (it != null) {
                         message.postValue("${it.message}")
                     }
-                    loading.postValue(false)
                 }
             } catch (e: Exception) {
                 message.postValue("${e.message}")
             }
 
         } catch (ex: Exception) {
-            loading.postValue(false)
             message.postValue(ex.message)
         }
     }

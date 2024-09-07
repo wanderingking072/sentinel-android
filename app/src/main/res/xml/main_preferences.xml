@@ -106,12 +106,17 @@
             app:summary="Error file containing previously caught exceptions"
             app:title="Share error log" />
 
+        <Preference
+            app:key="sendBackupToSupport"
+            app:summary="Share your Sentinel backup with tech support to aid with troubleshooting"
+            app:title="Send backup to tech support" />
+
     </PreferenceCategory>
 
     <PreferenceCategory>
 
         <Preference
-                app:icon="@drawable/ic_reset"
+                app:icon="@drawable/ic_alert"
                 app:key="clear"
                 app:summary="Clear all collections and reset settings"
                 app:title="Erase all Sentinel data" />

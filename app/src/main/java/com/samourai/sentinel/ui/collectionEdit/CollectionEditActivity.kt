@@ -20,13 +20,14 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
-import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
 import com.samourai.sentinel.databinding.ActivityCollectionEditBinding
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
 import com.samourai.sentinel.ui.fragments.QRBottomSheetDialog
@@ -73,14 +74,16 @@ class CollectionEditActivity : SentinelActivity() {
 
         checkIntent()
 
-        setUpPubKeyList()
 
         viewModel.getCollection().observe(this) {
             binding.collectionEdiText.setText(it.collectionLabel.trimEnd())
+            pubKeyAdapter.setIsImportFromWallet(it.isImportFromWallet)
+            setUpPubKeyList()
             binding.collectionEdiText.doOnTextChanged { text, _, _, _ ->
                 it.collectionLabel = text.toString()
             }
         }
+
 
         viewModel.getPubKeys().observe(this, Observer {
             pubKeyAdapter.update(it)
@@ -104,7 +107,7 @@ class CollectionEditActivity : SentinelActivity() {
                 this.askCameraPermission()
             } else {
                 if (AppUtil.getInstance(applicationContext).isOfflineMode
-                    ||  SentinelState.torState ==SentinelState.TorState.WAITING)
+                    ||  SentinelTorManager.getTorState().state == EnumTorState.STARTING)
                     Toast.makeText(this, "No data connection. Please wait, then try again", Toast.LENGTH_LONG).show()
                 else
                     showPubKeyBottomSheet()
@@ -138,6 +141,8 @@ class CollectionEditActivity : SentinelActivity() {
             val model = intent.extras?.getString("collection")?.let { repository.findById(it) }
             if (model != null) {
                 viewModel.setCollection(model)
+                if (model.isImportFromWallet)
+                    binding.addNewPubFab.visibility = View.GONE
                 // Check if any new Public key is passed through intent
                 // we will set last item as editable so the new Public key  will be shown in edit layout
                 if (intent.extras!!.containsKey("pubKey")) {
@@ -145,7 +150,7 @@ class CollectionEditActivity : SentinelActivity() {
 
                     if (newPubKey?.pubKey?.let { model.getPubKey(it) } != null) {
                         this@CollectionEditActivity.showFloatingSnackBar(
-                                binding.collectionDetailsRootLayout,
+                            binding.collectionDetailsRootLayout,
                             text = "Public key already exists in this collection",
                             duration = Snackbar.LENGTH_LONG
                         )
@@ -228,12 +233,13 @@ class CollectionEditActivity : SentinelActivity() {
             RecyclerView.OnItemTouchListener {
             override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
 
-                fun  viewPubKey(pubKeyModel: PubKeyModel){
+                fun  viewPubKey(pubKeyModel: PubKeyModel, position: Int){
                     val dialog =  QRBottomSheetDialog(
                         pubKeyModel.pubKey,
                         pubKeyModel.label,
                         pubKeyModel.label,
-                        secure = prefs.displaySecure!!
+                        secure = prefs.displaySecure!!,
+                        collection = if (viewModel.getCollection().value!!.isImportFromWallet && position == 0) viewModel.getCollection().value else null
                     )
                     dialog.show(supportFragmentManager, dialog.tag)
                 }
@@ -266,7 +272,7 @@ class CollectionEditActivity : SentinelActivity() {
                         if (pressDuration < MAX_CLICK_DURATION && distance(pressedX, pressedY, e.getX(), e.getY()) < MAX_CLICK_DISTANCE && childView != null) {
                             val position = rv.getChildAdapterPosition(childView)
                             if (position != RecyclerView.NO_POSITION && (e.x < 920)) {
-                                viewPubKey(viewModel.getPubKeys().value!!.get(position))
+                                viewPubKey(viewModel.getPubKeys().value!![position], position)
                             }
                         }
                     }
@@ -279,7 +285,7 @@ class CollectionEditActivity : SentinelActivity() {
             override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
 
-        fun delete(index: Int){
+        fun delete(index: Int, pubKeyModel: PubKeyModel){
             this.confirm(label = "Confirm",
                 message = "Are you sure want to remove this public key ?",
                 positiveText = "Yes",
@@ -289,18 +295,18 @@ class CollectionEditActivity : SentinelActivity() {
                         val collection = viewModel.getCollection().value ?: return@confirm
                         apiScope.launch(context = Dispatchers.IO) {
                             transactionsRepository.removeTxsRelatedToPubKey(
-                                collection.pubs[index],
+                                collection.pubs[collection.pubs.indexOf(pubKeyModel)],
                                 collection.id
                             )
                             needCollectionRefresh = true
                             withContext(Dispatchers.Main) {
                                 setResult(Activity.RESULT_OK)
                             }
-                            viewModel.removePubKey(index)
-
+                            viewModel.removePubKey(collection.pubs.indexOf(pubKeyModel))
+                            pubKeyAdapter.update(viewModel.getPubKeys().value!!)
                             //TODO: find a better way to refresh the pubkey list
                             binding.pubKeyRecyclerView.post {
-                                pubKeyAdapter.notifyDataSetChanged()
+                                pubKeyAdapter.notifyItemRemoved(index)
                             }
                         }
                         try {
@@ -312,17 +318,11 @@ class CollectionEditActivity : SentinelActivity() {
             )
         }
 
-        fun  viewPubKey(pubKeyModel: PubKeyModel){
-           val dialog =  QRBottomSheetDialog(
-               pubKeyModel.pubKey,
-               pubKeyModel.label,
-               pubKeyModel.label,
-               secure = prefs.displaySecure!!
-           )
-            dialog.show(supportFragmentManager, dialog.tag)
-        }
-
-        val items = arrayListOf("Edit","View Master Fingerprint","Delete")
+        val items =
+            if (viewModel.getCollection().value!!.isImportFromWallet)
+                arrayListOf("View Master Fingerprint","Delete")
+            else
+                arrayListOf("Edit","View Master Fingerprint","Delete")
         pubKeyAdapter.setOnEditClickListener { i, pubKeyModel ->
             MaterialAlertDialogBuilder(this)
                 .setItems(
@@ -330,13 +330,20 @@ class CollectionEditActivity : SentinelActivity() {
                 ) { _, which ->
                     when (which) {
                         0 -> {
-                            edit(pubKeyModel, i)
+                            if (!viewModel.getCollection().value!!.isImportFromWallet)
+                                edit(pubKeyModel, i)
+                            else
+                                editFingerprint(pubKeyModel, i)
                         }
                         1 -> {
-                            editFingerprint(pubKeyModel, i)
+                            if (!viewModel.getCollection().value!!.isImportFromWallet)
+                                editFingerprint(pubKeyModel, i)
+                            else
+                                delete(i, pubKeyModel)
                         }
                         2 -> {
-                            delete(i)
+                            if (!viewModel.getCollection().value!!.isImportFromWallet)
+                                delete(i, pubKeyModel)
                         }
                     }
                 }
@@ -353,19 +360,20 @@ class CollectionEditActivity : SentinelActivity() {
     }
 
     fun edit(pubKeyModel: PubKeyModel, i: Int){
-            this.alertWithInput(
-                label = "Public key label",
-                onConfirm = {
-                    pubKeyModel.label = it
-                    viewModel.updateKey(i, pubKeyModel)
-                    pubKeyAdapter.notifyItemChanged(i)
-                },
-                isCancelable = false,
-                maxLen = 30,
-                labelEditText = "Label",
-                value = pubKeyModel.label,
-                buttonLabel = "Save"
-            )
+        this.alertWithInput(
+            label = "Public key label",
+            onConfirm = {
+                pubKeyModel.label = it
+                viewModel.updateKey(i, pubKeyModel)
+                pubKeyAdapter.notifyItemChanged(i)
+            },
+            isCancelable = false,
+            maxLen = 30,
+            labelEditText = "Label",
+            value = pubKeyModel.label,
+            buttonLabel = "Save",
+            isEditable = !(viewModel.getCollection().value?.isImportFromWallet != null && viewModel.getCollection().value?.isImportFromWallet!!)
+        )
     }
 
     fun editFingerprint(pubKeyModel: PubKeyModel, i: Int){
@@ -380,7 +388,8 @@ class CollectionEditActivity : SentinelActivity() {
             maxLen = 8,
             labelEditText = "Fingerprint",
             value = if (pubKeyModel.fingerPrint == null) "" else pubKeyModel.fingerPrint!!,
-            buttonLabel = "Save"
+            buttonLabel = "Save",
+            isEditable = !viewModel.getCollection().value?.isImportFromWallet!!
         )
     }
 
@@ -403,7 +412,7 @@ class CollectionEditActivity : SentinelActivity() {
                 val items: ArrayList<PubKeyModel> = arrayListOf()
                 if (viewModel.getCollection().value?.getPubKey(it.pubKey) != null) {
                     this@CollectionEditActivity.showFloatingSnackBar(
-                            binding.collectionDetailsRootLayout,
+                        binding.collectionDetailsRootLayout,
                         text = "Public key already exists in this collection",
                         duration = Snackbar.LENGTH_LONG
                     )
@@ -427,7 +436,7 @@ class CollectionEditActivity : SentinelActivity() {
         if (item.itemId == R.id.saveCollectionMenuItem || item.itemId == android.R.id.home) {
             if (binding.collectionEdiText.text.isNullOrEmpty() || binding.collectionEdiText.text.isBlank()) {
                 this@CollectionEditActivity.showFloatingSnackBar(
-                        binding.collectionEdiText.parent as ViewGroup,
+                    binding.collectionEdiText.parent as ViewGroup,
                     text = "Please enter collection label",
                     duration = Snackbar.LENGTH_SHORT
                 )

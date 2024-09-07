@@ -8,6 +8,8 @@ import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.Preferences
 import com.samourai.sentinel.ui.utils.PrefsUtil
@@ -28,13 +30,6 @@ import kotlin.reflect.KProperty
  */
 class SentinelState {
 
-
-    enum class TorState {
-        WAITING,
-        ON,
-        OFF
-    }
-
     companion object {
 
         private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
@@ -46,10 +41,10 @@ class SentinelState {
         private var mainNetParams: NetworkParameters? = NetworkParameters.fromID(NetworkParameters.ID_MAINNET)
         private var networkParams: NetworkParameters? = mainNetParams
         var checkedClipBoard: Boolean = false
+        var hasAppJustStarted: Boolean = true
 
         var blockHeight: LatestBlock? = null
         private var isOffline = false
-        private var torStateLiveData: MutableLiveData<TorState> = MutableLiveData(TorState.OFF)
 
         private var countDownTimer: CountDownTimer? = null
         var torProxy: Proxy? = null
@@ -59,21 +54,6 @@ class SentinelState {
 
         val bDust: BigInteger = BigInteger.valueOf(Coin.parseCoin("0.00000546").longValue())
 
-        var torState: TorState = TorState.OFF
-            set(value) {
-                field = value
-                torStateLiveData.postValue(value)
-            }
-
-
-        fun isTorStarted(): Boolean {
-            return torState == TorState.ON
-        }
-
-
-        fun isConnected(): Boolean {
-            return true
-        }
 
         fun getNetworkParam(): NetworkParameters? {
             return this.networkParams
@@ -83,10 +63,6 @@ class SentinelState {
             return getNetworkParam() is TestNet3Params
         }
 
-        public fun torStateLiveData(): LiveData<TorState> {
-            return torStateLiveData
-        }
-
         init {
             readPrefs()
             prefsUtil.addListener(object : Preferences.SharedPrefsListener {
@@ -94,30 +70,6 @@ class SentinelState {
                     readPrefs()
                 }
             })
-            runApiChecking()
-        }
-
-        private fun runApiChecking() {
-            //App will try to refresh balance every 3 minutes
-            //If the user refreshed a recently this wont be executed
-            countDownTimer = object : CountDownTimer(Long.MAX_VALUE, 180000) {
-                // This is called after every 3.5 min interval.
-                override fun onTick(millisUntilFinished: Long) {
-
-                    if (isTorRequired() && isTorStarted()) {
-                        refreshCollection()
-                    } else {
-                        if (!isTorRequired()) {
-                            refreshCollection()
-                        }
-                    }
-
-                }
-
-                override fun onFinish() {
-                    start()
-                }
-            }.start()
         }
 
         private fun refreshCollection() {
@@ -152,11 +104,8 @@ class SentinelState {
 
 
         fun isTorRequired(): Boolean {
-            return dojoUtility.isDojoEnabled() || prefsUtil.enableTor!!
-        }
-
-        fun isTorRequiredAndStarted(): Boolean {
-            return isTorRequired() && isTorStarted()
+            return true
+            //return dojoUtility.isDojoEnabled() || prefsUtil.enableTor!!
         }
 
         fun isDojoEnabled(): Boolean {

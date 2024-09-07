@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -82,6 +83,13 @@ class BroadcastTx : SentinelActivity() {
         binding = LayoutBroadcastBottomSheetBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
+
+        window.statusBarColor = ContextCompat.getColor(this, R.color.v3_background)
+        binding.materialToolbar.setNavigationOnClickListener {
+            this.onBackPressed()
+        }
+
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.v3_background)
 
         disableBtn(binding.broadCastTransactionBtn, false)
 

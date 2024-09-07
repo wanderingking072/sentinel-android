@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.PubKeyModel
 import com.samourai.sentinel.data.Utxo
 import com.samourai.sentinel.data.db.dao.UtxoDao
@@ -23,18 +24,10 @@ import timber.log.Timber
 import java.math.BigInteger
 import java.text.NumberFormat
 import java.util.Locale
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.List
-import kotlin.collections.arrayListOf
-import kotlin.collections.filter
-import kotlin.collections.hashMapOf
 import kotlin.collections.set
 
 class SendViewModel : ViewModel() {
 
-
-    private var selectPubKeyModel: PubKeyModel? = null
     private val utxos: ArrayList<Utxo> = arrayListOf()
     private val selectedUtxos: ArrayList<Utxo> = arrayListOf()
     private var address: String = ""
@@ -45,7 +38,6 @@ class SendViewModel : ViewModel() {
     private var transactionComposer = TransactionComposer()
     private val utxoDao: UtxoDao by inject(UtxoDao::class.java)
     private var receivers: HashMap<String, BigInteger> = hashMapOf()
-
 
     private val _psbt = MutableLiveData("")
     val psbtLive: LiveData<String> = _psbt
@@ -69,16 +61,39 @@ class SendViewModel : ViewModel() {
         }
     }
 
-    fun setPublicKey(pubKeyModel: PubKeyModel, lifecycleOwner: LifecycleOwner) {
-        selectPubKeyModel = pubKeyModel
-        transactionComposer.setPubKey(pubKeyModel)
-        utxoDao.getUtxoWithPubKey(pubKeyModel.pubKey)
+    fun setPublicKey(
+        pubKeyModel: PubKeyModel,
+        lifecycleOwner: LifecycleOwner,
+        mCollection: PubKeyCollection
+    ) {
+        if (mCollection.isImportFromWallet && pubKeyModel.label.equals("Deposit")) {
+            transactionComposer.setPubKey(listOf(
+                getPubKeyModelByLabel("Deposit BIP84", mCollection),
+                getPubKeyModelByLabel("Deposit BIP49", mCollection),
+                getPubKeyModelByLabel("Deposit BIP44", mCollection)
+            ))
+            utxoDao.getUTXObyPubKeys(listOf(
+                getPubKeyModelByLabel("Deposit BIP84", mCollection).pubKey,
+                getPubKeyModelByLabel("Deposit BIP49", mCollection).pubKey,
+                getPubKeyModelByLabel("Deposit BIP44", mCollection).pubKey
+            ))
                 .observe(lifecycleOwner, utxoObserver)
+        } else {
+            transactionComposer.setPubKey(listOf(pubKeyModel))
+            utxoDao.getUtxoWithPubKey(pubKeyModel.pubKey)
+                .observe(lifecycleOwner, utxoObserver)
+        }
+    }
+
+    private fun getPubKeyModelByLabel(label: String, mCollection: PubKeyCollection): PubKeyModel {
+        mCollection.pubs?.forEach {
+            if (it.label == label)
+                return it
+        }
+        return mCollection.pubs[0]
     }
 
     private fun prepareSpend(): Boolean {
-
-
         selectedUtxos.clear()
 
         if (address.isBlank() || address.isEmpty()) {
@@ -114,6 +129,9 @@ class SendViewModel : ViewModel() {
                         _validSpend.postValue(isValid)
                     }
                 } catch (e: Exception) {
+                    viewModelScope.launch(Dispatchers.Main) {
+                        _validSpend.postValue(false)
+                    }
                     println("Exception: " + e)
                 }
             } catch (ex: TransactionComposer.ComposeException) {

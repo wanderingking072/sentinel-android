@@ -65,12 +65,12 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CollectionHolder {
         return if (layoutType == LayoutType.ROW) {
             val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.collection_item_row_layout, parent, false);
+                .inflate(R.layout.collection_item_row_layout, parent, false);
             CollectionHolder(view)
 
         } else {
             val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.collection_item_stacked_layout, parent, false);
+                .inflate(R.layout.collection_item_stacked_layout, parent, false);
             CollectionHolder(view)
         }
     }
@@ -99,6 +99,10 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
         holder.view.setOnClickListener {
             onClickListener(collection)
         }
+        if (collection.isImportFromWallet)
+            holder.icon.setImageResource(R.drawable.ic_samourai_logo)
+        else
+            holder.icon.setImageResource(R.drawable.ic_baseline_wallet_24)
     }
 
     fun setBalance(position: Int): Long {

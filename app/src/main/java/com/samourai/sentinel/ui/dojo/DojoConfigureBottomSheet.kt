@@ -1,10 +1,9 @@
 package com.samourai.sentinel.ui.dojo
 
 import android.Manifest
-import android.app.PendingIntent
+import android.app.Application
 import android.content.Context
 import android.content.DialogInterface
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,35 +11,40 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.invertedx.hummingbird.QRScanner
-import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.R
-import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.FragmentBottomsheetViewPagerBinding
 import com.samourai.sentinel.helpers.fromJSON
-import com.samourai.sentinel.tor.TorEventsReceiver
-import com.samourai.sentinel.tor.prefs.SentinelTorSettings
-import com.samourai.sentinel.ui.home.HomeActivity
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
 import com.samourai.sentinel.util.apiScope
-import io.matthewnelson.topl_service.TorServiceController
-import io.matthewnelson.topl_service.lifecycle.BackgroundManager
-import io.matthewnelson.topl_service.notification.ServiceNotification
-import kotlinx.coroutines.*
-import okhttp3.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent
 import java.io.IOException
-import java.net.InetSocketAddress
-import java.net.Proxy
 
 class DojoConfigureBottomSheet : GenericBottomSheet() {
     private var payloadPassed: String? = null;
@@ -116,18 +120,17 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     }
 
     private fun startTorAndConnect() {
-        if (SentinelState.isTorStarted()) {
+        if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
             dojoConnectFragment.showTorProgressSuccess()
             setDojo()
         } else {
             setUpTor()
-            TorServiceController.startTor()
+            SentinelTorManager.start()
             prefsUtil.enableTor = true
             dojoConnectFragment.showTorProgress()
-            TorServiceController.appEventBroadcaster.let {
-                (it as TorEventsReceiver).torLogs.observe(this.viewLifecycleOwner) { log ->
-                    if (log.contains("Bootstrapped 100%")) {
-                        dojoConnectFragment.showTorProgressSuccess()
+            SentinelTorManager.getTorStateLiveData().observe(this) {
+                if (it.state == EnumTorState.ON) {
+                    if (dojoConnectFragment.showTorProgressSuccess()) {
                         setDojo()
                     }
                 }
@@ -142,7 +145,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         try {
             val pairing = fromJSON<DojoPairing>(payload)
                 ?: throw  Exception("Invalid payload")
-            val client = OkHttpClient.Builder().proxy(SentinelState.torProxy).build()
+            val client = OkHttpClient.Builder().proxy(SentinelTorManager.getProxy()).build()
 
             val requestBody = FormBody.Builder()
                 .add("apikey", pairing.pairing?.apikey.toString())
@@ -156,9 +159,13 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
             client.newCall(request).enqueue(object : Callback {
 
                 override fun onResponse(call: Call, response: Response) {
-                    if (response.isSuccessful) {
-                        val string = response.body?.string() ?: "{}"
-                        val json = JSONObject(string)
+                    val body = response.body?.string() ?: "{}"
+                    if (response.code == 401 || (response.isSuccessful && !body.contains("authorizations"))) {
+                        Log.d("DojoConfiguration", "Unauthorized: wrong API key")
+                        dismissAllOrToast(false)
+                    }
+                    else if (response.isSuccessful) {
+                        val json = JSONObject(body)
                         dojoUtil.setDojoPayload(payload)
                         prefsUtil.apiEndPointTor = pairing.pairing.url
                         prefsUtil.apiEndPoint = pairing.pairing.url
@@ -169,10 +176,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                                 dismissAllOrToast(true)
                             }
                         }
-                    } else if (response.code == 401) {
-                        Log.d("DojoConfiguration", "Unauthorized: wrong API key")
-                        dismissAllOrToast(false)
-                    } else {
+                    }  else {
                         dismissAllOrToast(false)
                     }
                 }
@@ -180,8 +184,10 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                 override fun onFailure(call: Call, e: IOException) {
                     if (e.message!!.contains("Unable to resolve host")) {
                         Thread.sleep(5000)
-                        if (SentinelState.torProxy != null)
+                        if (SentinelTorManager.getProxy() != null)
                             setDojo()
+                        else
+                            dismissAllOrToast(false, true)
                     }
                     else {
                         dismissAllOrToast(false, true)
@@ -208,9 +214,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         else if (retry && numRetries <= 2) {
             numRetries += 1
             Thread.sleep(5000)
-            if (SentinelState.torProxy != null) {
-                setDojo()
-            }
+            setDojo()
         }
         else {
             Handler(Looper.getMainLooper()).post {
@@ -218,7 +222,9 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
                     this@DojoConfigureBottomSheet.dojoConfigurationListener?.onDismiss()
                     this@DojoConfigureBottomSheet.dismiss()
                 }, 500)
-                Toast.makeText(requireContext(), "Unable to connect to Dojo. Please try again", Toast.LENGTH_LONG).show()
+                if (context != null)
+                    Toast.makeText(context, "Unable to connect to Dojo. Please try again", Toast.LENGTH_LONG).show()
+                this.dismiss()
             }
         }
     }
@@ -226,113 +232,11 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
 
 
     private fun setUpTor() {
-        TorServiceController.Builder(
-            application = requireActivity().application,
-            torServiceNotificationBuilder = getTorNotificationBuilder(),
-            backgroundManagerPolicy = gePolicyManager(),
-            buildConfigVersionCode = BuildConfig.VERSION_CODE,
-            // Can instantiate directly here then access it from
-            defaultTorSettings = SentinelTorSettings(),
-            geoipAssetPath = "common/geoip",
-            geoip6AssetPath = "common/geoip6"
-        )
-            .addTimeToRestartTorDelay(milliseconds = 100L)
-            .addTimeToStopServiceDelay(milliseconds = 100L)
-            .setEventBroadcaster(TorEventsReceiver())
-            .setBuildConfigDebug(buildConfigDebug = BuildConfig.DEBUG)
-            .build()
-
-        TorServiceController.appEventBroadcaster?.let {
-
-            (it as TorEventsReceiver).liveTorState.observeForever { torState ->
-                when (torState.state) {
-                    "Tor: Off" -> {
-                        SentinelState.torState = SentinelState.TorState.OFF
-                    }
-                    "Tor: Starting" -> {
-                        SentinelState.torState = SentinelState.TorState.WAITING
-                    }
-                    "Tor: Stopping" -> {
-                        SentinelState.torState = SentinelState.TorState.WAITING
-                    }
-                }
-            }
-            it.torLogs.observeForever { log ->
-                if (log.contains("Bootstrapped 100%")) {
-                    it.torPortInfo.value?.socksPort?.let { it1 -> createProxy(it1) }
-                    SentinelState.torState = SentinelState.TorState.ON
-                }
-            }
-            it.torPortInfo.observeForever { torInfo ->
-                torInfo.socksPort?.let { port ->
-                    createProxy(port)
-                }
-            }
-        }
-        if (SentinelState.isTorRequired()) {
-            TorServiceController.startTor()
-            prefsUtil.enableTor = true
+        SentinelTorManager.setUp(context?.applicationContext as Application)
+        if (prefsUtil.enableTor == true) {
+            SentinelTorManager.start()
         }
     }
-
-
-    private fun createProxy(proxyUrl: String) {
-        val host = proxyUrl.split(":")[0].trim()
-        val port = proxyUrl.split(":")[1]
-        val proxy = Proxy(
-            Proxy.Type.SOCKS, InetSocketAddress(
-            host, port.trim().toInt())
-        )
-        SentinelState.torProxy = proxy;
-    }
-
-    private fun gePolicyManager(): BackgroundManager.Builder.Policy {
-        return BackgroundManager.Builder()
-            .runServiceInForeground(true)
-    }
-
-    private fun getTorNotificationBuilder(): ServiceNotification.Builder {
-
-        var contentIntent: PendingIntent? = null
-
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.FLAG_IMMUTABLE
-        } else {
-            0
-        }
-
-        context?.packageManager?.getLaunchIntentForPackage(requireContext().packageName)?.let { intent ->
-            contentIntent = PendingIntent.getActivity(
-                context,
-                0,
-                intent,
-                flags
-            )
-        }
-
-        return ServiceNotification.Builder(
-            channelName = "Tor Service",
-            channelDescription = "Tor foreground service notifications ",
-            channelID = "TOR_CHANNEL",
-            notificationID = 121
-        )
-            .setActivityToBeOpenedOnTap(
-                clazz = HomeActivity::class.java,
-                intentExtrasKey = null,
-                intentExtras = null,
-                intentRequestCode = null
-            )
-            .enableTorRestartButton(enable = true)
-            .enableTorStopButton(enable = true)
-            .showNotification(show = true)
-            .also { builder ->
-                contentIntent?.let {
-                    builder.setContentIntent(it)
-                }
-            }
-    }
-
-
 
     fun setDojoConfigurationListener(dojoConfigurationListener: DojoConfigurationListener?) {
         this.dojoConfigurationListener = dojoConfigurationListener
@@ -436,9 +340,14 @@ class DojoConnectFragment : Fragment() {
                 .start()
     }
 
-    fun showTorProgressSuccess() {
-        progressTor.visibility = View.INVISIBLE
-        checkImageTor.visibility = View.VISIBLE
+    @Synchronized
+    fun showTorProgressSuccess() : Boolean {
+        if (checkImageTor.visibility != View.VISIBLE) {
+            progressTor.visibility = View.INVISIBLE
+            checkImageTor.visibility = View.VISIBLE
+            return true
+        }
+        return false
     }
 
     fun showDojoProgress() {
@@ -478,7 +387,7 @@ class ConnectManuallyFragment : Fragment() {
         apiText = view.findViewById(R.id.setUpWalletApiKeyInput)
         connectButton = view.findViewById(R.id.setUpWalletConnectDojo)
 
-        connectButton?.setOnClickListener(View.OnClickListener {
+        connectButton?.setOnClickListener {
             if (onionText?.text?.isBlank() == true || apiText?.text?.isBlank() == true)
                 dojoPayload = null
             else
@@ -491,7 +400,7 @@ class ConnectManuallyFragment : Fragment() {
                         "}\n" +
                         "}"
             connectOnClickListener?.onClick(view)
-        })
+        }
     }
 }
 

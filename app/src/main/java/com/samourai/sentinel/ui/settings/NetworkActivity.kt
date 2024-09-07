@@ -3,6 +3,7 @@ package com.samourai.sentinel.ui.settings
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
@@ -13,8 +14,9 @@ import androidx.core.content.ContextCompat
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.api.ApiService
-import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.repository.CollectionRepository
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.dojo.DojoUtility
@@ -23,10 +25,6 @@ import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.apiScope
-import io.matthewnelson.topl_service.TorServiceController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.inject
 
@@ -65,11 +63,12 @@ class NetworkActivity : SentinelActivity() {
         dojoConnectionIcon = findViewById(R.id.network_dojo_status_icon)
         dojoConnectionStatus = findViewById(R.id.network_dojo_status)
         torRenewBtn?.setOnClickListener {
-            TorServiceController.newIdentity()
+            SentinelTorManager.newIdentity()
             this.showFloatingSnackBar(findViewById(R.id.toolbarCollectionDetails), text = "Tor identity has been renewed")
         }
-        SentinelState.torStateLiveData().observe(this, {
-            setTorConnectionState(it)
+        setTorConnectionState(SentinelTorManager.getTorState().state)
+        SentinelTorManager.getTorStateLiveData().observe(this, {
+            setTorConnectionState(it.state)
         })
         dojoButton?.setOnClickListener {
             if (dojoUtility.isDojoEnabled()) {
@@ -85,15 +84,15 @@ class NetworkActivity : SentinelActivity() {
             }
         }
         torButton!!.setOnClickListener {
-            if (SentinelState.isTorStarted()) {
+            if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 if (!dojoUtility.isDojoEnabled()) {
-                    TorServiceController.stopTor()
+                    SentinelTorManager.stop()
                     prefsUtil.enableTor = false
                 }
                 else
                     this.showFloatingSnackBar(torButton!!.rootView, text = "You wont be able to disable tor if dojo is enabled")
             } else {
-                TorServiceController.startTor()
+                SentinelTorManager.start()
                 prefsUtil.enableTor = true
             }
 
@@ -102,6 +101,7 @@ class NetworkActivity : SentinelActivity() {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == Companion.CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             showDojoSetUpBottomSheet()
         } else {
@@ -116,9 +116,15 @@ class NetworkActivity : SentinelActivity() {
         dojoUtility.clearDojo()
         setDojoStatus()
         if (prefsUtil.apiEndPoint.isNullOrEmpty()) {
+            if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
+                this.askCameraPermission()
+            } else {
+                showDojoSetUpBottomSheet()
+            }
+            /*
             this.confirm(label = "Choose server",
                     positiveText = "Connect to Dojo",
-                    negativeText = "Connect to Samourai’s server",
+                    //negativeText = "Connect to Samourai’s server",
                     isCancelable = false,
                     onConfirm = { confirm ->
                         if (confirm) {
@@ -130,10 +136,17 @@ class NetworkActivity : SentinelActivity() {
                                 negativeText = "No",
                                 onConfirm = { confirmed ->
                                     if (confirmed) {
-                                        TorServiceController.startTor()
+                                        SentinelTorManager.start()
                                         prefsUtil.enableTor = true
                                     }
-                                    importAllXpubs()
+                                    else {
+                                        SentinelTorManager.stop()
+                                        prefsUtil.enableTor = false
+                                    }
+                                    if (!prefsUtil.isAPIEndpointEnabled())
+                                        removeDojo()
+                                    else
+                                        importAllXpubs()
                                 }
                             )
                             if (prefsUtil.testnet!!) {
@@ -145,14 +158,26 @@ class NetworkActivity : SentinelActivity() {
                             }
                         }
                     })
+             */
         }
     }
 
     private fun importAllXpubs() {
         apiScope.launch {
-            repository.pubKeyCollections.forEach {
-                it.pubs.forEach {
-                    apiService.importXpub(it.pubKey, "bip${it.getPurpose()}")
+            val toImport = mutableListOf<Pair<String, String>>()
+
+            repository.pubKeyCollections.forEach { collection ->
+                collection.pubs.forEach { pub ->
+                    val purpose = "bip${pub.getPurpose()}"
+                    toImport.add(pub.pubKey to purpose)
+                }
+            }
+
+            toImport.forEach { (pubKey, purpose) ->
+                try {
+                    apiService.importXpub(pubKey, purpose)
+                } catch (e: Exception) {
+                    Log.d("NetworkActivity", "Error: ${e}")
                 }
             }
         }
@@ -170,18 +195,18 @@ class NetworkActivity : SentinelActivity() {
         }
     }
 
-    private fun setTorConnectionState(torState: SentinelState.TorState) {
+    private fun setTorConnectionState(torState: EnumTorState) {
         runOnUiThread {
             when (torState) {
 
-                SentinelState.TorState.ON -> {
+                EnumTorState.ON -> {
                     torButton!!.text = getString(R.string.disable)
                     torButton!!.isEnabled = true
                     torConnectionIcon!!.setColorFilter(activeColor)
                     torConnectionStatus!!.text = getString(R.string.Enabled)
                     torRenewBtn!!.visibility = View.VISIBLE
                 }
-                SentinelState.TorState.WAITING -> {
+                EnumTorState.STARTING -> {
                     torRenewBtn!!.visibility = View.INVISIBLE
                     torButton!!.text = getString(R.string.loading)
                     torButton!!.isEnabled = false

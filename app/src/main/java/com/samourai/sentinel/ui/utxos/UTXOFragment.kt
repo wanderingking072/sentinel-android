@@ -77,7 +77,7 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
         //For showing sections
         val active = Utxo(section = "Active")
         val blocked = Utxo(section = "Blocked")
-        val end = Utxo(section = "END")
+        val end = Utxo(section = "")
         val activeUtxo: ArrayList<Utxo> = arrayListOf()
         val blockedUtxo: ArrayList<Utxo> = arrayListOf()
 
@@ -163,6 +163,8 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
 
         private val diffCallBack = object : DiffUtil.ItemCallback<Utxo>() {
             override fun areItemsTheSame(oldItem: Utxo, newItem: Utxo): Boolean {
+                if (oldItem.section != null && newItem.section != null)
+                    return false
                 return newItem.txHash == oldItem.txHash && newItem.txOutputN == newItem.txOutputN
             }
 
@@ -290,7 +292,7 @@ class UTXOFragment : Fragment(), ActionMode.Callback {
                 }
                 R.id.utxo_details_action_spendable -> {
                     utxos.filter { utxo -> utxo.selected }.forEachIndexed { _, utxo ->
-                        UtxoMetaUtil.remove(utxo)
+                        UtxoMetaUtil.remove(utxo.txHash!!, utxo.txOutputN!!)
                     }
                     utxos.forEach { utxo -> utxo.selected = false }
                     updateList()

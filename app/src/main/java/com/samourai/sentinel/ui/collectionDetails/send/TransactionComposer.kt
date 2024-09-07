@@ -1,5 +1,7 @@
 package com.samourai.sentinel.ui.collectionDetails.send
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.samourai.sentinel.api.ApiService
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.core.SentinelState.Companion.bDust
@@ -18,12 +20,15 @@ import com.samourai.wallet.send.UTXO
 import com.samourai.wallet.util.FormatsUtilGeneric
 import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.lang3.tuple.Triple
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.ECKey
 import org.bitcoinj.params.MainNetParams
 import org.json.JSONObject
+import org.koin.ext.scope
 import org.koin.java.KoinJavaComponent
 import timber.log.Timber
 import java.math.BigInteger
@@ -43,7 +48,7 @@ class TransactionComposer {
     private var psbt: PSBT? = null
     private var balance: Long = 0L
     private var selectedUtxos: ArrayList<UTXO> = arrayListOf()
-    private var selectPubKeyModel: PubKeyModel? = null;
+    private var selectPubKeyModel: List<PubKeyModel?> = listOf();
     private var address: String = ""
     private var amount: Double = 0.0
     private var selectedFee = 0L;
@@ -53,6 +58,7 @@ class TransactionComposer {
     private val apiService: ApiService by KoinJavaComponent.inject(ApiService::class.java)
     private var txData:String = ""
     private val HARDENED = 2147483648
+    private val composeMutex = Mutex()
 
     fun setBalance(value: Long) {
         this.balance = value;
@@ -62,180 +68,185 @@ class TransactionComposer {
         return minerFeeChannel
     }
 
-    fun setPubKey(selectPubKeyModel: PubKeyModel) {
+    fun setPubKey(selectPubKeyModel: List<PubKeyModel>) {
         this.selectPubKeyModel = selectPubKeyModel
     }
 
-    @Synchronized
     suspend fun compose(
         inputUtxos: ArrayList<Utxo>,
         inputAddress: String,
         inputFee: Long,
         inputAmount: Double
     ): Boolean {
-        if (selectPubKeyModel == null) {
-            return false;
-        }
-        receivers = hashMapOf()
-        selectedUtxos = arrayListOf()
-        amount = inputAmount
-        address = inputAddress
-        selectedFee = inputFee
-        var totalValueSelected = 0L
-        var change: Long
-        var fee: BigInteger? = BigInteger.ZERO
-
-        val xpub = XPUB(this.selectPubKeyModel!!.pubKey)
-        xpub.decode()
-        val accountIdx = (xpub.child + HARDENED)
-
-        val utxos: ArrayList<UTXO> = arrayListOf();
-        for (utxoCoin in inputUtxos) {
-            if (utxoCoin.pubKey != selectPubKeyModel?.pubKey) {
-                continue
+        composeMutex.withLock {
+            if (selectPubKeyModel == null) {
+                return false;
             }
-            else {
-                val u = UTXO()
-                val outs: MutableList<MyTransactionOutPoint> = ArrayList()
-                outs.add(utxoCoin.getOutPoints())
-                u.outpoints = outs
-                utxos.add(u)
-            }
-        }
-        // sort in ascending order by value
-        Collections.sort(utxos, UTXO.UTXOComparator())
-        utxos.reverse()
-        receivers[address] = BigInteger.valueOf(amount.toLong())
-        // get smallest 1 UTXO > than spend + fee + dust
-        for (u in utxos) {
-            val outpointTypes: Triple<Int, Int, Int> =
-                FeeUtil.getInstance().getOutpointCount(Vector(u.outpoints))
-            if (u.value >= amount + bDust.toLong() + FeeUtil.getInstance().estimatedFeeSegwit(
-                    outpointTypes.left,
-                    outpointTypes.middle,
-                    outpointTypes.right,
-                    2
-                ).toLong()
-            ) {
-                selectedUtxos.add(u)
-                totalValueSelected += u.value
-                Timber.i("single output")
-                Timber.i("amount:$amount")
-                Timber.i("value selected:" + u.value)
-                Timber.i("total value selected:$totalValueSelected")
-                Timber.i("nb inputs:" + u.outpoints.size)
-                break
-            }
-        }
+            receivers = hashMapOf()
+            selectedUtxos = arrayListOf()
+            balance = 0L
+            amount = inputAmount
+            address = inputAddress
+            selectedFee = inputFee
+            var totalValueSelected = 0L
+            var change: Long
+            var fee: BigInteger? = BigInteger.ZERO
 
-        if (selectedUtxos.size == 0) {
-            // sort in descending order by value
+            val xpub = XPUB(this.selectPubKeyModel[0]!!.pubKey)
+            xpub.decode()
+            val accountIdx1 = (xpub.child + HARDENED)
+
+            val utxos: ArrayList<UTXO> = arrayListOf();
+            for (utxoCoin in inputUtxos) {
+                if (!selectPubKeyModel.any{it!!.pubKey == utxoCoin.pubKey}) {
+                    continue
+                } else {
+                    val u = UTXO()
+                    val outs: MutableList<MyTransactionOutPoint> = ArrayList()
+                    outs.add(utxoCoin.getOutPoints())
+                    u.outpoints = outs
+                    utxos.add(u)
+                }
+            }
+            // sort in ascending order by value
             Collections.sort(utxos, UTXO.UTXOComparator())
-            var selected = 0
-            var p2pkh = 0
-            var p2sh_p2wpkh = 0
-            var p2wpkh = 0
-
-            // get largest UTXOs > than spend + fee + dust
+            utxos.reverse()
+            receivers[address] = BigInteger.valueOf(amount.toLong())
+            // get smallest 1 UTXO > than spend + fee + dust
             for (u in utxos) {
-                selectedUtxos.add(u)
-                totalValueSelected += u.value
-                selected += u.outpoints.size
-
-//                            Log.d("SendActivity", "value selected:" + u.getValue());
-//                            Log.d("SendActivity", "total value selected/threshold:" + totalValueSelected + "/" + (amount + SamouraiWallet.bDust.longValue() + FeeUtil.getInstance().estimatedFee(selected, 2).longValue()));
                 val outpointTypes: Triple<Int, Int, Int> =
                     FeeUtil.getInstance().getOutpointCount(Vector(u.outpoints))
-                p2pkh += outpointTypes.left
-                p2sh_p2wpkh += outpointTypes.middle
-                p2wpkh += outpointTypes.right
-                if (totalValueSelected >= amount + bDust.toLong() + FeeUtil.getInstance()
-                        .estimatedFeeSegwit(p2pkh, p2sh_p2wpkh, p2wpkh, 2).toLong()
+                if (u.value >= amount + bDust.toLong() + FeeUtil.getInstance().estimatedFeeSegwit(
+                        outpointTypes.left,
+                        outpointTypes.middle,
+                        outpointTypes.right,
+                        2
+                    ).toLong()
                 ) {
-
+                    selectedUtxos.add(u)
+                    totalValueSelected += u.value
+                    Timber.i("single output")
+                    Timber.i("amount:$amount")
+                    Timber.i("value selected:" + u.value)
+                    Timber.i("total value selected:$totalValueSelected")
+                    Timber.i("nb inputs:" + u.outpoints.size)
                     break
                 }
             }
-        }
 
-        change = (totalValueSelected - (amount + fee!!.toLong())).toLong()
+            if (selectedUtxos.size == 0) {
+                // sort in descending order by value
+                Collections.sort(utxos, UTXO.UTXOComparator())
+                var selected = 0
+                var p2pkh = 0
+                var p2sh_p2wpkh = 0
+                var p2wpkh = 0
 
-        if (change > 0L && change < bDust.toLong()) {
-            throw ComposeException("Change is dust")
-        }
+                // get largest UTXOs > than spend + fee + dust
+                for (u in utxos) {
+                    selectedUtxos.add(u)
+                    totalValueSelected += u.value
+                    selected += u.outpoints.size
 
-        val outpoints: MutableList<MyTransactionOutPoint?> = ArrayList()
+//                            Log.d("SendActivity", "value selected:" + u.getValue());
+//                            Log.d("SendActivity", "total value selected/threshold:" + totalValueSelected + "/" + (amount + SamouraiWallet.bDust.longValue() + FeeUtil.getInstance().estimatedFee(selected, 2).longValue()));
+                    val outpointTypes: Triple<Int, Int, Int> =
+                        FeeUtil.getInstance().getOutpointCount(Vector(u.outpoints))
+                    p2pkh += outpointTypes.left
+                    p2sh_p2wpkh += outpointTypes.middle
+                    p2wpkh += outpointTypes.right
+                    if (totalValueSelected >= amount + bDust.toLong() + FeeUtil.getInstance()
+                            .estimatedFeeSegwit(p2pkh, p2sh_p2wpkh, p2wpkh, 2).toLong()
+                    ) {
 
-        for (utxo in selectedUtxos) {
-            balance += utxo.value
-        }
+                        break
+                    }
+                }
+            }
+
+            change = (totalValueSelected - (amount + fee!!.toLong())).toLong()
+
+            if (change > 0L && change < bDust.toLong()) {
+                throw ComposeException("Change is dust 1")
+            }
+
+            val outpoints: MutableList<MyTransactionOutPoint?> = ArrayList()
+
+            for (utxo in selectedUtxos) {
+                balance += utxo.value
+            }
 //            List<UTXO> utxos = preselectedUTXOs;
-        // sort in descending order by value
-        for (utxo in selectedUtxos) {
-            outpoints.addAll(utxo.outpoints)
-        }
-        val outpointTypes = FeeUtil.getInstance().getOutpointCount(Vector(outpoints))
-        fee = FeeUtil.getInstance().estimatedFeeSegwit(
-            outpointTypes.left,
-            outpointTypes.middle,
-            outpointTypes.right,
-            2
-        )
-        if (amount.toLong() == balance) {
+            // sort in descending order by value
+            for (utxo in selectedUtxos) {
+                outpoints.addAll(utxo.outpoints)
+            }
+            val outpointTypes = FeeUtil.getInstance().getOutpointCount(Vector(outpoints))
             fee = FeeUtil.getInstance().estimatedFeeSegwit(
                 outpointTypes.left,
                 outpointTypes.middle,
                 outpointTypes.right,
-                1
+                2
             )
-            amount -= fee.toLong()
-            receivers.clear()
-            receivers[address] = BigInteger.valueOf(amount.toLong())
+            if (amount.toLong() == balance) {
+                fee = FeeUtil.getInstance().estimatedFeeSegwit(
+                    outpointTypes.left,
+                    outpointTypes.middle,
+                    outpointTypes.right,
+                    1
+                )
+                amount -= fee.toLong()
+                receivers.clear()
+                receivers[address] = BigInteger.valueOf(amount.toLong())
 
-        }
+            }
 
-        change = (totalValueSelected - (amount + fee.toLong())).toLong()
-        //
-        //                    Log.d("SendActivity", "change:" + change);
+            change = (totalValueSelected - (amount + fee.toLong())).toLong()
+            minerFeeChannel.send(fee.toLong())
+            //
+            //                    Log.d("SendActivity", "change:" + change);
 
-        if (change < 0L && change < bDust.toLong()) {
-            throw ComposeException("Change is dust")
-        }
-        var changeType = "P2PKH"
-        if (FormatsUtilGeneric.getInstance().isValidBech32(address))
-            changeType = "P2WPKH"
-        else if (Address.fromBase58(SentinelState.getNetworkParam(), address).isP2SHAddress)
-            changeType = "P2SH"
+            if (change < bDust.toLong()) {
+                throw ComposeException("Change is dust 2")
+            }
+            var changeType = "P2PKH"
+            if (FormatsUtilGeneric.getInstance().isValidBech32(address))
+                changeType = "P2WPKH"
+            else if (Address.fromBase58(SentinelState.getNetworkParam(), address).isP2SHAddress)
+                changeType = "P2SH"
 
-        val changeAddress = getNextChangeAddress(accountIdx, changeType)
-            ?: throw ComposeException("Change address is invalid");
-        receivers[changeAddress] = BigInteger.valueOf(change)
-
-
-        val outPoints: ArrayList<MyTransactionOutPoint> = ArrayList()
+            val changeAddress = getNextChangeAddress(accountIdx1, changeType)
+                ?: throw ComposeException("Change address is invalid");
+            receivers[changeAddress] = BigInteger.valueOf(change)
 
 
-        for (u in selectedUtxos) {
-            outPoints.addAll(u.outpoints)
-        }
+            val outPoints: ArrayList<MyTransactionOutPoint> = ArrayList()
 
 
-        val transaction = try {
-            SendFactory.getInstance()
-                .makeTransaction(accountIdx.toInt(), outPoints, receivers)
-        } catch (e: Exception) {
-            throw   ComposeException("Unable to create tx")
-        }
+            for (u in selectedUtxos) {
+                outPoints.addAll(u.outpoints)
+            }
 
-        psbt = PSBT(transaction)
+            for (receiver in receivers)
+                if (receiver.value.toLong() == 0L)
+                    receivers.remove(receiver.key)
 
-        val networkParameters = SentinelState.getNetworkParam();
-        val type = if (networkParameters is MainNetParams) 0 else 1
+            val transaction = try {
+                SendFactory.getInstance()
+                    .makeTransaction(accountIdx1.toInt(), outPoints, receivers)
+            } catch (e: Exception) {
+                throw ComposeException("Unable to create tx")
+            }
 
-        val purpose = selectPubKeyModel?.getPurpose();
-        val data = if (selectPubKeyModel?.fingerPrint != null) selectPubKeyModel?.fingerPrint?.toCharArray() else "00000000".toCharArray()
+            psbt = PSBT(transaction)
 
-        /*
+            val networkParameters = SentinelState.getNetworkParam();
+            val type = if (networkParameters is MainNetParams) 0 else 1
+
+            val purpose1 = selectPubKeyModel[0]?.getPurpose();
+            val data =
+                if (selectPubKeyModel[0]?.fingerPrint != null) selectPubKeyModel[0]?.fingerPrint?.toCharArray() else "00000000".toCharArray()
+
+            /*
         psbt!!.addOutput(
             networkParameters,
             Hex.decodeHex(data),
@@ -249,8 +260,8 @@ class TransactionComposer {
 
          */
 
-        //external receiving address output
-        /*
+            //external receiving address output
+            /*
         psbt!!.addOutput(
             PSBT.PSBT_OUT_BIP32_DERIVATION,
             //org.bouncycastle.util.encoders.Hex.decode("028aeea96b86f67d91af6f3bee75abbd5e85976a4fe489b0d1c4851f744b58e2b5"),
@@ -260,17 +271,24 @@ class TransactionComposer {
 
          */
 
-        //change address output
-        psbt!!.addOutput(
-            PSBT.PSBT_OUT_BIP32_DERIVATION,
-            changeECKey!!.getPubKey(),
-            PSBT.writeBIP32Derivation(Hex.decodeHex(data), purpose!!, type, getAccount()!!.id, 1, changeIndex!!)
-        )
-        psbt!!.addOutputSeparator()
+            //change address output
+            psbt!!.addOutput(
+                PSBT.PSBT_OUT_BIP32_DERIVATION,
+                changeECKey!!.getPubKey(),
+                PSBT.writeBIP32Derivation(
+                    Hex.decodeHex(data),
+                    purpose1!!,
+                    type,
+                    getAccount()!!.id,
+                    1,
+                    changeIndex!!
+                )
+            )
+            psbt!!.addOutputSeparator()
 
-        psbt!!.addOutputSeparator()
+            psbt!!.addOutputSeparator()
 
-        /*
+            /*
         psbt!!.addOutput(
             networkParameters,
             Hex.decodeHex(data),
@@ -283,55 +301,35 @@ class TransactionComposer {
         )
          */
 
-        psbt?.addGlobalUnsignedTx(String(Hex.encodeHex(transaction.bitcoinSerialize())));
-        psbt?.addGlobalXpubRecord(
-            PSBT.deserializeXPUB(getAccount()?.xpubstr()),
-            Hex.decodeHex(data),
-            purpose,
-            type,
-            getAccount()!!.id
-        );
-        psbt?.addGlobalSeparator();
+            psbt?.addGlobalUnsignedTx(String(Hex.encodeHex(transaction.bitcoinSerialize())));
+            psbt?.addGlobalXpubRecord(
+                PSBT.deserializeXPUB(getAccount()?.xpubstr()),
+                Hex.decodeHex(data),
+                purpose1,
+                type,
+                getAccount()!!.id
+            );
+            psbt?.addGlobalSeparator();
 
-        for (outPoint in outPoints) {
-            for (input in inputUtxos) {
-                if (input.txHash == outPoint.hash.toString() && outPoint.txOutputN == input.txOutputN) {
-                    val accountIdx = (xpub.child + HARDENED)
-                    val path: String = input.path;
-                    val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
-                    val chainIndex = path.split("/".toRegex()).toTypedArray()[1].toInt()
-                    val eckeyInput = if (chainIndex == 1) {
-                        getAccount()?.change?.getAddressAt(addressIndex)?.ecKey
-                    } else {
-                        getAccount()?.receive?.getAddressAt(addressIndex)?.ecKey
-                    }
+            for (outPoint in outPoints) {
+                for (input in inputUtxos) {
+                    if (input.txHash == outPoint.hash.toString() && outPoint.txOutputN == input.txOutputN) {
+                        val inputXpub = XPUB(input.pubKey)
+                        inputXpub.decode()
+                        val accountIdx = (inputXpub.child + HARDENED)
+                        val purpose = selectPubKeyModel.filter { it?.pubKey.equals(input.pubKey) }[0]?.getPurpose()!!
 
-                    if (purpose == 84 && FormatsUtil.isValidBech32(input.addr!!)) {
-                        psbt?.addInput(
-                            networkParameters,
-                            Hex.decodeHex(data),
-                            eckeyInput,
-                            outPoint.value.value,
-                            purpose,
-                            type,
-                            accountIdx.toInt(),
-                            chainIndex,
-                            addressIndex
-                        )
-                    }
-
-                    else if (purpose == 49 || Address.fromBase58(SentinelState.getNetworkParam(), input.addr!!).isP2SHAddress) {
-                        val response = apiService.getTxHex(outPoint.hash.toString())
-                        if (response.isSuccessful) {
-                            val body = response.body?.string()
-                            if (body != null) {
-                                val jsonObject = JSONObject(body)
-                                if (jsonObject.has("data"))
-                                    txData = jsonObject.getString("data")
-                            }
+                        val path: String = input.path;
+                        val addressIndex: Int = path.split("/".toRegex()).toTypedArray()[2].toInt()
+                        val chainIndex = path.split("/".toRegex()).toTypedArray()[1].toInt()
+                        val eckeyInput = if (chainIndex == 1) {
+                            getAccount(input.pubKey)?.change?.getAddressAt(addressIndex)?.ecKey
+                        } else {
+                            getAccount(input.pubKey)?.receive?.getAddressAt(addressIndex)?.ecKey
                         }
-                        if (txData != "")
-                            psbt!!.addInputCompatibility(
+
+                        if (purpose == 84 && FormatsUtil.isValidBech32(input.addr!!)) {
+                            psbt?.addInput(
                                 networkParameters,
                                 Hex.decodeHex(data),
                                 eckeyInput,
@@ -340,59 +338,88 @@ class TransactionComposer {
                                 type,
                                 accountIdx.toInt(),
                                 chainIndex,
-                                addressIndex,
-                                txData,
-                                input.txOutputN!!
-                            );
-                    }
-                    else if (purpose == 44 || !FormatsUtil.isValidBech32(input.addr!!)) {
-                        val response = apiService.getTxHex(outPoint.hash.toString())
-                        if (response.isSuccessful) {
-                            val body = response.body?.string()
-                            if (body != null) {
-                                val jsonObject = JSONObject(body)
-                                if (jsonObject.has("data"))
-                                    txData = jsonObject.getString("data")
+                                addressIndex
+                            )
+                        } else if (purpose == 49 || Address.fromBase58(
+                                SentinelState.getNetworkParam(),
+                                input.addr!!
+                            ).isP2SHAddress
+                        ) {
+                            val response = apiService.getTxHex(outPoint.hash.toString())
+                            if (response.isSuccessful) {
+                                val body = response.body?.string()
+                                if (body != null) {
+                                    val jsonObject = JSONObject(body)
+                                    if (jsonObject.has("data"))
+                                        txData = jsonObject.getString("data")
+                                }
                             }
-                        }
+                            if (txData != "")
+                                psbt!!.addInputCompatibility(
+                                    networkParameters,
+                                    Hex.decodeHex(data),
+                                    eckeyInput,
+                                    outPoint.value.value,
+                                    purpose,
+                                    type,
+                                    accountIdx.toInt(),
+                                    chainIndex,
+                                    addressIndex,
+                                    txData,
+                                    input.txOutputN!!
+                                );
+                        } else if (purpose == 44 || !FormatsUtil.isValidBech32(input.addr!!)) {
+                            val response = apiService.getTxHex(outPoint.hash.toString())
+                            if (response.isSuccessful) {
+                                val body = response.body?.string()
+                                if (body != null) {
+                                    val jsonObject = JSONObject(body)
+                                    if (jsonObject.has("data"))
+                                        txData = jsonObject.getString("data")
+                                }
+                            }
 
-                        psbt?.addInputLegacy(
-                            Hex.decodeHex(data),
-                            eckeyInput,
-                            outPoint.value.value,
-                            purpose,
-                            type,
-                            accountIdx.toInt(),
-                            chainIndex,
-                            addressIndex,
-                            txData
-                        );
+                            psbt?.addInputLegacy(
+                                Hex.decodeHex(data),
+                                eckeyInput,
+                                outPoint.value.value,
+                                purpose,
+                                type,
+                                accountIdx.toInt(),
+                                chainIndex,
+                                addressIndex,
+                                txData
+                            );
+                        }
+                        break
                     }
-                    break
                 }
             }
-        }
 
-        if (psbt != null) {
-            fee?.let {
-                Timber.i("compose: ${fee} ${feeCallBack.hashCode()}")
+            if (psbt != null) {
+                fee?.let {
+                    Timber.i("compose: ${fee} ${feeCallBack.hashCode()}")
+                }
             }
-        }
 
-        return true
+            return true
+        }
     }
 
-    private fun getAccount(): HD_Account? {
-        val pubKey = this.selectPubKeyModel;
-        return when (this.selectPubKeyModel?.type) {
+    private fun getAccount(pubkeyStr: String? = null): HD_Account? {
+        //TODO: check what this method is used for and if we can make selectPubkeyModel a list of deposit pubs
+        var pubKey = this.selectPubKeyModel[0]?.pubKey;
+        if (pubkeyStr != null)
+            pubKey = pubkeyStr
+        return when (this.selectPubKeyModel[0]?.type) {
             AddressTypes.BIP44 -> {
-                return HD_Account(SentinelState.getNetworkParam(), pubKey?.pubKey, "", 0);
+                return HD_Account(SentinelState.getNetworkParam(), pubKey, "", 0);
             }
             AddressTypes.BIP49 -> {
-                return HD_Account(SentinelState.getNetworkParam(), pubKey?.pubKey, "", 0)
+                return HD_Account(SentinelState.getNetworkParam(), pubKey, "", 0)
             }
             AddressTypes.BIP84 -> {
-                return HD_Account(SentinelState.getNetworkParam(), pubKey?.pubKey, "", 0)
+                return HD_Account(SentinelState.getNetworkParam(), pubKey, "", 0)
             }
             AddressTypes.ADDRESS -> {
                 return null;
@@ -402,11 +429,11 @@ class TransactionComposer {
     }
 
     private fun getNextChangeAddress(accountIdx: Long = 0L, toAddrType: String = ""): String? {
-        val pubKey = this.selectPubKeyModel;
+        val pubKey = this.selectPubKeyModel[0];
         changeIndex = pubKey?.change_index!!
         val account = getAccount()
 
-        return when (this.selectPubKeyModel?.type) {
+        return when (this.selectPubKeyModel[0]?.type) {
             AddressTypes.BIP44 -> {
                 val address = account?.change?.getAddressAt(changeIndex!!)
                 changeECKey = address?.ecKey

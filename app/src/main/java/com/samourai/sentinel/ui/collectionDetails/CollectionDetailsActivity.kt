@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -21,6 +20,7 @@ import com.samourai.sentinel.ui.collectionDetails.receive.ReceiveFragment
 import com.samourai.sentinel.ui.collectionDetails.send.SendFragment
 import com.samourai.sentinel.ui.collectionDetails.transactions.TransactionsFragment
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
+import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -28,9 +28,12 @@ import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.inject
 
 
-class CollectionDetailsActivity : SentinelActivity() {
+class CollectionDetailsActivity : SentinelActivity(), TransactionsFragment.OnTabChangedListener {
 
 
+    private var isFirstToast = true
+    private var isTabWhirlpoolPub = false
+    private var isTabPremix = false
     private lateinit var pagerAdapter: PagerAdapter
     private val receiveFragment: ReceiveFragment = ReceiveFragment()
     private val sendFragment: SendFragment = SendFragment()
@@ -38,6 +41,12 @@ class CollectionDetailsActivity : SentinelActivity() {
     private var collection: PubKeyCollection? = null
     private val repository: CollectionRepository by inject(CollectionRepository::class.java)
     private lateinit var binding: ActivityCollectionDetailsBinding
+    private val HARDENED = 2147483648
+    private val POSTMIX_ACC = 2147483646L
+    private val PREMIX_ACC = 2147483645L
+    private val BADBANK_ACC = 2147483644L
+    private val SWAPS_REFUND = 2147483642L
+    private val SWAPS_ASB = 2147483641L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,12 +88,14 @@ class CollectionDetailsActivity : SentinelActivity() {
         binding.bottomNav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.bottom_nav_receive -> {
-                    binding.fragmentHostContainerPager.setCurrentItem(0, true)
+                    if ((collectionHasOnlyNoSendPubkeys() || isTabWhirlpoolPub) && !isFirstToast) {}
+                    else {
+                        binding.fragmentHostContainerPager.setCurrentItem(0, true)
+                    }
+                    isFirstToast = false
                 }
 
                 R.id.bottom_nav_send -> {
-                    //Toast.makeText(this, "Send - coming soon", Toast.LENGTH_LONG).show()
-
                     if (collectionOnlyHasSingleAddresses())
                         this@CollectionDetailsActivity.showFloatingSnackBar(
                             binding.root,
@@ -152,6 +163,18 @@ class CollectionDetailsActivity : SentinelActivity() {
                 )
             }
         }
+        else if (requestCode == 2 && resultCode == Activity.RESULT_OK) {
+            data?.data?.also { uri ->
+                val fileContent = sendFragment.viewModel.psbtLive.value
+                val outputStream = contentResolver.openOutputStream(uri)
+                outputStream?.write(fileContent?.toByteArray())
+                outputStream?.close()
+                this@CollectionDetailsActivity.showFloatingSnackBar(
+                    binding.root,
+                    text = "Txt file saved to ${uri.path}"
+                )
+            }
+        }
     }
 
     override fun onBackPressed() {
@@ -170,6 +193,23 @@ class CollectionDetailsActivity : SentinelActivity() {
     private fun collectionOnlyHasSingleAddresses(): Boolean {
         collection?.pubs?.forEach {
             if (it.type  != AddressTypes.ADDRESS)
+                return false
+        }
+
+        return true
+    }
+
+    private fun collectionHasOnlyNoSendPubkeys(): Boolean {
+        collection?.pubs?.forEach {
+            if (it.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(it.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                if (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC
+                    && account != SWAPS_REFUND && account != SWAPS_ASB)
+                    return false
+            }
+            else
                 return false
         }
 
@@ -219,6 +259,44 @@ class CollectionDetailsActivity : SentinelActivity() {
         }
     }
 
+    override fun onTabChanged(position: Int) {
+        if (position >= 0) {
+            val pubSelected = collection?.pubs?.get(position)
+            if (pubSelected?.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(pubSelected?.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                isTabWhirlpoolPub =
+                    if (account == POSTMIX_ACC || account == PREMIX_ACC || account == BADBANK_ACC ||
+                        account == SWAPS_REFUND || account == SWAPS_ASB) {
+                        binding.bottomNav.getMenuItem(0)?.setIcon(null)
+                        binding.bottomNav.getMenuItem(0)?.setEnabled(false)
+                        true
+                    } else {
+                        binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
+                        binding.bottomNav.getMenuItem(0)?.setEnabled(true)
+                        false
+                    }
 
+                isTabPremix = if (account == PREMIX_ACC) {
+                    binding.bottomNav.getMenuItem(2)?.setIcon(null)
+                    binding.bottomNav.getMenuItem(2)?.setEnabled(false)
+                    true
+                } else {
+                    binding.bottomNav.getMenuItem(2)?.setIcon(R.drawable.ic_baseline_sent_24)
+                    binding.bottomNav.getMenuItem(2)?.setEnabled(true)
+                    false
+                }
+            }
+        }
+        else {
+            binding.bottomNav.getMenuItem(0)?.setIcon(R.drawable.ic_baseline_receive_24)
+            binding.bottomNav.getMenuItem(0)?.setEnabled(true)
+            binding.bottomNav.getMenuItem(2)?.setIcon(R.drawable.ic_baseline_sent_24)
+            binding.bottomNav.getMenuItem(2)?.setEnabled(true)
+            isTabWhirlpoolPub = false
+            isTabPremix = false
+        }
+    }
 }
 

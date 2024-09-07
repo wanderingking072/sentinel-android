@@ -90,7 +90,7 @@ class TransactionsDetailsBottomSheet(private var tx: Tx, val secure: Boolean = f
         binding.txDetailsConfirmation.text = tx.confirmations.toString() ?: "0"
         if (tx.result != null)
             binding.txDetailsTime.text = "${fmt.format(Date(tx.time * 1000))} "
-        binding.txDetailsHash.text = tx.hash
+        binding.txDetailsHash.text = tx.hash.split("-")[0]
 
     }
 

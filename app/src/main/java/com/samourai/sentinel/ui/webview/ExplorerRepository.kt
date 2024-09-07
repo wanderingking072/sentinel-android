@@ -1,6 +1,8 @@
 package com.samourai.sentinel.ui.webview
 
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import org.koin.java.KoinJavaComponent
@@ -32,14 +34,14 @@ object ExplorerRepository {
 
     fun getExplorer(txId: String): String {
         return if (SentinelState.isTestNet()) {
-            if (SentinelState.isTorStarted())
+            if (SentinelTorManager.getTorState().state == EnumTorState.ON)
                 makeUrl(Explorers.first { it.testnet.and(it.tor) }, txId)
             else
                 makeUrl(Explorers.first { it.testnet }, txId)
         } else {
             val selection = prefsUtil.selectedExplorer
             val explorer =
-                if (SentinelState.isTorStarted())
+                if (SentinelTorManager.getTorState().state == EnumTorState.ON)
                     Explorers.first { it.tor.and(it.name == selection) }
                 else
                     Explorers.first { it.name == selection }

@@ -1,9 +1,16 @@
 package com.samourai.sentinel.ui.collectionDetails.transactions
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.viewModels
@@ -22,10 +29,7 @@ import com.samourai.sentinel.ui.collectionEdit.CollectionEditActivity
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.utxos.UtxosActivity
 import com.samourai.sentinel.util.MonetaryUtil
-import com.samourai.sentinel.util.PrefsUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
-import kotlinx.coroutines.flow.merge
-import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent.inject
 import java.text.DecimalFormat
 
@@ -43,23 +47,28 @@ class TransactionsFragment : Fragment() {
     private val exchangeRateRepository: ExchangeRateRepository by inject(ExchangeRateRepository::class.java)
     val indexPubSelected: MutableLiveData<Int> by lazy { MutableLiveData<Int>() }
     val df = DecimalFormat("#")
+    private var tabChangeListener: OnTabChangedListener? = null
 
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         _binding = FragmentTransactionsBinding.inflate(inflater, container, false)
         val view = binding.root
         df.minimumIntegerDigits = 1
         df.minimumFractionDigits = 8
         df.maximumFractionDigits = 8
+
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.mpm_black)
+        requireActivity().window.navigationBarColor = ContextCompat.getColor(requireContext(), R.color.grey_homeActivity)
 
         initViewModel()
 
@@ -70,19 +79,34 @@ class TransactionsFragment : Fragment() {
         transactionsViewModel.setCollection(collection)
 
         binding.txViewPager.adapter = CollectionPubKeysViewpager(this.activity, collection)
+        binding.txViewPager.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.grey_homeActivity))
         binding.txViewPager.offscreenPageLimit = 5
+
         TabLayoutMediator(binding.tabLayout, binding.txViewPager) { tab, position ->
-            if(position == 0){
-                tab.text = "All"
-            }else{
-                tab.text = collection.pubs[position-1].label
+            if (collection.isImportFromWallet) {
+                when (position) {
+                    0 -> tab.text = "All"
+                    1 -> tab.text = "Deposit"
+                    2 -> tab.text = "Premix"
+                    3 -> tab.text = "Postmix"
+                    4 -> tab.text = "Badbank"
+                }
+            }
+            else {
+                if (position == 0)
+                    tab.text = "All"
+                else
+                    tab.text = collection.pubs[position - 1].label
             }
         }.attach()
+
 
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab:
                                        TabLayout.Tab
                                        ?) {
+                if (tabChangeListener != null)
+                    tabChangeListener?.onTabChanged(tab?.position!!-1)
                 indexPubSelected.value = tab?.position!!
                 setBalance(tab.position-1)
             }
@@ -102,8 +126,20 @@ class TransactionsFragment : Fragment() {
         })
 
         balanceLiveData.observe(viewLifecycleOwner) {
-            binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
-            setBalance(-1)
+            if (it != null) {
+                binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
+                setBalance(-1)
+            }
+        }
+
+        binding.collectionBalanceBtc.setOnLongClickListener {
+            goToUTXOActivity()
+            true
+        }
+
+        binding.collectionBalanceFiat.setOnLongClickListener {
+            goToUTXOActivity()
+            true
         }
 
         binding.collectionBalanceFiat.visibility = if (prefsUtil.fiatDisabled!!) View.INVISIBLE else View.VISIBLE
@@ -114,7 +150,7 @@ class TransactionsFragment : Fragment() {
             }
         })
         transactionsViewModel.getMessage().observe(
-                this.viewLifecycleOwner
+            this.viewLifecycleOwner
         ) {
             if (it != "null")
                 (requireActivity() as AppCompatActivity)
@@ -122,6 +158,21 @@ class TransactionsFragment : Fragment() {
         }
     }
 
+    private fun goToUTXOActivity() {
+        startActivityForResult(Intent(context, UtxosActivity::class.java).apply {
+            putExtra("collection", collection.id)
+            putExtra("indexPub", indexPubSelected.value)
+        }, EDIT_REQUEST_ID)
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnTabChangedListener) {
+            tabChangeListener = context
+        } else {
+            throw ClassCastException("$context must implement OnButtonClickListener")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,31 +188,52 @@ class TransactionsFragment : Fragment() {
     }
 
     fun setBalance(pubkeyIndex: Int) {
-        if (pubkeyIndex != -1) {
+        //Handle deposit tab in collection imported from wallet
+        if (collection.isImportFromWallet && pubkeyIndex == 0) {
             var blockedUtxoBalanceSum = 0L
-            val blockedUtxos =
-                UtxoMetaUtil.getBlockedAssociatedWithPubKey(collection.pubs[pubkeyIndex].pubKey)
-            blockedUtxos.forEach { utxo ->
-                blockedUtxoBalanceSum += utxo.amount
-            }
-            val balance = collection.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
-            binding.collectionBalanceFiat.text = getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
-            binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
-        }
-        else {
-            var blockedUtxosBalanceSum = 0L
-            collection.pubs.forEach { pubKeyModel ->
-                val blockedUtxos1 =
-                    UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
-                blockedUtxos1.forEach { blockedUtxo ->
-                    blockedUtxosBalanceSum += blockedUtxo.amount
+            var balance = 0L
+            collection.pubs.forEach { pub ->
+                if (pub.label.lowercase().contains("deposit")) {
+                    balance += pub.balance
+                    val blockedUtxos1 =
+                        UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
+                    blockedUtxos1.forEach { blockedUtxo ->
+                        blockedUtxoBalanceSum += blockedUtxo.amount
+                    }
                 }
             }
-            val balance = collection.balance - blockedUtxosBalanceSum
-            binding.collectionBalanceFiat.text = getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
-            binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+            val finalBalance = balance - blockedUtxoBalanceSum
+            binding.collectionBalanceFiat.text = getFiatBalance(finalBalance, exchangeRateRepository.getRateLive().value)
+            binding.collectionBalanceBtc.text = df.format(finalBalance.div(1e8)) + " BTC"
         }
-
+        else {
+            if (pubkeyIndex != -1) {
+                var blockedUtxoBalanceSum = 0L
+                val blockedUtxos =
+                    UtxoMetaUtil.getBlockedAssociatedWithPubKey(collection.pubs[pubkeyIndex].pubKey)
+                blockedUtxos.forEach { utxo ->
+                    blockedUtxoBalanceSum += utxo.amount
+                }
+                val balance = collection.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
+                binding.collectionBalanceFiat.text =
+                    getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
+                binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+            } else {
+                //Handle "All" tab
+                var blockedUtxosBalanceSum = 0L
+                collection.pubs.forEach { pubKeyModel ->
+                    val blockedUtxos1 =
+                        UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
+                    blockedUtxos1.forEach { blockedUtxo ->
+                        blockedUtxosBalanceSum += blockedUtxo.amount
+                    }
+                }
+                val balance = collection.balance - blockedUtxosBalanceSum
+                binding.collectionBalanceFiat.text =
+                    getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
+                binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+            }
+        }
     }
 
     private fun getFiatBalance(balance: Long?, rate: ExchangeRateRepository.Rate?): String {
@@ -185,6 +257,7 @@ class TransactionsFragment : Fragment() {
         (activity as SentinelActivity).setSupportActionBar(binding.toolbarCollectionDetails)
         (activity as SentinelActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbarCollectionDetails.title = collection.collectionLabel
+        binding.toolbarCollectionDetails.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.mpm_black))
         setBalance(-1)
     }
 
@@ -234,19 +307,24 @@ class TransactionsFragment : Fragment() {
     }
 
     private class CollectionPubKeysViewpager(
-            fa: FragmentActivity?,
-            private val collection: PubKeyCollection,
+        fa: FragmentActivity?,
+        private val collection: PubKeyCollection,
 
-            ) : FragmentStateAdapter(fa!!) {
+        ) : FragmentStateAdapter(fa!!) {
         override fun createFragment(position: Int): Fragment {
             return TransactionsListFragment(position, collection)
         }
 
         override fun getItemCount(): Int {
-            return collection.pubs.size + 1
+            return if (collection.isImportFromWallet)
+                collection.pubs.size - 1
+            else
+                collection.pubs.size + 1
         }
     }
 
-
+    interface OnTabChangedListener {
+        fun onTabChanged(position: Int)
+    }
 }
 

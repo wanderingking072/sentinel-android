@@ -25,8 +25,8 @@
             android:layout_height="wrap_content" />
 
         <androidx.cardview.widget.CardView
-            android:layout_width="150dp"
-            android:layout_height="150dp"
+            android:layout_width="130dp"
+            android:layout_height="130dp"
             app:cardCornerRadius="250dp"
             app:cardBackgroundColor="@color/green_ui_2"
             android:layout_gravity="center">
@@ -53,6 +53,7 @@
             tools:text="TxID: 4b59bcaaed4017155ba38cca8e5f3bf97b19210abc53fba0f66122360dbeabfe"
             android:id="@+id/transactionID"
             android:textSize="18sp"
+            android:padding="10dp"
             android:gravity="center"
             style="@style/TextAppearance.AppCompat.Title"
             android:paddingBottom="10dp"

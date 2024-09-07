@@ -14,6 +14,20 @@
         tools:context=".util.QRBottomSheetDialog">
 
 
+        <ImageButton
+            android:id="@+id/leftButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+            android:rotation="270"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/imgQrCode"
+            android:layout_marginEnd="50dp"
+            android:layout_marginTop="110dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"/>
+
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imgQrCode"
             android:layout_width="320dp"
@@ -23,9 +37,23 @@
             android:layout_marginEnd="32dp"
             android:elevation="6dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@id/leftButton"
             app:layout_constraintTop_toBottomOf="@+id/qrToolbar"
             tools:src="@tools:sample/backgrounds/scenic[7]" />
+
+        <ImageButton
+            android:id="@+id/rightButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+            android:rotation="90"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/imgQrCode"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="110dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"/>
 
         <TextView
             android:id="@+id/qrTextView"

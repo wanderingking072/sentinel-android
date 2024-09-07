@@ -22,6 +22,7 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -46,9 +47,9 @@ import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
+import com.samourai.wallet.util.XPUB
 import com.sparrowwallet.hummingbird.UR
 import com.sparrowwallet.hummingbird.registry.RegistryType
-import kotlinx.android.synthetic.main.fragment_compose_tx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,7 +61,6 @@ import java.math.BigInteger
 import java.text.DecimalFormat
 import java.util.*
 import kotlin.math.ceil
-
 
 class SendFragment : Fragment() {
 
@@ -83,6 +83,10 @@ class SendFragment : Fragment() {
     private val fragmentSpendBinding get() = _fragmentSpendBinding!!
     private var indexPubSelector = -1
     val viewModel: SendViewModel by viewModels()
+    private var availableBalance: Long = 0L
+
+    private val HARDENED = 2147483648
+    private val PREMIX_ACC = 2147483645L
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -119,6 +123,20 @@ class SendFragment : Fragment() {
             DecimalFormat.getNumberInstance().currency = Currency.getInstance(rate.currency)
         }
 
+        fragmentSpendBinding.fragmentComposeTx.totalBTC.setOnClickListener {
+            viewModel.setAmount(availableBalance.div(1e8))
+            setBtcEdit(decimalFormatBTC.format(availableBalance.div(1e8)).toString())
+            val fiatRate = availableBalance.div(1e8).times(rate.rate)
+            setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
+        }
+
+        fragmentSpendBinding.fragmentComposeTx.textView12.setOnClickListener {
+            viewModel.setAmount(availableBalance.div(1e8))
+            setBtcEdit(decimalFormatBTC.format(availableBalance.div(1e8)).toString())
+            val fiatRate = availableBalance.div(1e8).times(rate.rate)
+            setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
+        }
+
         watchAddressAndAmount()
 
         fragmentSpendBinding.toEditText.setEndIconOnClickListener {
@@ -130,9 +148,6 @@ class SendFragment : Fragment() {
             containerTransform(fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView, fragmentSpendBinding.composeBtn)
         }
 
-
-
-        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(mCollection!!.pubs[0].balance.div(1e8)).toString() + " BTC"
         setBalance(mCollection!!.pubs[findFirstNonAddressPubkey()-1])
 
         if (isAdded) {
@@ -198,6 +213,30 @@ class SendFragment : Fragment() {
                     R.id.menu_save_as_psbt -> {
                         sharePSBTFile()
                     }
+                    R.id.menu_share_psbt -> {
+                        val psbtBytes: ByteArray? = viewModel.getPsbtBytes()
+                        val psbtFile = File(requireContext().cacheDir, "PSBT_transaction.psbt")
+                        psbtFile.writeBytes(psbtBytes!!)
+
+                        val uri = FileProvider.getUriForFile(
+                            requireContext(),
+                            "${requireContext().packageName}.provider",
+                            psbtFile
+                        )
+
+                        val sendIntent: Intent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            type = "application/octet-stream"
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
+                        val shareIntent = Intent.createChooser(sendIntent, null)
+                        startActivity(shareIntent)
+                    }
+                    R.id.menu_save_as_text_file -> {
+                        saveTxtFile()
+                    }
                 }
                 true
             }
@@ -219,7 +258,8 @@ class SendFragment : Fragment() {
         fragmentSpendBinding.fragmentBroadcastTx.unsignedTxToolbar.setNavigationOnClickListener {
             containerTransform(fragmentSpendBinding.composeBtn, fragmentSpendBinding.fragmentBroadcastTx.unsignedTxView)
         }
-
+        fragmentSpendBinding.sendAppBar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.mpm_black))
+        (activity as SentinelActivity).window.navigationBarColor = ContextCompat.getColor(requireContext(), R.color.grey_homeActivity)
         fragmentSpendBinding.sendAppBar.setNavigationOnClickListener {
             requireActivity().onBackPressed()
         }
@@ -317,6 +357,29 @@ class SendFragment : Fragment() {
         requireActivity().startActivityForResult(intent, 1)
     }
 
+    private fun saveTxtFile() {
+        val psbt = viewModel.psbtLive.value ?: return
+        val fileUUID = UUID.randomUUID()
+        val txtFile = "${requireContext().cacheDir.path}${File.separator}${fileUUID}.txt"
+
+        val file = File(txtFile)
+        if (file.exists()) {
+            file.delete()
+        }
+        file.writeText(psbt)
+
+        file.setReadable(true, false)
+
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "text/plain" // Set the MIME type for text files
+            putExtra(Intent.EXTRA_TITLE, "${fileUUID}.txt")
+        }
+
+        intent.putExtra("txtContent", psbt)
+        requireActivity().startActivityForResult(intent, 2)
+    }
+
     private fun containerTransform(enter: View, leaving: View) {
         val transform = MaterialContainerTransform()
         transform.scrimColor = Color.TRANSPARENT
@@ -341,7 +404,7 @@ class SendFragment : Fragment() {
 
     private fun watchAddressAndAmount() {
         fragmentSpendBinding.fiatEditTextLayout.hint = exchangeRateRepository.getRateLive().value?.currency
-        fragmentSpendBinding.fiatEditText.addTextChangedListener { onFiatValueChange(it.toString(), fragmentSpendBinding.btcEditText.toString()) }
+        fragmentSpendBinding.fiatEditText.addTextChangedListener { onFiatValueChange(it.toString()) }
         fragmentSpendBinding.btcEditText.addTextChangedListener { onBtcValueChanged(it.toString()) }
         fragmentSpendBinding.btcAddress.addTextChangedListener {
             if (it.toString().isNotEmpty()) {
@@ -379,6 +442,11 @@ class SendFragment : Fragment() {
                 setBtcEdit("")
                 return
             }
+            if (amount <= 0) {
+                fragmentSpendBinding.composeBtn.alpha = 0.6f
+                fragmentSpendBinding.composeBtn.isEnabled = false
+                return
+            }
             val fiatRate = btc.times(rate.rate)
             setFiatEdit(DecimalFormat.getNumberInstance().format(fiatRate))
             viewModel.setAmount(amount)
@@ -388,20 +456,23 @@ class SendFragment : Fragment() {
         }
     }
 
-    private fun onFiatValueChange(fiatString: String, btcString: String) {
+    private fun onFiatValueChange(fiatString: String) {
+        val ungroupedFiat = fiatString.replace((DecimalFormat.getInstance() as DecimalFormat).decimalFormatSymbols.groupingSeparator.toString(), "")
         if (isFiatEditing) {
             return
         }
-        if (fiatString.contains(".") && fiatString.split(".")[1].length > 2) {
-            setFiatEdit(fiatString.dropLast(1))
+        if (ungroupedFiat.contains(".") && ungroupedFiat.split(".")[1].length > 2) {
+            setFiatEdit(ungroupedFiat.dropLast(1))
             return
         }
         try {
-            if (fiatString.isEmpty()) {
+            if (ungroupedFiat.isEmpty()) {
                 setBtcEdit("")
                 setFiatEdit("")
+                fragmentSpendBinding.composeBtn.alpha = 0.6f
+                fragmentSpendBinding.composeBtn.isEnabled = false
             }
-            val fiat: Double = fiatString.toDouble()
+            val fiat: Double = ungroupedFiat.toDouble()
             val btcRate = (1 / rate.rate.toFloat()) * fiat.toFloat()
             if (btcRate > 21000000.0) {
                 setBtcEdit("")
@@ -409,7 +480,7 @@ class SendFragment : Fragment() {
                 return
             }
 
-            if (fiatString.get(fiatString.lastIndex).equals('.'))
+            if (ungroupedFiat.get(ungroupedFiat.lastIndex).equals('.'))
                 setFiatEdit(DecimalFormat.getNumberInstance().format(fiat) + ".")
             else
                 setFiatEdit(DecimalFormat.getNumberInstance().format(fiat))
@@ -465,7 +536,9 @@ class SendFragment : Fragment() {
         val newIndex = if (mCollection!!.pubs[index-1].type != AddressTypes.ADDRESS) index else findFirstNonAddressPubkey()
 
         mCollection?.let { pubKeySelector ->
-            val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
+            val items = pubKeySelector.pubs.filter {
+                isPubkeyAddressOrPremix(it)
+            }.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                 requireContext(),
@@ -475,9 +548,16 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.threshold = items.size
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
             val selectPubKeyModel = pubKeySelector.pubs[newIndex-1]
-            viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
-            transactionComposer.setPubKey(selectPubKeyModel)
-            fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
+            viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner, mCollection!!)
+            if (mCollection!!.isImportFromWallet && selectPubKeyModel.label.equals("Deposit")) {
+                transactionComposer.setPubKey(listOf(
+                    getPubKeyModelByLabel("Deposit BIP84"),
+                    getPubKeyModelByLabel("Deposit BIP49"),
+                    getPubKeyModelByLabel("Deposit BIP44")
+                ))
+            } else {
+                transactionComposer.setPubKey(listOf(selectPubKeyModel))
+            }
             setBalance(mCollection!!.pubs[newIndex-1])
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(mCollection!!.pubs.get(newIndex-1).label, false)
 
@@ -487,10 +567,38 @@ class SendFragment : Fragment() {
             }
     }
 
+    private fun isPubkeyAddressOrPremix(it: PubKeyModel): Boolean {
+        //Also has to filter if collection is imported via Samourai Wallet pairing menu
+
+        if (mCollection!!.isImportFromWallet) {
+            if (it.label.equals("Deposit BIP49") || it.label.equals("Deposit BIP44"))
+                return false
+            if (it.label.equals("Deposit BIP84"))
+                it.label = "Deposit"
+        }
+
+        if (it.type == AddressTypes.ADDRESS)
+            return false
+
+        val xpub = XPUB(it.pubKey)
+        xpub.decode()
+        val account = xpub.child + HARDENED
+        if (account == PREMIX_ACC)
+            return false
+
+        return true
+    }
+
     private fun findFirstNonAddressPubkey(): Int {
+        //Pubkey must also NOT be Premix
         mCollection!!.pubs.forEach {
-            if (it.type != AddressTypes.ADDRESS)
-                return mCollection!!.pubs.indexOf(it)+1
+            if (it.type != AddressTypes.ADDRESS) {
+                val xpub = XPUB(it.pubKey)
+                xpub.decode()
+                val account = xpub.child + HARDENED
+                if (account != PREMIX_ACC)
+                    return mCollection!!.pubs.indexOf(it)+1
+            }
         }
         return 1
     }
@@ -504,7 +612,7 @@ class SendFragment : Fragment() {
             return
         }
         mCollection?.let { pubKeySelector ->
-            val items = pubKeySelector.pubs.filter { it.type != AddressTypes.ADDRESS }.map { it.label }.toMutableList()
+            val items = pubKeySelector.pubs.filter { isPubkeyAddressOrPremix(it) }.map { it.label }.toMutableList()
 
             val adapter: ArrayAdapter<String> = ArrayAdapter(
                     requireContext(),
@@ -515,11 +623,20 @@ class SendFragment : Fragment() {
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setAdapter(adapter)
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
                 val selectPubKeyModel = getPubKeyModelByLabel(items[index])
-                viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner)
-                transactionComposer.setPubKey(selectPubKeyModel)
-                fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(selectPubKeyModel.balance.div(1e8)).toString() + " BTC"
+                viewModel.setPublicKey(selectPubKeyModel, viewLifecycleOwner, mCollection!!)
+
+                if (mCollection!!.isImportFromWallet && selectPubKeyModel.label.equals("Deposit")) {
+                    transactionComposer.setPubKey(listOf(
+                        getPubKeyModelByLabel("Deposit BIP84"),
+                        getPubKeyModelByLabel("Deposit BIP49"),
+                        getPubKeyModelByLabel("Deposit BIP44")
+                    ))
+                } else {
+                    transactionComposer.setPubKey(listOf(selectPubKeyModel))
+                }
                 setBalance(getPubKeyModelByLabel(items[index]))
-                    view?.isEnabled = true
+
+                view?.isEnabled = true
                 view?.alpha = 1f
                 fragmentSpendBinding.composeBtn.isEnabled = true
             }
@@ -527,7 +644,9 @@ class SendFragment : Fragment() {
                 return
             }
             fragmentSpendBinding.fragmentComposeTx.pubKeySelector.setText(items.first(), false)
-            viewModel.setPublicKey(getPubKeyModelByLabel(items[0]), viewLifecycleOwner)
+            viewModel.setPublicKey(getPubKeyModelByLabel(items[0]), viewLifecycleOwner,
+                mCollection!!
+            )
         }
     }
 
@@ -540,13 +659,37 @@ class SendFragment : Fragment() {
     }
 
     private fun setBalance(pub: PubKeyModel) {
-        var blockedUtxoBalanceSum = 0L
-        val blockedUtxos =  UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
-        blockedUtxos.forEach{ utxo ->
-            blockedUtxoBalanceSum += utxo.amount
+
+        if (mCollection!!.isImportFromWallet && pub.label == "Deposit") {
+            var blockedUtxoBalanceSum = 0L
+            val totalBalance =
+                getPubKeyModelByLabel("Deposit BIP84").balance + getPubKeyModelByLabel("Deposit BIP44").balance + getPubKeyModelByLabel("Deposit BIP49").balance
+            val depositPubs = listOf(
+                getPubKeyModelByLabel("Deposit BIP84").pubKey,
+                getPubKeyModelByLabel("Deposit BIP49").pubKey,
+                getPubKeyModelByLabel("Deposit BIP44").pubKey
+            )
+            depositPubs.forEach {
+                val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKey(it)
+                blockedUtxos.forEach { utxo ->
+                    blockedUtxoBalanceSum += utxo.amount
+                }
+            }
+            val finalBalance = totalBalance - blockedUtxoBalanceSum
+            availableBalance = finalBalance
+            fragmentSpendBinding.fragmentComposeTx.totalBTC.text =
+                decimalFormatBTC.format(finalBalance.div(1e8)).toString() + " BTC"
+        } else {
+            var blockedUtxoBalanceSum = 0L
+            val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKey(pub.pubKey)
+            blockedUtxos.forEach { utxo ->
+                blockedUtxoBalanceSum += utxo.amount
+            }
+            val balance = pub.balance - blockedUtxoBalanceSum
+            availableBalance = balance
+            fragmentSpendBinding.fragmentComposeTx.totalBTC.text =
+                decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
         }
-        val balance = pub.balance - blockedUtxoBalanceSum
-        fragmentSpendBinding.fragmentComposeTx.totalBTC.text = decimalFormatBTC.format(balance.div(1e8)).toString() + " BTC"
     }
 
     private fun setUpFee() {
@@ -566,7 +709,7 @@ class SendFragment : Fragment() {
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.valueFrom = 1F
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.setLabelFormatter { i: Float ->
             val value = (i + multiplier) / multiplier
-            val formatted = "${decimalFormat.format(value)} sats/b"
+            val formatted = "${decimalFormat.format(value)} sat/vB"
             fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = formatted
             formatted
         }
@@ -605,7 +748,7 @@ class SendFragment : Fragment() {
         }
         fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRateLayman.text = getString(R.string.normal)
         feeRepository.sanitizeFee()
-        fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = ("$feeMed sats/b")
+        fragmentSpendBinding.fragmentComposeTx.feeSelector.selectedFeeRate.text = ("$feeMed sat/vB")
         fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value = (feeMedSliderValue - multiplier + 1).toFloat()
         setFeeLabels()
         viewModel.setFee(((fragmentSpendBinding.fragmentComposeTx.feeSelector.feeSlider.value + multiplier) / multiplier)*1000)

@@ -16,20 +16,23 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.APIConfig
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.databinding.ActivityHomeBinding
 import com.samourai.sentinel.service.WebSocketHandler
 import com.samourai.sentinel.service.WebSocketService
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter
-import com.samourai.sentinel.ui.broadcast.BroadcastTx
 import com.samourai.sentinel.ui.collectionDetails.CollectionDetailsActivity
 import com.samourai.sentinel.ui.dojo.DojoConfigureBottomSheet
 import com.samourai.sentinel.ui.fragments.AddNewPubKeyBottomSheet
 import com.samourai.sentinel.ui.settings.NetworkActivity
 import com.samourai.sentinel.ui.settings.SettingsActivity
+import com.samourai.sentinel.ui.tools.ToolsActivity
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
@@ -39,12 +42,11 @@ import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.TimeOutUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
-import io.matthewnelson.topl_service.TorServiceController
-import io.matthewnelson.topl_service_base.TorServicePrefs
+import com.samourai.sentinel.widgets.popUpMenu.popupMenu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
@@ -57,7 +59,6 @@ class HomeActivity : SentinelActivity() {
     private val webSocketHandler: WebSocketHandler by inject(WebSocketHandler::class.java)
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
     private var connectingDojo = false
-    private lateinit var torServicePrefs: TorServicePrefs
     private lateinit var binding: ActivityHomeBinding
     private val model: HomeViewModel by viewModels()
     private var balance = -1L
@@ -66,14 +67,23 @@ class HomeActivity : SentinelActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         val view = binding.root
+        window.statusBarColor = ContextCompat.getColor(this, R.color.mpm_black)
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.grey_homeActivity)
         setContentView(view)
         setSwipeBackEnable(false)
         setSupportActionBar(binding.toolbarHome)
-        torServicePrefs = TorServicePrefs(this)
+
+        title = ""
+
+        binding.toolbarIcon.setOnClickListener {
+            showToolOptions(it)
+        }
 
         val model: HomeViewModel by viewModels()
-        if (SentinelState.isTorRequired() && SentinelState.torState == SentinelState.TorState.OFF) {
-            TorServiceController.startTor()
+        UtxoMetaUtil.read()
+
+        if (SentinelState.isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.OFF) {
+            SentinelTorManager.start()
             prefsUtil.enableTor = true
         }
 
@@ -106,28 +116,34 @@ class HomeActivity : SentinelActivity() {
 
         model.getFiatBalance().observe(this, { updateFiat(it) })
 
+        binding.fab.setBackgroundResource(R.drawable.background_gradient);
+
         binding.fab.setOnClickListener {
             connectingDojo = false
             if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
                 this.askCameraPermission()
             } else {
                 if (AppUtil.getInstance(applicationContext).isOfflineMode
-                    ||  SentinelState.torState ==SentinelState.TorState.WAITING)
+                    ||  SentinelTorManager.getTorState().state == EnumTorState.STARTING)
                     Toast.makeText(this, "No data connection. Please wait, then try again", Toast.LENGTH_LONG).show()
                 else
                     showPubKeyBottomSheet()
             }
         }
 
-        model.loading().observe(this, {
-            binding.swipeRefreshCollection.isRefreshing = it
-        })
+        model.loading().observe(this) {
+            binding.swipeRefreshCollection.isRefreshing = it.contains(true) || it.isNotEmpty()
+        }
         model.getErrorMessage().observe(this) {
-            if (it != "null" &&  SentinelState.torState != SentinelState.TorState.WAITING)
-                this@HomeActivity.showFloatingSnackBar(
-                    binding.fab,
-                    text = "No data connection available. Please enable data"
-                )
+            if (it != "null" &&  SentinelTorManager.getTorState().state != EnumTorState.STARTING) {
+                if (!it.lowercase().startsWith("unable to resolve host")
+                    && !it.lowercase().contains("standalonecoroutine was cancelled")) {
+                    this@HomeActivity.showFloatingSnackBar(
+                        binding.fab,
+                        text = "No data connection available. Please enable data"
+                    )
+                }
+            }
         }
 
         if (intent != null) {
@@ -139,17 +155,17 @@ class HomeActivity : SentinelActivity() {
         binding.swipeRefreshCollection.setOnRefreshListener {
             binding.swipeRefreshCollection.isRefreshing = false
             if (SentinelState.isTorRequired()) {
-                if (SentinelState.torState == SentinelState.TorState.WAITING) {
+                if (SentinelTorManager.getTorState().state == EnumTorState.STARTING) {
                     this.showFloatingSnackBar(binding.fab, anchorView = binding.fab.id,
                             text = "Tor is bootstrapping! please wait and try again")
                 }
-                if (SentinelState.torState == SentinelState.TorState.OFF) {
+                if (SentinelTorManager.getTorState().state == EnumTorState.OFF) {
                     this.showFloatingSnackBar(binding.fab,
                             text="Please wait while Tor is turning on")
-                    TorServiceController.startTor()
+                    SentinelTorManager.start()
                     prefsUtil.enableTor = true
                 }
-                if (SentinelState.torState == SentinelState.TorState.ON) {
+                if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                     model.fetchBalance()
                 }
             } else {
@@ -160,27 +176,77 @@ class HomeActivity : SentinelActivity() {
         fetch(model)
 
         if (SentinelState.isTorRequired()) {
-            SentinelState.torStateLiveData().observe(this, {
-                if (it == SentinelState.TorState.ON)
+            SentinelTorManager.getTorStateLiveData().observe(this, {
+                if (it.state == EnumTorState.ON)
                     WebSocketService.start(applicationContext)
             })
         } else {
             WebSocketService.start(applicationContext)
         }
-
-        checkClipBoard()
     }
 
+    private fun showToolOptions(it: View) {
+        val toolWindowSize = applicationContext.resources.displayMetrics.density * 220;
+        val popupMenu = popupMenu {
+            fixedContentWidthInPx = toolWindowSize.toInt()
+            style = R.style.Theme_Samourai_Widget_MPM_Menu_Dark
+            section {
+                item {
+                    label = "Sentinel"
+                    iconDrawable = ContextCompat.getDrawable(applicationContext, R.drawable.icon_innergradient)
+                    iconSize = 34
+                    labelColor = ContextCompat.getColor(applicationContext, R.color.white)
+                    disableTint = true
+                    iconShapeAppearanceModel = ShapeAppearanceModel().toBuilder()
+                        .setAllCornerSizes(resources.getDimension(R.dimen.qr_image_corner_radius))
+                        .build()
+                    isTitle = true
+                }
+                item {
+                    label = "\tTools"
+                    icon = R.drawable.ic_tools
+                    iconSize = 18
+                    hasNestedItems
+                    callback = {
+                        val intent = Intent(this@HomeActivity, ToolsActivity::class.java)
+                        startActivity(intent)
+                    }
+                }
 
+            }
+            section {
+                item {
+                    label = "\tSettings"
+                    icon = R.drawable.ic_cog
+                    iconSize = 18
+                    callback = {
+                        TimeOutUtil.getInstance().updatePin()
+                        val intent = Intent(this@HomeActivity, SettingsActivity::class.java)
+                        startActivity(intent)
+                    }
+                }
+                item {
+                    label = "\tExit"
+                    iconSize = 18
+                    iconColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)
+                    labelColor = ContextCompat.getColor(this@HomeActivity, R.color.mpm_red)
+                    icon = R.drawable.ic_baseline_power_settings_new_24
+                    callback = {
+                        this@HomeActivity.onBackPressed()
+                    }
+                }
+            }
+        }
+        popupMenu.show(this@HomeActivity, it)
+    }
     private fun fetch(model: HomeViewModel) {
         if (!SentinelState.isRecentlySynced()) {
-            if (SentinelState.isTorRequired() && SentinelState.isTorStarted()) {
+            if (SentinelState.isTorRequired() && SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 model.fetchBalance()
             } else {
-                SentinelState.torStateLiveData().observe(this, {
-                    if (it == SentinelState.TorState.ON) {
+                SentinelTorManager.getTorStateLiveData().observe(this, {
+                    if (it.state == EnumTorState.ON) {
                         GlobalScope.launch {
-                            delay(250L)
                             withContext(Dispatchers.Main) {
                                 model.fetchBalance()
                             }
@@ -193,9 +259,6 @@ class HomeActivity : SentinelActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (SentinelState.isTestNet() && !title.contains("TestNet")) {
-            title = "$title | TestNet"
-        }
         if (balance != -1L)
             updateBalance(balance)
 
@@ -207,13 +270,11 @@ class HomeActivity : SentinelActivity() {
             this.confirm(label = "Choose network",
                     positiveText = "Mainnet",
                     negativeText = "Testnet",
+                    isCancelable = false,
                     onConfirm = { confirm ->
                         prefsUtil.firstRun = false
                         if (!confirm) {
                             prefsUtil.testnet = true
-                        }
-                        if (!SentinelState.isTestNet()) {
-                            title = "$title".removeSuffix("| TestNet")
                         }
                         showServerConfig()
                     })
@@ -224,9 +285,16 @@ class HomeActivity : SentinelActivity() {
 
     private fun showServerConfig() {
         if (prefsUtil.apiEndPoint.isNullOrEmpty()) {
+            connectingDojo = true
+            if (!AndroidUtil.isPermissionGranted(Manifest.permission.CAMERA, applicationContext)) {
+                this.askCameraPermission()
+            } else {
+                showDojoSetUpBottomSheet()
+            }
+            /*
             this.confirm(label = "Choose server",
                     positiveText = "Connect to Dojo",
-                    negativeText = "Connect to Samourai’s server",
+                    //negativeText = "Connect to Samourai’s server",
                     isCancelable = false,
                     onConfirm = { confirm ->
                         if (confirm) {
@@ -243,7 +311,7 @@ class HomeActivity : SentinelActivity() {
                                 negativeText = "No",
                                 onConfirm = { confirmed ->
                                     if (confirmed) {
-                                        TorServiceController.startTor()
+                                        SentinelTorManager.start()
                                         prefsUtil.enableTor = true
                                     }
                                 }
@@ -257,22 +325,7 @@ class HomeActivity : SentinelActivity() {
                             }
                         }
                     })
-
-        }
-    }
-
-    private fun checkClipBoard() {
-        val clipData = AndroidUtil.getClipBoardString(applicationContext)
-
-        if (clipData != null) {
-            val formatted = FormatsUtil.extractPublicKey(clipData)
-            if (FormatsUtil.isValidBitcoinAddress(formatted) || FormatsUtil.isValidXpub(formatted)) {
-                showFloatingSnackBar(binding.fab, text = "Public Key detected in clipboard", actionText = "Add", actionClick = {
-                    val bottomSheetFragment = AddNewPubKeyBottomSheet(formatted)
-                    bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)
-                })
-            }
-
+             */
         }
     }
 
@@ -289,23 +342,7 @@ class HomeActivity : SentinelActivity() {
     }
 
     private fun updateBalance(it: Long) {
-        var blockedUtxosBalanceSum = 0L
-
-        for (i in 0..collectionsAdapter.getCollectionList().size-1){
-            collectionsAdapter.setBalance(i)
-        }
-        collectionsAdapter.getCollectionList().forEach{collection ->
-            collection.pubs.forEach { pubKeyModel ->
-                val blockedUtxos1 =
-                    UtxoMetaUtil.getBlockedAssociatedWithPubKey(pubKeyModel.pubKey)
-                blockedUtxos1.forEach { blockedUtxo ->
-                    blockedUtxosBalanceSum += blockedUtxo.amount
-                }
-            }
-        }
-        val balance = it - blockedUtxosBalanceSum
-
-        binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(balance)} BTC"
+        binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(it)} BTC"
     }
 
     private fun updateFiat(it: String) {
@@ -328,7 +365,7 @@ class HomeActivity : SentinelActivity() {
 
         linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
-        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(applicationContext, R.drawable.divider_home)!!)
+        val decorator = RecyclerViewItemDividerDecorator(ContextCompat.getDrawable(applicationContext, R.drawable.divider_tx)!!)
         binding.collectionRecyclerView.apply {
             adapter = collectionsAdapter
             layoutManager = linearLayoutManager
@@ -341,7 +378,6 @@ class HomeActivity : SentinelActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!SentinelState.checkedClipBoard) {
-            checkClipBoard()
             SentinelState.checkedClipBoard = true
         }
     }
@@ -369,18 +405,6 @@ class HomeActivity : SentinelActivity() {
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.home_options_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-            }
-            R.id.home_options_broadcast -> {
-                startActivity(Intent(this, BroadcastTx::class.java))
-            }
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.home_menu, menu)
         return super.onCreateOptionsMenu(menu)
@@ -393,14 +417,14 @@ class HomeActivity : SentinelActivity() {
                 .setNegativeButton(resources.getString(R.string.no)) { _, _ ->
                 }
                 .setPositiveButton(resources.getString(R.string.yes)) { _, _ ->
-                    TorServiceController.stopTor()
+                    SentinelTorManager.stop()
                     super.onBackPressed()
                 }
                 .show()
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        menu?.let { setNetWorkMenu(it) }
+        menu.let { setNetWorkMenu(it) }
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -409,17 +433,17 @@ class HomeActivity : SentinelActivity() {
         val rootView = alertMenuItem.actionView
         val statusCircle = rootView?.findViewById<View>(R.id.home_menu_network_shape) as FrameLayout
         val shape = ContextCompat.getDrawable(applicationContext, R.drawable.circle_shape)
-        shape?.setTint(ContextCompat.getColor(applicationContext, R.color.red))
+        shape?.setTint(0)
         statusCircle.background = shape
         statusCircle.visibility = View.VISIBLE
-        SentinelState.torStateLiveData().observe(this, Observer {
-            if (it == SentinelState.TorState.ON) {
+        SentinelTorManager.getTorStateLiveData().observe(this, Observer {
+            if (it.state == EnumTorState.ON) {
                 shape?.setTint(0)
             }
-            if (it == SentinelState.TorState.OFF) {
+            if (it.state == EnumTorState.OFF) {
                 shape?.setTint(0)
             }
-            if (it == SentinelState.TorState.WAITING) {
+            if (it.state == EnumTorState.STARTING) {
                 shape?.setTint(ContextCompat.getColor(applicationContext, R.color.warning_yellow))
             }
             statusCircle.background = shape

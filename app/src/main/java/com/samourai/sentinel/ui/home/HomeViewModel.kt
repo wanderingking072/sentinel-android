@@ -2,14 +2,18 @@ package com.samourai.sentinel.ui.home
 
 import androidx.lifecycle.*
 import com.samourai.sentinel.api.ApiService
+import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.data.repository.CollectionRepository
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
 import com.samourai.sentinel.data.repository.FeeRepository
 import com.samourai.sentinel.data.repository.TransactionsRepository
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.MonetaryUtil
+import com.samourai.sentinel.util.UtxoMetaUtil
 import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -32,7 +36,6 @@ class HomeViewModel : ViewModel() {
     private val balance: MutableLiveData<Long> = MutableLiveData()
     private var netWorkJobs: ArrayList<Job?> = arrayListOf()
     private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java);
-    private val balanceFiat: MutableLiveData<String> = MutableLiveData()
 
     init {
         load()
@@ -51,10 +54,26 @@ class HomeViewModel : ViewModel() {
     }
 
     fun getCollections(): LiveData<ArrayList<PubKeyCollection>> {
-        return repository.collectionsLiveData.map {
-            updateBalance()
-            it
+        val collectionsLiveData = repository.collectionsLiveData
+        val resultLiveData = MediatorLiveData<ArrayList<PubKeyCollection>>()
+
+        resultLiveData.addSource(collectionsLiveData) { collections ->
+            apiScope.launch {
+                transactionsRepository.loading.postValue(transactionsRepository.loading.value?.apply { add(true) })
+                collections.forEach {
+                    if ((!SentinelState.isTorRequired() && !SentinelState.hasAppJustStarted)
+                        || SentinelTorManager.getTorState().state == EnumTorState.ON) {
+                        transactionsRepository.fetchUTXOS(it.id)
+                        updateBalance()
+                    }
+                }
+                updateBalance()
+                SentinelState.hasAppJustStarted = false
+                resultLiveData.postValue(collections)
+                transactionsRepository.loading.postValue(transactionsRepository.loading.value?.apply { remove(true) })
+            }
         }
+        return resultLiveData
     }
 
     fun getBalance(): LiveData<Long> {
@@ -116,7 +135,7 @@ class HomeViewModel : ViewModel() {
         return errorMessage
     }
 
-    fun loading(): LiveData<Boolean> {
+    fun loading(): LiveData<MutableList<Boolean>> {
         return transactionsRepository.loadingState()
     }
 
@@ -163,13 +182,29 @@ class HomeViewModel : ViewModel() {
         if (repository.collectionsLiveData.value!!.size == 0) {
             balance.postValue(0L)
         }
-        repository.collectionsLiveData.value?.let { pubkeys ->
-            if (pubkeys.isEmpty()) {
+        repository.collectionsLiveData.value?.let { collections ->
+            if (collections.isEmpty()) {
                 return
             }
             try {
-                val total = pubkeys.map { it.balance }.reduce { acc, l -> acc + l }
-                balance.postValue(total)
+                val pubkeysList:MutableList<String> = mutableListOf()
+                collections.forEach { collection ->
+                    collection.pubs.forEach{ pubkey ->
+                        pubkeysList.add(pubkey.pubKey)
+                    }
+                }
+
+                val blockedUtxos = UtxoMetaUtil.getBlockedAssociatedWithPubKeyList(pubkeysList)
+
+                val totalAmount = collections.map { it.balance }.reduce { acc, l -> acc + l }
+
+                val totalBlocked =
+                    if (blockedUtxos.size > 0)
+                        blockedUtxos.map { it.amount }.reduce { acc, l -> acc + l }
+                    else
+                        0
+
+                balance.postValue(totalAmount - totalBlocked)
             } catch (e: Exception) {
                 Timber.e(e)
             }

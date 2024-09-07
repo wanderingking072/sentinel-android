@@ -32,11 +32,24 @@ internal class UtxoActivityViewModel(private val pubKeyCollection: PubKeyCollect
     }
 
 
-    fun getUtxo(pubKey: String): LiveData<List<Utxo>> {
+    fun getUtxoByPubAndCollection(pubKey: String): LiveData<List<Utxo>> {
         return utxoDao.getUTXObyCollectionAndPubKey(pubKeyCollection.id, pubKey)
     }
 
-    class UtxoViewModelViewModelFactory(private val pubKeyCollection: PubKeyCollection) : ViewModelProvider.Factory {
+    fun getUtxoByPubOnly(pubKey: String): LiveData<List<Utxo>> {
+        return utxoDao.getUtxoWithPubKey(pubKey)
+    }
+
+    fun getUtxoByPubAndCollection(pubkeys: List<String>): LiveData<List<Utxo>> {
+        return utxoDao.getUTXObyCollectionAndPubKeys(pubKeyCollection.id, pubkeys)
+    }
+
+    fun getUtxoByPubOnly(pubkeys: List<String>): LiveData<List<Utxo>> {
+        return utxoDao.getUTXObyPubKeys(pubkeys)
+    }
+
+
+        class UtxoViewModelViewModelFactory(private val pubKeyCollection: PubKeyCollection) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(UtxoActivityViewModel::class.java)) {
                 return UtxoActivityViewModel(pubKeyCollection) as T

@@ -5,9 +5,14 @@ package com.samourai.sentinel.api
 import com.samourai.sentinel.BuildConfig
 import com.samourai.sentinel.api.okHttp.await
 import com.samourai.sentinel.core.SentinelState
+import com.samourai.sentinel.helpers.fromJSON
+import com.samourai.sentinel.tor.EnumTorState
+import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.apiScope
+import com.samourai.wallet.api.backend.beans.UnspentOutput
+import com.samourai.wallet.api.backend.beans.WalletResponse
 import com.samourai.wallet.util.XPUB
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,6 +24,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
+import java.util.Arrays
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
@@ -135,6 +141,12 @@ open class ApiService {
         return client.newCall(request).await()
     }
 
+    suspend fun fetchAddressForSweep(address: String): MutableList<UnspentOutput> {
+        val response = getWallet(address)
+        val items: WalletResponse = fromJSON<WalletResponse>(response.body!!.string())!!
+        return Arrays.asList(*items.unspent_outputs)
+    }
+
     suspend fun importAddress(pubKey: String): Response {
 
         buildClient(excludeAuthenticator = true)
@@ -223,7 +235,7 @@ open class ApiService {
             }
             prefsUtil.apiEndPointTor
         } else {
-            if (SentinelState.isTorStarted()) {
+            if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 return prefsUtil.apiEndPointTor
             }
             if (prefsUtil.apiEndPoint == null) {
@@ -287,33 +299,36 @@ open class ApiService {
                 if (!excludeAuthenticator)
                     builder.authenticator(TokenAuthenticator(apiService))
             }
-            if (SentinelState.isTorStarted()) {
+            if (SentinelTorManager.getTorState().state == EnumTorState.ON) {
                 builder.callTimeout(90, TimeUnit.SECONDS)
                 builder.readTimeout(90, TimeUnit.SECONDS)
                 builder.readTimeout(90, TimeUnit.SECONDS)
                 builder.connectTimeout(120, TimeUnit.SECONDS)
                 getHostNameVerifier(builder)
-                builder.proxy(SentinelState.torProxy)
+                builder.proxy(SentinelTorManager.getProxy())
             }
 
             /**
              * Intercept current request and add apiKey if needed
              * for more please refer https://code.samourai.io/dojo/samourai-dojo/-/blob/master/doc/POST_auth_login.md#authentication
              */
-            if (!excludeApiKey)
-                builder.addInterceptor(Interceptor { chain ->
-                    val original = chain.request()
-                    val newBuilder = original.newBuilder()
-                    if (!authToken.isNullOrEmpty() && SentinelState.isDojoEnabled()) {
-                        newBuilder.url(
-                            original.url.newBuilder()
-                                .addQueryParameter("at", authToken)
-                                .build()
-                        )
-                    }
-                    val request = newBuilder.build()
-                    chain.proceed(request)
-                })
+            if (!excludeApiKey) {
+                try {
+                    builder.addInterceptor(Interceptor { chain ->
+                        val original = chain.request()
+                        val newBuilder = original.newBuilder()
+                        if (!authToken.isNullOrEmpty() && SentinelState.isDojoEnabled()) {
+                            newBuilder.url(
+                                original.url.newBuilder()
+                                    .addQueryParameter("at", authToken)
+                                    .build()
+                            )
+                        }
+                        val request = newBuilder.build()
+                        chain.proceed(request)
+                    })
+                } catch (_:Exception) {}
+            }
             return builder.build()
         }
 

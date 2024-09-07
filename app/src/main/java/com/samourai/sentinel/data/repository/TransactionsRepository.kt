@@ -14,6 +14,7 @@ import com.samourai.sentinel.data.db.dao.TxDao
 import com.samourai.sentinel.data.db.dao.UtxoDao
 import com.samourai.sentinel.helpers.fromJSON
 import com.samourai.sentinel.ui.utils.logThreadInfo
+import com.samourai.sentinel.util.UtxoMetaUtil
 import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
@@ -45,7 +46,7 @@ class TransactionsRepository {
     private val apiService: ApiService by inject(ApiService::class.java)
     private val collectionRepository: CollectionRepository by inject(CollectionRepository::class.java)
     private val feeRepository: FeeRepository by inject(FeeRepository::class.java)
-    private val loading: MutableLiveData<Boolean> = MutableLiveData(false)
+    val loading: MutableLiveData<MutableList<Boolean>> = MutableLiveData(mutableListOf())
 
     //track currently loading collection
     var loadingCollectionId = ""
@@ -72,7 +73,7 @@ class TransactionsRepository {
                 jobs.add(item);
             }
             apiScope.launch(Dispatchers.Main) {
-                loading.postValue(true)
+                loading.value = loading.value?.apply { add(true) }
             }
 
             jobs.forEach { job ->
@@ -97,6 +98,7 @@ class TransactionsRepository {
                         if (SentinelState.blockHeight != null)
                             latestBlockHeight = SentinelState.blockHeight?.height!!
                         val items = response.txs.map { tx ->
+                            tx.hash = tx.hash + "-" + collectionId
                             tx.associatedPubKey = pubKeyAssociated.pubKey
                             val txBlockHeight = tx.block_height ?: 0
                             if (tx.block_height != null)
@@ -149,7 +151,7 @@ class TransactionsRepository {
                 }
             }
             apiScope.launch(Dispatchers.Main) {
-                loading.postValue(false)
+                loading.value = loading.value?.apply { remove(true) }
             }
 
             withContext(Dispatchers.IO) {
@@ -160,9 +162,13 @@ class TransactionsRepository {
             saveTx(newTransactions, collectionId)
             saveUtxos(utxos, collectionId)
         } catch (e: Exception) {
-            apiScope.launch(Dispatchers.Main) {
-                loading.postValue(false)
+            if (!e.message?.lowercase()!!.contains("unable to resolve host")
+                && !e.message?.lowercase()!!.contains("standalonecoroutine was cancelled")) {
+                    apiScope.launch(Dispatchers.Main) {
+                        loading.value = loading.value?.apply { remove(true) }
+                    }
             }
+
             throw  e
         }
     }
@@ -185,7 +191,7 @@ class TransactionsRepository {
         return transactions
     }
 
-    fun loadingState(): LiveData<Boolean> {
+    fun loadingState(): LiveData<MutableList<Boolean>> {
         return loading
     }
 
@@ -199,6 +205,7 @@ class TransactionsRepository {
 
 
     private fun saveUtxos(utxos: ArrayList<Utxo>, collectionId: String) = apiScope.launch {
+        val collection = collectionRepository.findById(collectionId)
         withContext(Dispatchers.IO) {
             utxoDao.getUTXObyCollectionAsList(collectionId)
                 .forEach {
@@ -209,6 +216,16 @@ class TransactionsRepository {
                         if (it.txOutputN != null && it.txHash != null) {
                             utxoDao.delete(it.txHash!!, it.txOutputN!!)
                         }
+                    }
+                }
+
+            UtxoMetaUtil.getBlockedAssociatedWithPubKeyList(collection!!.pubs.map { it.pubKey }.toList())
+                .forEach {
+                    val isExist =
+                        utxos.find { utxo -> (utxo.txHash == it.hash && it.txOutputN == utxo.txOutputN) }
+                    //if utxos is not present in the new list it will be removed from the Blocked UTXOs List
+                    if(isExist == null){
+                        UtxoMetaUtil.remove(it.hash, it.txOutputN)
                     }
                 }
             utxos.forEach {
@@ -228,4 +245,52 @@ class TransactionsRepository {
     suspend fun fetchFromServer(collection: PubKeyCollection) {
         return this.fetchFromServer(collection.id)
     }
-}
+
+    suspend fun fetchUTXOS(collectionId: String) {
+        try {
+            val collection = collectionRepository.findById(collectionId) ?: return
+            val utxos: ArrayList<Utxo> = arrayListOf();
+            val jobs: ArrayList<Deferred<Response>> = arrayListOf()
+            collection.pubs.forEach {
+                val item = apiScope.async {
+                    apiService.getWallet(it.pubKey)
+                }
+                jobs.add(item);
+            }
+
+            jobs.forEach { job ->
+                val index = jobs.indexOf(job)
+                loadingCollectionId = collectionId
+                try {
+                    val res = jobs[index].await()
+                    res.body?.let { it ->
+                        val resString = it.string()
+                        val pubKeyAssociated = collection.pubs[index]
+                        val response: WalletResponse = fromJSON<WalletResponse>(resString)!!
+
+                        response.unspent_outputs?.let {
+                            val list = response.unspent_outputs.toMutableList().map {
+                                it.pubKey = pubKeyAssociated.pubKey
+                                it.idx = "${it.txHash}:${it.txOutputN}"
+                                it.collectionId = collectionId
+                                if (it.xpub != null) {
+                                    it.path = it.xpub?.path!!
+                                }
+                                it
+                            }.toList()
+                            utxos.addAll(list)
+                        }
+                    }
+                } catch (e: Exception) {throw e}
+            }
+
+            withContext(Dispatchers.IO) {
+                utxoDao.deleteByCollection(collectionId)
+            }
+
+            saveUtxos(utxos, collectionId)
+        } catch (e: Exception) {
+            throw  e
+        }
+    }
+    }

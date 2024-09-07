@@ -13,17 +13,31 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
-import android.view.*
-import android.widget.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.Spinner
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
+import com.google.android.material.textfield.TextInputLayout
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.client.android.Contents
@@ -34,12 +48,13 @@ import com.samourai.sentinel.core.hd.HD_Account
 import com.samourai.sentinel.core.segwit.P2SH_P2WPKH
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
+import com.samourai.sentinel.data.PubKeyModel
+import com.samourai.sentinel.databinding.AdvancedReceiveFragmentBinding
 import com.samourai.sentinel.ui.SentinelActivity
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.wallet.segwit.SegwitAddress
 import com.samourai.wallet.util.XPUB
-import kotlinx.android.synthetic.main.advanced_receive_fragment.view.*
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.Coin
 import org.bitcoinj.core.NetworkParameters
@@ -51,10 +66,11 @@ import java.io.IOException
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.text.ParseException
-import java.util.*
+import java.util.Locale
 
 
 class ReceiveFragment : Fragment() {
+    private lateinit var binding: AdvancedReceiveFragmentBinding
 
     private lateinit var collection: PubKeyCollection;
     private lateinit var toolbar: Toolbar
@@ -65,10 +81,19 @@ class ReceiveFragment : Fragment() {
     private lateinit var advancedButton: LinearLayout
     private lateinit var tvPath: TextView
     private var pubKeyIndex = 0
+    private var pubsShownInDropdown: List<PubKeyModel> = listOf()
     private lateinit var pubKeyDropDown: AutoCompleteTextView
+    private lateinit var generalDropdown: TextInputLayout
+    private lateinit var addressTypesSpinner: Spinner
+
     private val receiveViewModel: ReceiveViewModel by viewModels()
     private lateinit var advancedContainer: ConstraintLayout
     private val HARDENED = 2147483648
+    private val POSTMIX_ACC = 2147483646L
+    private val PREMIX_ACC = 2147483645L
+    private val BADBANK_ACC = 2147483644L
+    private val SWAPS_REFUND = 2147483642L
+    private val SWAPS_ASB = 2147483641L
 
 
     private lateinit var qrFile: String
@@ -78,7 +103,7 @@ class ReceiveFragment : Fragment() {
             container: ViewGroup?,
             savedInstanceState: Bundle?
     ): View? {
-
+        binding = AdvancedReceiveFragmentBinding.inflate(inflater, container, false)
         val root = inflater.inflate(R.layout.fragment_receive, container, false)
 
         val df = DecimalFormat("#")
@@ -90,14 +115,23 @@ class ReceiveFragment : Fragment() {
         receiveQR = root.findViewById(R.id.receiveQR)
         receiveAddressText = root.findViewById(R.id.receiveAddressText)
         pubKeyDropDown = root.findViewById(R.id.pubKeySelector)
+        generalDropdown = root.findViewById(R.id.dropdown_menu)
+        addressTypesSpinner = root.findViewById(R.id.address_type_spinner)
+
         advancedButton = root.findViewById(R.id.advance_button)
-        advancedContainer = root.container_advance_options
+        advancedContainer = root.findViewById(R.id.container_advance_options)
         btcEditText = root.findViewById(R.id.amountBTC)
         satEditText = root.findViewById(R.id.amountSAT)
-        tvPath = root.path
+        tvPath = root.findViewById(R.id.path)
 
         qrFile = "${requireContext().cacheDir.path}${File.separator}qr.png";
 
+
+        if(collection.isImportFromWallet) {
+            generalDropdown.visibility = View.GONE
+            addressTypesSpinner.visibility = View.VISIBLE
+            populateSpinner()
+        }
 
         setUpSpinner()
 
@@ -106,6 +140,37 @@ class ReceiveFragment : Fragment() {
         tvPath.text = getPath()
 
         setUpToolBar()
+
+        addressTypesSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                when (position) {
+                    1 -> {
+                        //BIP 49
+                        pubKeyIndex = 2
+                    }
+
+                    2 -> {
+                        //BIP 44
+                        pubKeyIndex = 1
+                    }
+
+                    else -> {
+                        //BIP 84
+                        pubKeyIndex = 0
+                    }
+                }
+                tvPath.text = getPath()
+                generateQR()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+        }
 
         receiveAddressText.setOnClickListener {
 
@@ -135,6 +200,12 @@ class ReceiveFragment : Fragment() {
     }
 
 
+    override fun onResume() {
+        super.onResume()
+        if (collection.isImportFromWallet)
+            populateSpinner()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -160,6 +231,15 @@ class ReceiveFragment : Fragment() {
                     }
                 }
         )
+    }
+
+    private fun populateSpinner() {
+        val adapter = ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.address_types, android.R.layout.simple_spinner_item
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        addressTypesSpinner.adapter = adapter
     }
 
     private fun shareQR() {
@@ -262,18 +342,18 @@ class ReceiveFragment : Fragment() {
     }
 
     fun getPath(): String {
-
+        val newPubkeys = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList()
         var path = "m/"
 
-        if (collection.pubs.size == 0) {
+        if (newPubkeys.size == 0) {
             return ""
         }
 
-        if (collection.pubs[pubKeyIndex].type == AddressTypes.ADDRESS) {
-            return collection.pubs[pubKeyIndex].pubKey
+        if (newPubkeys[pubKeyIndex].type == AddressTypes.ADDRESS) {
+            return newPubkeys[pubKeyIndex].pubKey
         }
-        val pubKey = collection.pubs[pubKeyIndex]
-        val xpub = XPUB(pubKey.pubKey.toString())
+        val pubKey = newPubkeys[pubKeyIndex]
+        val xpub = XPUB(pubKey.pubKey)
         xpub.decode()
 
         path += pubKey.getPurpose().toString() + "'/" // add purpose
@@ -288,17 +368,19 @@ class ReceiveFragment : Fragment() {
 
 
     fun getAddress(): String {
-        if (collection.pubs.size == 0) {
+        val newPubkeys = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList()
+
+        if (newPubkeys.size == 0) {
             return ""
         }
 
-        if (collection.pubs[pubKeyIndex].type == AddressTypes.ADDRESS) {
-            return collection.pubs[pubKeyIndex].pubKey
+        if (newPubkeys[pubKeyIndex].type == AddressTypes.ADDRESS) {
+            return newPubkeys[pubKeyIndex].pubKey
         }
-        val pubKey = collection.pubs[pubKeyIndex]
-        val accountIndex = collection.pubs[pubKeyIndex].account_index
+        val pubKey = newPubkeys[pubKeyIndex]
+        val accountIndex = newPubkeys[pubKeyIndex].account_index
 
-        return when (collection.pubs[pubKeyIndex].type) {
+        return when (newPubkeys[pubKeyIndex].type) {
             AddressTypes.BIP44 -> {
                 val account = HD_Account(SentinelState.getNetworkParam(), pubKey.pubKey, "", 0)
                 account.getChain(0).addrIdx = accountIndex
@@ -322,7 +404,7 @@ class ReceiveFragment : Fragment() {
                 segwitAddress.bech32AsString
             }
             AddressTypes.ADDRESS -> {
-                collection.pubs[pubKeyIndex].pubKey
+                newPubkeys[pubKeyIndex].pubKey
             }
             else -> ""
         }
@@ -331,8 +413,11 @@ class ReceiveFragment : Fragment() {
 
     private fun setUpToolBar() {
         (activity as SentinelActivity).setSupportActionBar(toolbar)
+        (activity as SentinelActivity).window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.mpm_black)
+        (activity as SentinelActivity).window.navigationBarColor = ContextCompat.getColor(requireContext(), R.color.grey_homeActivity)
         (activity as SentinelActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.title = collection.collectionLabel
+        toolbar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.mpm_black))
     }
 
 
@@ -349,9 +434,22 @@ class ReceiveFragment : Fragment() {
         }
     }
 
+    private fun isPubAllowedToReceive (pubkey: PubKeyModel): Boolean {
+        return if (pubkey.type != AddressTypes.ADDRESS) {
+            val xpub = XPUB(pubkey.pubKey)
+            xpub.decode()
+            val account = xpub.child + HARDENED
+            (account != POSTMIX_ACC && account != PREMIX_ACC && account != BADBANK_ACC &&
+                    account != SWAPS_REFUND && account != SWAPS_ASB)
+        } else
+            true
+    }
 
     private fun setUpSpinner() {
-        val items = collection.pubs.map { it.label }.toMutableList()
+        val items = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it.label }.toMutableList()
+        val newPubkeys = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList()
+        pubsShownInDropdown = newPubkeys
+
         if (items.size != 0) {
             val adapter: ArrayAdapter<String> = ArrayAdapter(requireContext(),
                     R.layout.dropdown_menu_popup_item, items)
@@ -359,6 +457,7 @@ class ReceiveFragment : Fragment() {
             pubKeyDropDown.setAdapter(adapter)
             pubKeyDropDown.threshold = 50
             pubKeyDropDown.setText(items.first(), false)
+            pubKeyIndex = newPubkeys.indexOf(getPubKeyModelByLabel(items.first()))
             pubKeyDropDown.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
                 pubKeyIndex = index
                 generateQR()
@@ -446,7 +545,7 @@ class ReceiveFragment : Fragment() {
                 if (editable.toString().length == 0) {
                     btcEditText.setText("0.00")
                     satEditText.setText("")
-                    btcEditText.addTextChangedListener(this)
+                    satEditText.addTextChangedListener(this)
                     btcEditText.addTextChangedListener(BTCWatcher)
                     return
                 }
@@ -498,18 +597,47 @@ class ReceiveFragment : Fragment() {
     }
 
     fun setDropDownPub(index: Int) {
-        val items = collection.pubs.map { it.label }.toMutableList()
+        if (index <= 0 || !isAdded) {
+            setDropDownPub(1)
+            return
+        }
+        val items = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it.label }.toMutableList()
 
-        if (items.size != 0 && index > 0) {
+        val newPubkeys = collection.pubs.filter { isPubAllowedToReceive(it) }.map { it }.toMutableList()
+        pubsShownInDropdown = newPubkeys
+
+        val newIndex =
+            if (index-1 > 0)
+                getIndexByLabel(newPubkeys, collection.pubs[index-1].label)
+            else
+                -1
+
+        if (items.size != 0 && newIndex > 0) {
             val adapter: ArrayAdapter<String> = ArrayAdapter(requireContext(),
                 R.layout.dropdown_menu_popup_item, items)
             pubKeyDropDown.inputType = InputType.TYPE_NULL
             pubKeyDropDown.setAdapter(adapter)
-            pubKeyDropDown.setText(items.get(index-1), false)
-            pubKeyIndex = index-1
+            pubKeyDropDown.setText(items[newIndex-1], false)
+            pubKeyIndex = newIndex-1
             generateQR()
             tvPath.text = getPath()
         }
+    }
+
+    private fun getIndexByLabel(items: MutableList<PubKeyModel>, label: String): Int {
+        items.forEach {
+            if (it.label == label)
+                return items.indexOf(it)+1
+        }
+        return 1
+    }
+
+    private fun getPubKeyModelByLabel(label: String): PubKeyModel {
+        collection.pubs.forEach {
+            if (it.label == label)
+                return it
+        }
+        return collection.pubs[0]
     }
 
 

@@ -10,7 +10,8 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="@color/grey_homeActivity">
 
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
@@ -27,16 +28,17 @@
                 app:collapseIcon="@drawable/ic_close_black_24dp"
                 app:layout_scrollFlags="snap"
                 style="@style/Widget.MaterialComponents.Toolbar.Primary"
+                android:backgroundTint="@color/mpm_black"
                 />
             <LinearLayout
                 android:id="@+id/addressAreaContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/v3_primary"
                 android:gravity="center"
                 app:layout_scrollFlags="scroll"
                 android:orientation="vertical"
-                android:padding="@dimen/spacing_large">
+                android:padding="@dimen/spacing_large"
+                android:background="@color/mpm_black">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/toEditText"
@@ -134,7 +136,8 @@
         <LinearLayout
             android:layout_gravity="bottom|center"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:background="@color/grey_homeActivity">
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 style="@style/Widget.MaterialComponents.ExtendedFloatingActionButton.Icon"
