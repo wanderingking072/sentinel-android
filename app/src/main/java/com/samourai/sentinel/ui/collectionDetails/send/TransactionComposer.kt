@@ -205,7 +205,7 @@ class TransactionComposer {
             //
             //                    Log.d("SendActivity", "change:" + change);
 
-            if (change < bDust.toLong()) {
+            if (change < bDust.toLong() && change != 0L) { // allow change to be 0 to make full UTXO spends.
                 throw ComposeException("Change is dust 2")
             }
             var changeType = "P2PKH"
@@ -226,9 +226,13 @@ class TransactionComposer {
                 outPoints.addAll(u.outpoints)
             }
 
-            for (receiver in receivers)
-                if (receiver.value.toLong() == 0L)
-                    receivers.remove(receiver.key)
+            val iterator = receivers.iterator()
+            while (iterator.hasNext()) {
+                val receiver = iterator.next()
+                if (receiver.value.toLong() == 0L) {
+                    iterator.remove()
+                }
+            }
 
             val transaction = try {
                 SendFactory.getInstance()

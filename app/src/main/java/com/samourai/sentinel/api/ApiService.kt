@@ -52,7 +52,7 @@ open class ApiService {
     init {
         try {
             buildClient()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
         } catch (e: ApiNotConfigured) {
             Timber.e(e)
         }
@@ -222,8 +222,8 @@ open class ApiService {
     }
 
 
-    suspend fun request(request: Request): Response {
-        buildClient()
+    suspend fun request(request: Request, excludeApiKey: Boolean = true): Response {
+        buildClient(excludeApiKey=excludeApiKey)
         return client.newCall(request).await()
     }
 

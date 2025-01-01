@@ -127,7 +127,10 @@ class TransactionsFragment : Fragment() {
 
         balanceLiveData.observe(viewLifecycleOwner) {
             if (it != null) {
-                binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
+                if (prefsUtil.streetMode == false)
+                    binding.collectionBalanceBtc.text = "${df.format(it.div(1e8))} BTC"
+                else
+                    binding.collectionBalanceBtc.text = "********"
                 setBalance(-1)
             }
         }
@@ -203,8 +206,14 @@ class TransactionsFragment : Fragment() {
                 }
             }
             val finalBalance = balance - blockedUtxoBalanceSum
-            binding.collectionBalanceFiat.text = getFiatBalance(finalBalance, exchangeRateRepository.getRateLive().value)
-            binding.collectionBalanceBtc.text = df.format(finalBalance.div(1e8)) + " BTC"
+            if (prefsUtil.streetMode == false) {
+                binding.collectionBalanceBtc.text = df.format(finalBalance.div(1e8)) + " BTC"
+                binding.collectionBalanceFiat.text = getFiatBalance(finalBalance, exchangeRateRepository.getRateLive().value)
+            }
+            else {
+                binding.collectionBalanceBtc.text = "********"
+                binding.collectionBalanceFiat.text = "********"
+            }
         }
         else {
             if (pubkeyIndex != -1) {
@@ -215,9 +224,16 @@ class TransactionsFragment : Fragment() {
                     blockedUtxoBalanceSum += utxo.amount
                 }
                 val balance = collection.pubs[pubkeyIndex].balance - blockedUtxoBalanceSum
-                binding.collectionBalanceFiat.text =
-                    getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
-                binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+
+                if (prefsUtil.streetMode == false) {
+                    binding.collectionBalanceFiat.text =
+                        getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
+                    binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+                }
+                else {
+                    binding.collectionBalanceFiat.text = "********"
+                    binding.collectionBalanceBtc.text = "********"
+                }
             } else {
                 //Handle "All" tab
                 var blockedUtxosBalanceSum = 0L
@@ -229,9 +245,16 @@ class TransactionsFragment : Fragment() {
                     }
                 }
                 val balance = collection.balance - blockedUtxosBalanceSum
-                binding.collectionBalanceFiat.text =
-                    getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
-                binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+
+                if (prefsUtil.streetMode == false) {
+                    binding.collectionBalanceFiat.text =
+                        getFiatBalance(balance, exchangeRateRepository.getRateLive().value)
+                    binding.collectionBalanceBtc.text = df.format(balance.div(1e8)) + " BTC"
+                }
+                else {
+                    binding.collectionBalanceFiat.text = "********"
+                    binding.collectionBalanceBtc.text = "********"
+                }
             }
         }
     }

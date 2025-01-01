@@ -26,21 +26,30 @@
             android:key="haptic"
             android:defaultValue="false" />
 
-
+        <CheckBoxPreference
+            android:title="@string/street_mode"
+            android:summary="@string/hide_your_bitcoin_balance_from_prying_eyes"
+            android:defaultValue="false"
+            android:key="streetMode" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
         app:allowDividerAbove="true"
         app:allowDividerBelow="true"
-        app:title="Exchange Settings">
+        app:title="External Settings">
 
-        <!-- Comment out until more exchanges are available for selection
+        <ListPreference
+            app:key="explorerSelection"
+            app:title="Explorer"
+            app:useSimpleSummaryProvider="true"
+            android:summary="@string/options_blockexplorer2" />
+
         <ListPreference
             app:key="exchangeSelection"
             app:title="Exchange"
             app:useSimpleSummaryProvider="true" />
-         -->
+
 
         <ListPreference
             app:key="selectedCurrency"

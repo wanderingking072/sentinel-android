@@ -125,7 +125,7 @@
 
     <string name="unknown_xpub">XPUB depth</string>
 
-    <string name="action_sweep">Sweep private key</string>
+    <string name="action_sweep">Sweep Private Key</string>
     <string name="enter_privkey">Enter private key</string>
     <string name="cannot_recognize_privkey">Cannot recognize private key</string>
     <string name="cannot_sweep_privkey">Error sweeping private key</string>
@@ -308,6 +308,10 @@
     <string name="request_amount">Request Amount</string>
     <string name="path">Path</string>
     <string name="advanced">Advanced</string>
+    <string name="hide_your_bitcoin_balance_from_prying_eyes">Hide your balance from prying eyes</string>
+    <string name="street_mode">Street mode</string>
+    <string name="choose_collection">Choose collection</string>
+    <string name="choose_pubkey">Choose Pubkey</string>
 
 
 </resources>

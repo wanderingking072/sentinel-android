@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.samourai.sentinel.R
 import com.samourai.sentinel.api.ApiService
+import com.samourai.sentinel.api.ApiService.ApiNotConfigured
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.Tx
 import com.samourai.sentinel.data.repository.ExchangeRateRepository
@@ -24,6 +25,7 @@ import com.samourai.sentinel.util.apiScope
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.koin.java.KoinJavaComponent.inject
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -129,8 +131,9 @@ class TransactionsDetailsBottomSheet(private var tx: Tx, val secure: Boolean = f
                         }
                     }
                 }
-            } catch (ex: Exception) {
-                throw CancellationException(ex.message)
+            } catch (_: Exception) {
+            } catch (e: ApiNotConfigured) {
+                Timber.e(e)
             }
         }
         job?.invokeOnCompletion {

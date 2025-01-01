@@ -17,6 +17,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.viewModelScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
@@ -30,7 +31,9 @@ import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.utils.AndroidUtil
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.views.GenericBottomSheet
+import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.apiScope
+import com.samourai.wallet.util.FormatsUtilGeneric
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Runnable
@@ -51,7 +54,6 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     private val scanFragment = ScanFragment()
     private val dojoConfigureBottomSheet = DojoNodeInstructions()
     private val dojoConnectFragment = DojoConnectFragment()
-    private val connectManuallyFragment = ConnectManuallyFragment()
     private var dojoConfigurationListener: DojoConfigurationListener? = null
     private val prefsUtil: PrefsUtil by KoinJavaComponent.inject(PrefsUtil::class.java);
     private var numRetries = 0
@@ -79,29 +81,29 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         dojoConfigureBottomSheet.setConnectListener(View.OnClickListener {
             binding.pager.setCurrentItem(1, true)
         })
-        connectManuallyFragment.setConnectListener(View.OnClickListener {
-            if (connectManuallyFragment.dojoPayload == null )
-                Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
-            else
-                binding.pager.setCurrentItem(3, true)
-        })
-        scanFragment.setManualDetailsListener(View.OnClickListener {
-            binding.pager.setCurrentItem(2, true)
-        })
+        scanFragment.setManualDetailsListener {
+            val jsonDojo = AndroidUtil.getClipBoardString(requireContext())
+
+            if (jsonDojo != null && dojoUtil.validate(jsonDojo!!)) {
+                payload = jsonDojo
+                binding.pager.setCurrentItem(2, true)
+            } else
+                Toast.makeText(requireContext(), "Invalid pairing payload", Toast.LENGTH_SHORT).show()
+        }
         scanFragment.setOnScanListener {
             if (dojoUtil.validate(it)) {
                 payload = it
-                binding.pager.setCurrentItem(3, true)
+                binding.pager.setCurrentItem(2, true)
             } else {
                 scanFragment.resetCamera()
-                Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Invalid pairing payload", Toast.LENGTH_SHORT).show()
             }
         }
         //validate payload that is passed
         payloadPassed?.let {
             if (dojoUtil.validate(it)) {
                 payload = it
-                binding.pager.setCurrentItem(3, true)
+                binding.pager.setCurrentItem(2, true)
             } else {
                 scanFragment.resetCamera()
                 Toast.makeText(requireContext(), "Invalid payload", Toast.LENGTH_SHORT).show()
@@ -113,7 +115,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     private val pagerCallBack = object : ViewPager2.OnPageChangeCallback() {
         override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
             super.onPageScrolled(position, positionOffset, positionOffsetPixels)
-            if (position == 3) {
+            if (position == 2) {
                 startTorAndConnect()
             }
         }
@@ -139,8 +141,6 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
     }
 
     private fun setDojo() {
-        if (connectManuallyFragment.dojoPayload?.isNotEmpty() == true && connectManuallyFragment.dojoPayload != null)
-            payload = connectManuallyFragment.dojoPayload!!
         dojoConnectFragment.showDojoProgress()
         try {
             val pairing = fromJSON<DojoPairing>(payload)
@@ -246,7 +246,6 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         val item = arrayListOf<Fragment>()
         item.add(dojoConfigureBottomSheet)
         item.add(scanFragment)
-        item.add(connectManuallyFragment)
         item.add(dojoConnectFragment)
         binding.pager.adapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int {
@@ -360,50 +359,6 @@ class DojoConnectFragment : Fragment() {
         checkImageDojo.visibility = View.VISIBLE
     }
 }
-
-class ConnectManuallyFragment : Fragment() {
-    private var connectOnClickListener: View.OnClickListener? = null
-    private var onionText : TextInputEditText? = null
-    private var apiText : TextInputEditText? = null
-    private var connectButton: MaterialButton? = null
-
-    var dojoPayload : String? = null
-
-
-    fun setConnectListener(listener: View.OnClickListener) {
-        connectOnClickListener = listener
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.activity_set_dojo_manually, container, false)
-
-        return view
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        onionText = view.findViewById(R.id.setUpWalletAddressInput)
-        apiText = view.findViewById(R.id.setUpWalletApiKeyInput)
-        connectButton = view.findViewById(R.id.setUpWalletConnectDojo)
-
-        connectButton?.setOnClickListener {
-            if (onionText?.text?.isBlank() == true || apiText?.text?.isBlank() == true)
-                dojoPayload = null
-            else
-                dojoPayload = "{\n" +
-                        "\"pairing\": {\n" +
-                        "\"type\": \"dojo.api\",\n" +
-                        "\"version\": \"1.19.0\",\n" +
-                        "\"apikey\": \"${apiText?.text}\",\n" +
-                        "\"url\": \"${onionText?.text}\"\n" +
-                        "}\n" +
-                        "}"
-            connectOnClickListener?.onClick(view)
-        }
-    }
-}
-
 
 class ScanFragment : Fragment() {
 

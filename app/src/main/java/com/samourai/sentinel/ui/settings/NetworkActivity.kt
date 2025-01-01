@@ -231,9 +231,10 @@ class NetworkActivity : SentinelActivity() {
             override fun onDismiss() {
                 //Update dojo status
                 setDojoStatus()
-                if (!prefsUtil.isAPIEndpointEnabled())
-                    removeDojo()
-                else
+                if (!prefsUtil.isAPIEndpointEnabled()) {
+                    //removeDojo()
+                    Toast.makeText(applicationContext, "No Dojo connected", Toast.LENGTH_SHORT).show()
+                } else
                     importAllXpubs()
             }
         })

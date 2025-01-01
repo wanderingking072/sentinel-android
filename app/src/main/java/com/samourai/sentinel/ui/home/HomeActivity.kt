@@ -133,6 +133,10 @@ class HomeActivity : SentinelActivity() {
 
         model.loading().observe(this) {
             binding.swipeRefreshCollection.isRefreshing = it.contains(true) || it.isNotEmpty()
+            if (it.contains(true) || model.repository.pubKeyCollections.isNotEmpty()) {
+                collectionsAdapter.update(model.repository.pubKeyCollections)
+                binding.welcomeMessage.visibility = View.GONE
+            }
         }
         model.getErrorMessage().observe(this) {
             if (it != "null" &&  SentinelTorManager.getTorState().state != EnumTorState.STARTING) {
@@ -259,6 +263,7 @@ class HomeActivity : SentinelActivity() {
 
     override fun onResume() {
         super.onResume()
+        model.fetchBalance()
         if (balance != -1L)
             updateBalance(balance)
 
@@ -335,18 +340,25 @@ class HomeActivity : SentinelActivity() {
         dojoConfigureBottomSheet.setDojoConfigurationListener(object : DojoConfigureBottomSheet.DojoConfigurationListener {
             override fun onDismiss() {
                 if (!prefsUtil.isAPIEndpointEnabled()) {
-                    showServerConfig()
+                    //showServerConfig()
+                    Toast.makeText(applicationContext, "No Dojo connected", Toast.LENGTH_SHORT).show()
                 }
             }
         })
     }
 
     private fun updateBalance(it: Long) {
-        binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(it)} BTC"
+        if (prefsUtil.streetMode == true)
+            binding.homeBalanceBtc.text = "********"
+        else
+            binding.homeBalanceBtc.text = "${MonetaryUtil.getInstance().getBTCDecimalFormat(it)} BTC"
     }
 
     private fun updateFiat(it: String) {
-        binding.exchangeRateTxt.text = it
+        if (prefsUtil.streetMode == true)
+            binding.exchangeRateTxt.text = "********"
+        else
+            binding.exchangeRateTxt.text = it
     }
 
     private fun showPubKeyBottomSheet() {

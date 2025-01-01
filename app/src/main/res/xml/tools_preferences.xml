@@ -9,7 +9,7 @@
             app:icon="@drawable/ic_broom"
             android:summary="Enter a private key and sweep any funds to\nyour next bitcoin address"
             app:key="sweep"
-            app:title="Sweep Private Key" />
+            app:title="@string/action_sweep" />
 
         <Preference
             app:icon="@drawable/ic_broadcast_transaction"
