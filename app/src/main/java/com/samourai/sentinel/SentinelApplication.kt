@@ -21,6 +21,7 @@ import com.samourai.sentinel.tor.SentinelTorManager
 import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.PrefsUtil
+import com.samourai.sentinel.ui.webview.ExplorerRepository
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.apiScope
 import com.samourai.sentinel.util.dataBaseScope
@@ -74,6 +75,7 @@ class SentinelApplication : Application() {
             single { MonetaryUtil.getInstance() }
             single { CollectionRepository() }
             single { ExchangeRateRepository() }
+            single { ExplorerRepository() }
             single { FeeRepository() }
             single { TransactionsRepository() }
             single { WebSocketHandler() }

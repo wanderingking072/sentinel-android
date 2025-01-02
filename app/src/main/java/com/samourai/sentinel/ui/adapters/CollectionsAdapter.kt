@@ -11,23 +11,25 @@ import androidx.recyclerview.widget.RecyclerView
 import com.samourai.sentinel.R
 import com.samourai.sentinel.data.PubKeyCollection
 import com.samourai.sentinel.ui.adapters.CollectionsAdapter.CollectionHolder
+import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
 import org.bitcoinj.core.Coin
 import org.koin.java.KoinJavaComponent
+import org.koin.java.KoinJavaComponent.inject
 import timber.log.Timber
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.text.DecimalFormat
-import java.util.*
-import kotlin.collections.ArrayList
+import java.util.UUID
 
 
-class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
+class
+CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
 
     private var onClickListener: (PubKeyCollection) -> Unit = {};
-    private val monetaryUtil: MonetaryUtil by KoinJavaComponent.inject(MonetaryUtil::class.java)
     private var layoutType: LayoutType = LayoutType.ROW;
+    private val prefsUtil: PrefsUtil by inject(PrefsUtil::class.java)
 
     private val diffCallBack = object : DiffUtil.ItemCallback<PubKeyCollection>() {
 
@@ -95,7 +97,11 @@ class CollectionsAdapter : RecyclerView.Adapter<CollectionHolder>() {
 
         val collection = mDiffer.currentList[position];
         holder.title.text = collection.collectionLabel;
-        holder.balance.text = "${df.format(setBalance(position).div(1e8))} BTC"
+        holder.balance.text =
+            if (prefsUtil.streetMode == false)
+                "${df.format(setBalance(position).div(1e8))} BTC"
+            else
+                "********"
         holder.view.setOnClickListener {
             onClickListener(collection)
         }

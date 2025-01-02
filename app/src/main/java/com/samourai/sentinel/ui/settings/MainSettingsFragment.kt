@@ -33,6 +33,7 @@ import com.samourai.sentinel.ui.utils.showFloatingSnackBar
 import com.samourai.sentinel.ui.views.LockScreenDialog
 import com.samourai.sentinel.ui.views.alertWithInput
 import com.samourai.sentinel.ui.views.confirm
+import com.samourai.sentinel.ui.webview.ExplorerRepository
 import com.samourai.sentinel.util.ExportImportUtil
 import com.samourai.sentinel.util.Hash
 import com.samourai.sentinel.util.UtxoMetaUtil
@@ -63,6 +64,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
     private val accessFactory: AccessFactory by inject(AccessFactory::class.java);
     private val collectionRepository: CollectionRepository by inject(CollectionRepository::class.java);
     private val exchangeRateRepository: ExchangeRateRepository by inject(ExchangeRateRepository::class.java);
+    private val explorerRepository: ExplorerRepository by inject(ExplorerRepository::class.java);
     private val dojoUtility: DojoUtility by inject(DojoUtility::class.java);
     private val settingsScope = CoroutineScope(context = Dispatchers.Main)
     private var exportedBackUp: String? = null
@@ -75,6 +77,7 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
         super.onViewCreated(view, savedInstanceState)
 
         setExchangeSettings()
+        setExplorerSettings()
 
         val pineEntryCheckBox = findPreference<CheckBoxPreference>("pinEnabled")
         pineEntryCheckBox?.let {
@@ -112,6 +115,18 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
         hapticPin?.let {
             it.setOnPreferenceClickListener {
                 prefsUtil.haptics = !prefsUtil.haptics!!
+                true
+            }
+        }
+
+        val streetModePref = findPreference<CheckBoxPreference>("streetMode")
+        val currentStreetVal = com.samourai.sentinel.util.PrefsUtil.getInstance(requireContext())
+            .getValue("streetMode", false)
+        streetModePref?.isChecked = currentStreetVal
+        streetModePref?.let {
+            it.setOnPreferenceClickListener {
+                com.samourai.sentinel.util.PrefsUtil.getInstance(requireContext())
+                    .setValue("streetMode", !currentStreetVal)
                 true
             }
         }
@@ -191,6 +206,22 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
         email.type = "message/rfc822"
         startActivity(Intent.createChooser(email, requireContext().getText(R.string.choose_email_client)))
     }
+
+    private fun setExplorerSettings() {
+        val entries: Array<CharSequence> = explorerRepository.getExplorers().toArray(arrayOfNulls<CharSequence>(explorerRepository.getExplorers().size))
+
+        findPreference<ListPreference>("explorerSelection")
+            ?.apply {
+                setEntries(entries)
+                entryValues = entries
+                value = prefsUtil.selectedExplorer
+                setOnPreferenceChangeListener { preference, newValue ->
+                    prefsUtil.selectedExplorer = newValue as String
+                    true
+                }
+            }
+    }
+
     private fun setExchangeSettings() {
 
         fun setCurrencies() {

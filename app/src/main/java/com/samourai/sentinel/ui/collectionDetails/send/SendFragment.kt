@@ -47,6 +47,7 @@ import com.samourai.sentinel.ui.views.codeScanner.CameraFragmentBottomSheet
 import com.samourai.sentinel.util.FormatsUtil
 import com.samourai.sentinel.util.MonetaryUtil
 import com.samourai.sentinel.util.UtxoMetaUtil
+import com.samourai.wallet.util.FormatsUtilGeneric
 import com.samourai.wallet.util.XPUB
 import com.sparrowwallet.hummingbird.UR
 import com.sparrowwallet.hummingbird.registry.RegistryType
@@ -275,7 +276,11 @@ class SendFragment : Fragment() {
                 } else {
                     val camera = CameraFragmentBottomSheet()
                     camera.setQrCodeScanLisenter {
-                        if (it.length < 100) {
+                        if (FormatsUtilGeneric.getInstance().isBitcoinUri(it)) {
+                            fragmentSpendBinding.btcAddress.setText(FormatsUtilGeneric.getInstance().getBitcoinAddress(it))
+                            val satsAmount = java.lang.Double.valueOf(FormatsUtilGeneric.getInstance().getBitcoinAmount(it))
+                            fragmentSpendBinding.btcEditText.setText(MonetaryUtil.getInstance().getBTCDecimalFormat(satsAmount.toLong()))
+                        } else if (it.length < 100) {
                             fragmentSpendBinding.btcAddress.setText(it)
                         }
                         camera.dismiss()

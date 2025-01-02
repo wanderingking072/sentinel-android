@@ -30,6 +30,7 @@ import java.util.*
 class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(DIFF) {
 
     private val appContext: Context by inject(Context::class.java)
+    private val prefsUtil: com.samourai.sentinel.ui.utils.PrefsUtil by inject(com.samourai.sentinel.ui.utils.PrefsUtil::class.java)
     private var onClickListener: (Tx) -> Unit = {};
     private val simpleDateFormat = SimpleDateFormat("H:mm", Locale.getDefault())
     private val fmt = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
@@ -80,7 +81,10 @@ class TransactionAdapter : PagedListAdapter<Tx, TransactionAdapter.ViewHolder>(D
             onClickListener.invoke(tx)
         }
         holder.hideDivider()
-        holder.txAmount.text = tx.result?.let {"${df.format(it.div(1e8))} BTC"}
+        if (prefsUtil.streetMode == false)
+            holder.txAmount.text = tx.result?.let {"${df.format(it.div(1e8))} BTC"}
+        else
+            holder.txAmount.text = "********"
         if (tx.result != null) {
             if (tx.result > 0) {
                 holder.directionImageView.setImageDrawable(appContext.getDrawable(R.drawable.ic_baseline_incoming_arrow));

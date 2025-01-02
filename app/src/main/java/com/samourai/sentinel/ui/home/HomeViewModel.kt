@@ -25,7 +25,7 @@ import timber.log.Timber
 class HomeViewModel : ViewModel() {
 
 
-    private val repository: CollectionRepository by inject(CollectionRepository::class.java)
+    val repository: CollectionRepository by inject(CollectionRepository::class.java)
     private val exchangeRateRepository: ExchangeRateRepository by inject(ExchangeRateRepository::class.java)
     private val transactionsRepository: TransactionsRepository by inject(TransactionsRepository::class.java)
     private val dojoUtility: DojoUtility by inject(DojoUtility::class.java)

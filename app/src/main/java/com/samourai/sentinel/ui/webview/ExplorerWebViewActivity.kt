@@ -105,7 +105,7 @@ class ExplorerWebViewActivity : AppCompatActivity() {
             }
         }
         tx?.let {
-            url = ExplorerRepository.getExplorer(it.hash.split("-")[0])
+            url = ExplorerRepository().getExplorer(it.hash.split("-")[0])
             binding.webView.loadUrl(url)
         }
 

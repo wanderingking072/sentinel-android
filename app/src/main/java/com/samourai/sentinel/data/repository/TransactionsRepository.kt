@@ -3,6 +3,7 @@ package com.samourai.sentinel.data.repository
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.samourai.sentinel.api.ApiService
+import com.samourai.sentinel.api.ApiService.ApiNotConfigured
 import com.samourai.sentinel.core.SentinelState
 import com.samourai.sentinel.data.AddressTypes
 import com.samourai.sentinel.data.PubKeyCollection
@@ -281,7 +282,7 @@ class TransactionsRepository {
                             utxos.addAll(list)
                         }
                     }
-                } catch (e: Exception) {throw e}
+                } catch (e: Exception) { Timber.e(e) }
             }
 
             withContext(Dispatchers.IO) {
@@ -289,8 +290,9 @@ class TransactionsRepository {
             }
 
             saveUtxos(utxos, collectionId)
-        } catch (e: Exception) {
-            throw  e
+        } catch (_: Exception) {
+        } catch (e: ApiNotConfigured) {
+            Timber.e(e)
         }
     }
     }
