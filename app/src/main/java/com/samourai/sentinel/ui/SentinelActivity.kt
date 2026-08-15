@@ -98,7 +98,13 @@ open class SentinelActivity : AppCompatActivity(), SwipeBackActivityBase {
             .show()
     }
 
-    protected fun askNotificationPermission() {
+    /**
+     * [onComplete] fires once this dialog is dismissed (any button, or tapped
+     * outside) so callers that also need to show their own popup - e.g. the
+     * initial-setup flow queuing the dojo setup sheet next - can wait for it
+     * instead of showing both at once.
+     */
+    protected fun askNotificationPermission(onComplete: () -> Unit = {}) {
         MaterialAlertDialogBuilder(this)
             .setTitle(resources.getString(R.string.permission_alert_dialog_title_notifications))
             .setMessage(resources.getString(R.string.permission_dialog_message_notifications))
@@ -112,6 +118,7 @@ open class SentinelActivity : AppCompatActivity(), SwipeBackActivityBase {
                     )
                 }
             }
+            .setOnDismissListener { onComplete() }
             .show()
     }
 

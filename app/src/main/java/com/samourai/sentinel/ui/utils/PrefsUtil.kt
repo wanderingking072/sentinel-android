@@ -49,6 +49,7 @@ class PrefsUtil(context: Context) : Preferences(context, "${context.packageName}
     var refreshToken by stringPref(defaultValue = "")
     var apiEndPoint by stringPref(defaultValue = null)
     var selectedExplorer by stringPref(defaultValue = "Blockstream")
+    var customExplorerUrl by stringPref(defaultValue = "")
     var apiEndPointTor by stringPref(defaultValue = null)
     var testnet by booleanPref(defaultValue = false)
     var ricochetStaggeredDelivery by booleanPref(defaultValue = false)

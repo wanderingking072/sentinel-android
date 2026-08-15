@@ -45,12 +45,12 @@ android {
         staging {
             applicationId 'com.samourai.sentinel.staging'
             targetSdkVersion 33
-            versionCode 56
-            versionName '5.1.3-beta.1'
+            versionCode 57
+            versionName '5.1.3-beta.2'
             // Labelled "Beta" so testers can tell it apart from a real Sentinel
             // install on the same device (separate applicationId above).
             resValue "string", "app_name", "Sentinel Beta"
-            resValue "string", "version_name", "5.1.3-beta.1"
+            resValue "string", "version_name", "5.1.3-beta.2"
         }
     }
     compileOptions {

@@ -34,11 +34,13 @@ class ExplorerRepository {
     )
 
     fun getExplorer(txId: String): String {
+        val selection = prefsUtil.selectedExplorer
+        if (selection == CUSTOM_EXPLORER_NAME) {
+            return makeCustomUrl(txId)
+        }
         return if (SentinelState.isTestNet()) {
-            val selection = prefsUtil.selectedExplorer
             makeUrl(Explorers.first { it.testnet.and(it.name == selection) }, txId)
         } else {
-            val selection = prefsUtil.selectedExplorer
             val explorer =
                 if (SentinelTorManager.getTorState().state == EnumTorState.ON)
                     Explorers.first { it.tor.and(it.name == selection) }
@@ -52,11 +54,32 @@ class ExplorerRepository {
         return explorer.url.replace(TX_KEY, txId)
     }
 
+    /**
+     * The user's own explorer URL (see [PrefsUtil.customExplorerUrl]). It may
+     * contain a [TXID_PLACEHOLDER] to mark where the transaction id goes
+     * (e.g. "http://xyz.onion/tx/{txid}"); without one, the id is just
+     * appended, matching the common .../tx/<txid> convention.
+     */
+    private fun makeCustomUrl(txId: String): String {
+        val template = prefsUtil.customExplorerUrl.orEmpty()
+        return if (template.contains(TXID_PLACEHOLDER, ignoreCase = true)) {
+            template.replace(TXID_PLACEHOLDER, txId, ignoreCase = true)
+        } else {
+            template.trimEnd('/') + "/" + txId
+        }
+    }
+
     fun getExplorers(): ArrayList<String> {
         return ArrayList<String>().apply {
             this.addAll(Explorers.filter {
                 it.tor
             }.map { it.name }.toTypedArray())
+            add(CUSTOM_EXPLORER_NAME)
         }
+    }
+
+    companion object {
+        const val CUSTOM_EXPLORER_NAME = "Custom"
+        const val TXID_PLACEHOLDER = "{txid}"
     }
 }

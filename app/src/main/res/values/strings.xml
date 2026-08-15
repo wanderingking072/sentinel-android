@@ -192,6 +192,35 @@
     -->
     <string name="dojo_pairing_details" translatable="false">Details</string>
     <string name="Enabled">Enabled</string>
+
+    <!--
+      Community Dojo directory (Dojo Bay) picker, shown from the Dojo pairing
+      flow. Marked translatable="false" to match the project's existing pattern
+      of English fallbacks for newer strings (see dojo_pairing_details above).
+    -->
+    <string name="community_dojo_browse_button" translatable="false">Browse Community Dojos (Dojo Bay)</string>
+    <string name="community_dojo_warning_title" translatable="false">Privacy warning</string>
+    <string name="community_dojo_warning_message" translatable="false">IT IS HIGHLY RECOMMENDED TO RUN YOUR OWN DOJO! It is easy to do within Start9/Umbrel or on your own hardware. This is a list of a federation of community members who run Dojo\'s for others to use in order to use Samourai/Ashigaru tools. Connecting to a Dojo that is not your own shares your transaction history and addresses with the owner of the Dojo. You are trusting this node with your privacy.</string>
+    <string name="community_dojo_continue" translatable="false">Continue</string>
+    <string name="community_dojo_toolbar_title" translatable="false">Community Dojos (Dojo Bay)</string>
+    <string name="community_dojo_connecting_tor" translatable="false">Connecting via Tor…</string>
+    <string name="community_dojo_fetching" translatable="false">Fetching the Dojo Bay directory over Tor… this can take a while</string>
+    <string name="community_dojo_empty" translatable="false">No active %1$s Dojos were found on Dojo Bay right now.</string>
+    <string name="community_dojo_error" translatable="false">Could not reach Dojo Bay: %1$s</string>
+    <string name="community_dojo_retry" translatable="false">Retry</string>
+    <string name="community_dojo_status_dot_description" translatable="false">Dojo online status</string>
+    <string name="copy_dojo_pairing_json" translatable="false">Copy Dojo pairing JSON</string>
+
+    <!--
+      Balance/rescan-xpub help, shown right after a first-time Dojo connection
+      during initial setup and again on demand from Settings > Troubleshooting
+      &amp; Debug. Marked translatable="false" to match the project's existing
+      pattern of English fallbacks for newer strings (see dojo_pairing_details
+      above).
+    -->
+    <string name="balance_query_help_title" translatable="false">Help querying correct balance</string>
+    <string name="balance_query_help_message" translatable="false">If your balance is not showing up, you may need to rescan your xpub in the Dojo that you are connected to. If it is your own Dojo, you can do this within the Dojo Maintenance Tool. If it is someone else\'s Dojo, visit %1$s and find the Dojo you\'re connected to, then follow the steps there under &quot;Rescan XPUB&quot;.</string>
+    <string name="copy_dojo_bay_link" translatable="false">Copy Dojo Bay link</string>
     <string name="loading">loading…</string>
     <string name="tor_initializing">Tor initializing</string>
     <string name="enable">Enable</string>

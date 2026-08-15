@@ -120,6 +120,11 @@
             app:summary="Share your Sentinel backup with tech support to aid with troubleshooting"
             app:title="Send backup to tech support" />
 
+        <Preference
+            app:key="helpBalanceQuery"
+            app:summary="What to do if your balance isn't showing up"
+            app:title="@string/balance_query_help_title" />
+
     </PreferenceCategory>
 
     <PreferenceCategory>

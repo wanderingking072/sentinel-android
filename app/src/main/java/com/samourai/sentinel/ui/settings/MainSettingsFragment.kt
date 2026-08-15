@@ -30,6 +30,7 @@ import com.samourai.sentinel.ui.dojo.DojoUtility
 import com.samourai.sentinel.ui.home.HomeActivity
 import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
+import com.samourai.sentinel.ui.views.BalanceHelpDialog
 import com.samourai.sentinel.ui.views.LockScreenDialog
 import com.samourai.sentinel.ui.views.alertWithInput
 import com.samourai.sentinel.ui.views.confirm
@@ -184,6 +185,12 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
+        findPreference<Preference>("helpBalanceQuery")
+                ?.setOnPreferenceClickListener {
+                    BalanceHelpDialog.show(requireContext())
+                    true
+                }
+
         findPreference<Preference>("import")
                 ?.setOnPreferenceClickListener {
                     startActivity(Intent(requireActivity(), ImportBackUpActivity::class.java))
@@ -216,10 +223,37 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
                 entryValues = entries
                 value = prefsUtil.selectedExplorer
                 setOnPreferenceChangeListener { preference, newValue ->
-                    prefsUtil.selectedExplorer = newValue as String
-                    true
+                    if (newValue == ExplorerRepository.CUSTOM_EXPLORER_NAME) {
+                        // Don't switch until a URL is actually saved - stay on
+                        // the previous selection in the meantime.
+                        promptForCustomExplorerUrl(preference as ListPreference)
+                        false
+                    } else {
+                        prefsUtil.selectedExplorer = newValue as String
+                        true
+                    }
                 }
             }
+    }
+
+    private fun promptForCustomExplorerUrl(preference: ListPreference) {
+        (activity as SentinelActivity).alertWithInput(
+            label = "Custom block explorer",
+            buttonLabel = "Save",
+            value = prefsUtil.customExplorerUrl.orEmpty(),
+            labelEditText = "Onion URL, e.g. http://xyz.onion/tx/{txid}",
+            maxLen = 256,
+            onConfirm = { input ->
+                val url = input.trim()
+                if (url.isNotEmpty()) {
+                    prefsUtil.customExplorerUrl = url
+                    prefsUtil.selectedExplorer = ExplorerRepository.CUSTOM_EXPLORER_NAME
+                    preference.value = ExplorerRepository.CUSTOM_EXPLORER_NAME
+                } else {
+                    Toast.makeText(requireContext(), "No URL entered", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
     }
 
     private fun setExchangeSettings() {

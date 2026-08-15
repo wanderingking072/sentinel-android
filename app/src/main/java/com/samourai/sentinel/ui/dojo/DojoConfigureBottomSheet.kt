@@ -21,6 +21,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.invertedx.hummingbird.QRScanner
 import com.samourai.sentinel.R
@@ -80,6 +81,9 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
         setUpViewPager()
         dojoConfigureBottomSheet.setConnectListener(View.OnClickListener {
             binding.pager.setCurrentItem(1, true)
+        })
+        dojoConfigureBottomSheet.setBrowseCommunityDojoListener(View.OnClickListener {
+            showCommunityDojoPrivacyWarning()
         })
         scanFragment.setManualDetailsListener {
             val jsonDojo = AndroidUtil.getClipBoardString(requireContext())
@@ -232,6 +236,27 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
 
 
 
+    private fun showCommunityDojoPrivacyWarning() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.community_dojo_warning_title))
+            .setMessage(getString(R.string.community_dojo_warning_message))
+            .setPositiveButton(getString(R.string.community_dojo_continue)) { _, _ ->
+                showCommunityDojoList()
+            }
+            .show()
+    }
+
+    private fun showCommunityDojoList() {
+        CommunityDojoListBottomSheet { selectedPayload ->
+            if (dojoUtil.validate(selectedPayload)) {
+                payload = selectedPayload
+                binding.pager.setCurrentItem(2, true)
+            } else {
+                Toast.makeText(requireContext(), "Invalid pairing payload", Toast.LENGTH_SHORT).show()
+            }
+        }.show(childFragmentManager, "community_dojo_list")
+    }
+
     private fun setUpTor() {
         SentinelTorManager.setUp(context?.applicationContext as Application)
         if (prefsUtil.enableTor == true) {
@@ -291,6 +316,7 @@ class DojoConfigureBottomSheet : GenericBottomSheet() {
 class DojoNodeInstructions : Fragment() {
 
     private var connectOnClickListener: View.OnClickListener? = null
+    private var browseCommunityDojoOnClickListener: View.OnClickListener? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.bottomsheet_dojo_configure_instruction, container, false);
@@ -300,10 +326,17 @@ class DojoNodeInstructions : Fragment() {
         connectOnClickListener = listener
     }
 
+    fun setBrowseCommunityDojoListener(listener: View.OnClickListener) {
+        browseCommunityDojoOnClickListener = listener
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<MaterialButton>(R.id.connect_dojo).setOnClickListener { view ->
             connectOnClickListener?.onClick(view)
+        }
+        view.findViewById<MaterialButton>(R.id.browse_community_dojos).setOnClickListener { view ->
+            browseCommunityDojoOnClickListener?.onClick(view)
         }
     }
 

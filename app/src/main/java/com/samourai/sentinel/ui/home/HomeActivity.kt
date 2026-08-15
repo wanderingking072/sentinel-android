@@ -42,6 +42,7 @@ import com.samourai.sentinel.ui.utils.PrefsUtil
 import com.samourai.sentinel.ui.utils.RecyclerViewItemDividerDecorator
 import com.samourai.sentinel.ui.utils.SlideInItemAnimator
 import com.samourai.sentinel.ui.utils.showFloatingSnackBar
+import com.samourai.sentinel.ui.views.BalanceHelpDialog
 import com.samourai.sentinel.ui.views.confirm
 import com.samourai.sentinel.util.AppUtil
 import com.samourai.sentinel.util.FormatsUtil
@@ -91,14 +92,19 @@ class HomeActivity : SentinelActivity() {
             prefsUtil.enableTor = true
         }
 
-        if (
+        val needsNotificationPermissionPrompt =
             !AndroidUtil.isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS, applicationContext)
             && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && prefsUtil.firstRun == true
-        )
-            this.askNotificationPermission()
 
-        setUp()
+        if (needsNotificationPermissionPrompt) {
+            // setUp() (network choice / camera permission / dojo setup) only runs
+            // once this dialog is dismissed - showing both at once was stacking
+            // popups on top of each other during initial setup.
+            this.askNotificationPermission { setUp() }
+        } else {
+            setUp()
+        }
 
         setUpCollectionList()
 
@@ -426,6 +432,11 @@ class HomeActivity : SentinelActivity() {
                 if (!prefsUtil.isAPIEndpointEnabled()) {
                     //showServerConfig()
                     Toast.makeText(applicationContext, "No Dojo connected", Toast.LENGTH_SHORT).show()
+                } else {
+                    // This sheet is only ever reached from the first-time setup
+                    // flow (setUp() / showServerConfig()), so a successful
+                    // connection here is always the user's first Dojo.
+                    BalanceHelpDialog.show(this@HomeActivity)
                 }
             }
         })
